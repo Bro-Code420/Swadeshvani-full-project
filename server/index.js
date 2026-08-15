@@ -112,6 +112,12 @@ app.get("/api/whatsapp/qr", (req, res) => {
   if (connectionStatus === "connected") {
     return res.json({ status: "connected", qr: null, message: "Already connected" });
   }
+  res.json({
+    status: connectionStatus,
+    qr: currentQrCode,
+  });
+});
+
 // List joined channels & groups
 app.get("/api/whatsapp/channels", async (req, res) => {
   try {
@@ -185,7 +191,7 @@ async function resolveTargetJid(input) {
     console.error("Error resolving channel invite link:", err.message);
   }
 
-  // Fallback: if ends without @, append @newsletter if looks like channel, else return as is
+  // Fallback
   return target;
 }
 
