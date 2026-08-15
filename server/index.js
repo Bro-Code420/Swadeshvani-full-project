@@ -72,14 +72,16 @@ async function connectToWhatsApp() {
         console.log(`WhatsApp connection closed (Code: ${statusCode}). Reconnecting: ${shouldReconnect}`);
 
         if (shouldReconnect) {
-          setTimeout(connectToWhatsApp, 5000);
+          setTimeout(connectToWhatsApp, 3000);
         } else {
-          // Logged out: remove auth files
+          // Logged out / 401 expired session: clean auth files and create fresh pairing session
+          console.log("🔄 Session expired or unlinked. Generating fresh QR code for pairing...");
           try {
             fs.rmSync(AUTH_DIR, { recursive: true, force: true });
           } catch (e) {
             console.error("Error clearing auth directory:", e);
           }
+          setTimeout(connectToWhatsApp, 2000);
         }
       } else if (connection === "open") {
         connectionStatus = "connected";
