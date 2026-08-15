@@ -1,179 +1,110 @@
-import React from "react";
-
-const sections = [
-  {
-    name: "Education",
-    slugColor: "text-emerald-700",
-    articles: [
-      {
-        id: 1,
-        title: "Government unveils major overhaul of national curriculum",
-        category: "EDUCATION",
-        time: "Updated 2 hours ago",
-        image:
-          "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80",
-      },
-      {
-        id: 2,
-        title: "Top universities embrace hybrid learning for upcoming session",
-        category: "EDUCATION",
-        time: "Updated 1 hour ago",
-        image:
-          "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1200&q=80",
-      },
-      {
-        id: 3,
-        title: "Rural colleges to receive funding for smart classrooms",
-        category: "EDUCATION",
-        time: "Updated 14 hours ago",
-        image:
-          "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80",
-      },
-      {
-        id: 4,
-        title: "Entrance examination reforms proposed for 2027 intake",
-        category: "EDUCATION",
-        time: "Updated 1 day ago",
-        image:
-          "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-  {
-    name: "Politics",
-    slugColor: "text-emerald-700",
-    articles: [
-      {
-        id: 1,
-        title: "Parliament debates key reforms in public policy framework",
-        category: "POLITICS",
-        time: "Updated 3 hours ago",
-        image:
-          "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80",
-      },
-      {
-        id: 2,
-        title: "Leaders convene to discuss regional development roadmap",
-        category: "POLITICS",
-        time: "Updated 1 hour ago",
-        image:
-          "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80",
-      },
-      {
-        id: 3,
-        title: "Budget allocations questioned in opposition briefing",
-        category: "POLITICS",
-        time: "Updated 15 hours ago",
-        image:
-          "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&w=400&q=80",
-      },
-      {
-        id: 4,
-        title: "Election commission details new code of conduct",
-        category: "POLITICS",
-        time: "Updated 2 days ago",
-        image:
-          "https://images.unsplash.com/photo-1545987796-200677ee1011?auto=format&fit=crop&w=400&q=80",
-      },
-    ],
-  },
-];
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Clock, ArrowRight, TrendingUp } from "lucide-react";
+import { getAllArticles } from "../data/newsData";
 
 export default function CategoriesSection() {
+  const [articles, setArticles] = useState([]);
+
+  useEffect(() => {
+    setArticles(getAllArticles());
+  }, []);
+
+  // Group articles by category
+  const categoriesMap = articles.reduce((acc, item) => {
+    const cat = item.category || "General";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {});
+
+  const categoryNames = Object.keys(categoriesMap);
+
   return (
-    <div className="bg-white py-12">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-0 space-y-16">
-        {sections.map((section) => (
-          <section key={section.name}>
-            {/* Category header */}
-            <div className="flex items-center gap-3 mb-6">
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
-                <span className="font-semibold text-orange-500">
-                  {section.name}
+    <div className="bg-slate-50 min-h-screen py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-16">
+        {/* Page Header */}
+        <div className="border-b border-slate-200 pb-6">
+          <span className="text-xs font-bold text-orange-600 uppercase tracking-widest block mb-2">
+            Categories &amp; Feeds
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-blue-950">
+            सभी प्रमुख समाचार श्रेणियां
+          </h1>
+          <p className="text-sm text-slate-500 mt-2">
+            झारखंड, देश और दुनिया की ताज़ा एवं निष्पक्ष खबरें
+          </p>
+        </div>
+
+        {categoryNames.map((catName) => {
+          const catArticles = categoriesMap[catName];
+          return (
+            <section key={catName} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm">
+              {/* Category header */}
+              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
+                <span className="h-6 w-2 rounded-full bg-orange-500"></span>
+                <h2 className="text-2xl font-bold tracking-tight text-blue-950">
+                  {catName}
+                </h2>
+                <div className="flex-1 h-px bg-slate-100" />
+                <span className="text-xs font-semibold text-slate-400">
+                  {catArticles.length} खबरें
                 </span>
-              </h2>
-              <svg
-                className="w-5 h-5 text-emerald-700"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-              <div className="flex-1 h-px bg-slate-200" />
-            </div>
+              </div>
 
-            {/* Articles grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              {/* Top row: 2 feature stories */}
-              {section.articles.slice(0, 2).map((article) => (
-                <article
-                  key={article.id}
-                  className="group flex flex-col gap-4 cursor-pointer"
-                >
-                  <div className="overflow-hidden rounded-xl bg-slate-100">
-                    <img
-                      src={article.image}
-                      alt={article.title}
-                      className="w-full h-[260px] md:h-[280px] object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl sm:text-2xl font-serif font-semibold leading-snug text-slate-900 group-hover:text-slate-800">
-                      {article.title}
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm">
-                      <span className="font-semibold uppercase tracking-[0.12em] text-emerald-700">
-                        {article.category}
-                      </span>
-                      <span className="text-slate-400">•</span>
-                      <span className="text-slate-500">{article.time}</span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-
-              {/* Bottom row: stacked smaller stories */}
-              <div className="flex flex-col gap-6">
-                {section.articles.slice(2).map((article, idx) => (
+              {/* Articles grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {catArticles.map((article) => (
                   <article
                     key={article.id}
-                    className={`flex gap-4 pb-6 ${
-                      idx === section.articles.slice(2).length - 1
-                        ? ""
-                        : "border-b border-slate-200"
-                    }`}
+                    className="group flex flex-col gap-4 border border-slate-100 p-4 rounded-2xl bg-slate-50/50 hover:bg-white hover:border-orange-200 hover:shadow-md transition duration-300"
                   >
-                    <div className="flex-1 space-y-2">
-                      <h3 className="text-lg sm:text-xl font-serif font-semibold leading-snug text-slate-900 hover:text-slate-800 cursor-pointer">
-                        {article.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs sm:text-sm">
-                        <span className="font-semibold uppercase tracking-[0.12em] text-emerald-700">
-                          {article.category}
-                        </span>
-                        <span className="text-slate-400">•</span>
-                        <span className="text-slate-500">{article.time}</span>
+                    {article.image && (
+                      <Link to={`/news/${article.id}`} className="overflow-hidden rounded-xl bg-slate-100 block">
+                        <img
+                          src={article.image}
+                          alt={article.title}
+                          className="w-full h-[220px] object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </Link>
+                    )}
+
+                    <div className="space-y-2.5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 text-xs mb-2">
+                          <span className="font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-100">
+                            {article.category}
+                          </span>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-slate-500">{article.date}</span>
+                        </div>
+
+                        <h3 className="text-lg sm:text-xl font-bold leading-snug text-blue-950 group-hover:text-orange-600 transition">
+                          <Link to={`/news/${article.id}`}>
+                            {article.title}
+                          </Link>
+                        </h3>
+
+                        {article.excerpt && (
+                          <p className="text-xs sm:text-sm text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                            {article.excerpt}
+                          </p>
+                        )}
                       </div>
-                    </div>
-                    <div className="w-[96px] h-[96px] sm:w-[112px] sm:h-[112px] flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                      <img
-                        src={article.image}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                      />
+
+                      <Link
+                        to={`/news/${article.id}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700 mt-3 pt-3 border-t border-slate-100"
+                      >
+                        पूरी खबर पढ़ें <ArrowRight size={14} />
+                      </Link>
                     </div>
                   </article>
                 ))}
               </div>
-            </div>
-          </section>
-        ))}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

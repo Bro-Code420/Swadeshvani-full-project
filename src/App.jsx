@@ -22,6 +22,7 @@ import Footer from "./Component/Footer.jsx";
 import About from "./Component/About.jsx";
 import TermsConditions from "./Component/TermsConditions.jsx";
 import PrivacyPolicy from "./Component/LegalPrivacy.jsx";
+import ArticleDetail from "./Component/ArticleDetail.jsx";
 function AppLayout() {
   const location = useLocation();
 
@@ -36,6 +37,8 @@ function AppLayout() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/News" element={<News />} />
+        <Route path="/news/:id" element={<ArticleDetail />} />
+        <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/Education" element={<Education />} />
         <Route path="/Worldnews" element={<Worldnews />} />
         <Route path="/Technologynews" element={<Technologynews />} />

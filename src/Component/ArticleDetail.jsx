@@ -1,0 +1,343 @@
+import React, { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import {
+  Calendar,
+  Clock,
+  User,
+  Share2,
+  ArrowLeft,
+  Bookmark,
+  Eye,
+  Check,
+  ChevronRight,
+  TrendingUp,
+  AlertCircle,
+  Home,
+} from "lucide-react";
+import {
+  FaWhatsapp,
+  FaFacebookF,
+  FaLinkedinIn,
+  FaTwitter,
+  FaCopy,
+} from "react-icons/fa";
+import { getArticleById, getAllArticles } from "../data/newsData";
+
+export default function ArticleDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+
+  // Fetch the specific article
+  const article = getArticleById(id);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [id]);
+
+  // Related articles (excluding current one)
+  const allArticles = getAllArticles();
+  const relatedArticles = allArticles
+    .filter((a) => String(a.id) !== String(article?.id) && a.category === article?.category)
+    .concat(allArticles.filter((a) => String(a.id) !== String(article?.id) && a.category !== article?.category))
+    .slice(0, 4);
+
+  const shareUrl = window.location.href;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleShareWa = () => {
+    const text = `🔴 *${article?.title}*\n\n${article?.excerpt || ""}\n\n👉 पूरी खबर यहां पढ़ें:\n${shareUrl}\n\n#SwadeshVaani #BreakingNews`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const handleShareFb = () => {
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(article?.title || "")}`;
+    window.open(fbUrl, "fbShare", "width=640,height=580,menubar=no,toolbar=no");
+  };
+
+  const handleShareLi = () => {
+    const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+    window.open(liUrl, "liShare", "width=640,height=600,menubar=no,toolbar=no");
+  };
+
+  const handleShareTw = () => {
+    const twUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔴 ${article?.title}`)}&url=${encodeURIComponent(shareUrl)}&hashtags=SwadeshVaani,JharkhandNews`;
+    window.open(twUrl, "twShare", "width=600,height=500,menubar=no,toolbar=no");
+  };
+
+  // 404 / Article Not Found View
+  if (!article) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-orange-50/30 flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full text-center bg-white p-8 sm:p-10 rounded-3xl border border-orange-100 shadow-xl">
+          <div className="h-20 w-20 bg-orange-100 text-orange-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <AlertCircle className="h-10 w-10" />
+          </div>
+
+          <span className="inline-block px-3 py-1 bg-red-100 text-red-700 font-bold text-xs rounded-full uppercase tracking-wider mb-3">
+            404 • Article Not Found
+          </span>
+
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-950 mb-3">
+            खबर उपलब्ध नहीं है
+          </h2>
+
+          <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+            आप जिस खबर को ढूंढ रहे हैं, वह या तो हटा दी गई है या उसका लिंक बदल गया है।
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition"
+            >
+              <ArrowLeft className="h-4 w-4" /> वापस जाएं
+            </button>
+
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-orange-500 text-white font-semibold text-sm hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition"
+            >
+              <Home className="h-4 w-4" /> मुख्य पृष्ठ पर जाएं
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800">
+      {/* Breadcrumbs */}
+      <nav className="bg-white border-b border-slate-100 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-2 text-xs font-medium text-slate-500 overflow-x-auto whitespace-nowrap">
+          <Link to="/" className="hover:text-orange-600 flex items-center gap-1">
+            <Home className="h-3.5 w-3.5" /> होम
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 text-slate-300 flex-shrink-0" />
+          <Link to="/News" className="hover:text-orange-600">
+            {article.category || "समाचार"}
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 text-slate-300 flex-shrink-0" />
+          <span className="text-slate-800 font-semibold truncate max-w-xs sm:max-w-md">
+            {article.title}
+          </span>
+        </div>
+      </nav>
+
+      {/* Main Container */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main Article Content */}
+          <article className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-10 shadow-sm">
+            {/* Category & Badge */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <span className="inline-flex items-center rounded-full bg-orange-100 px-3.5 py-1 text-xs font-bold text-orange-700 tracking-wide">
+                {article.category || "ताज़ा खबर"}
+              </span>
+
+              <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-slate-400" />
+                  {article.readTime || "3 मिनट"}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5 text-slate-400" />
+                  1.2k बार पढ़ा गया
+                </span>
+              </div>
+            </div>
+
+            {/* Main Headline */}
+            <h1 className="text-2xl sm:text-4xl lg:text-[38px] font-extrabold text-blue-950 leading-tight mb-5 tracking-tight">
+              {article.title}
+            </h1>
+
+            {/* Author & Date Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 py-4 mb-6 border-y border-slate-100 text-xs text-slate-600">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                  {article.author ? article.author.charAt(0) : "S"}
+                </div>
+                <div>
+                  <p className="font-bold text-blue-950 text-sm">
+                    {article.author || "स्वदेश वाणी ब्यूरो"}
+                  </p>
+                  <p className="text-slate-400 text-[11px]">वेरिफाइड जर्नलिस्ट • स्वदेश वाणी</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 font-medium text-slate-500">
+                <Calendar className="h-4 w-4 text-orange-500" />
+                <span>{article.date || "आज"}</span>
+              </div>
+            </div>
+
+            {/* Social Share Floating Bar (Top) */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 mb-8 rounded-2xl bg-gradient-to-r from-orange-50/80 via-white to-blue-50/80 border border-slate-200">
+              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Share2 className="h-4 w-4 text-orange-500" /> इस खबर को शेयर करें:
+              </span>
+
+              <div className="flex items-center gap-2">
+                {/* WhatsApp */}
+                <button
+                  onClick={handleShareWa}
+                  title="Share on WhatsApp"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-green-600 text-white font-bold text-xs shadow-sm hover:bg-green-700 active:scale-95 transition"
+                >
+                  <FaWhatsapp className="text-sm" /> WhatsApp
+                </button>
+
+                {/* Facebook */}
+                <button
+                  onClick={handleShareFb}
+                  title="Share on Facebook"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm hover:bg-blue-700 active:scale-95 transition text-xs"
+                >
+                  <FaFacebookF />
+                </button>
+
+                {/* LinkedIn */}
+                <button
+                  onClick={handleShareLi}
+                  title="Share on LinkedIn"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0077b5] text-white shadow-sm hover:bg-[#005582] active:scale-95 transition text-xs"
+                >
+                  <FaLinkedinIn />
+                </button>
+
+                {/* Twitter / X */}
+                <button
+                  onClick={handleShareTw}
+                  title="Share on X (Twitter)"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm hover:bg-black active:scale-95 transition text-xs"
+                >
+                  <FaTwitter />
+                </button>
+
+                {/* Copy Link */}
+                <button
+                  onClick={handleCopyLink}
+                  title="Copy Article Link"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <FaCopy className="text-xs" />}
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+
+            {/* Featured Image */}
+            {article.image && (
+              <div className="mb-8 overflow-hidden rounded-2xl border border-slate-100 shadow-md">
+                <img
+                  src={article.image}
+                  alt={article.title}
+                  className="w-full max-h-[480px] object-cover hover:scale-105 transition duration-500"
+                />
+                <div className="p-2.5 bg-slate-50 text-[11px] text-slate-400 text-center italic border-t border-slate-100">
+                  फोटो: {article.title} (स्वदेश वाणी स्पेशल)
+                </div>
+              </div>
+            )}
+
+            {/* Short Excerpt Box */}
+            {article.excerpt && (
+              <div className="p-5 mb-8 rounded-2xl bg-orange-500/5 border-l-4 border-orange-500 text-slate-800 text-base font-semibold leading-relaxed">
+                {article.excerpt}
+              </div>
+            )}
+
+            {/* Full Body Content */}
+            <div
+              className="article-content prose prose-lg max-w-none text-slate-800 leading-8 text-[17px] font-normal space-y-5"
+              dangerouslySetInnerHTML={{ __html: article.content || `<p>${article.excerpt}</p>` }}
+            />
+
+            {/* End of Story Signature */}
+            <div className="mt-12 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+              <p>📰 स्वदेश वाणी न्यूज़ नेटवर्क — सत्य, निष्पक्ष और सटीक पत्रकारिता।</p>
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="text-orange-600 font-bold hover:underline"
+              >
+                ↑ ऊपर जाएं (Top)
+              </button>
+            </div>
+          </article>
+
+          {/* Sidebar / Related Stories */}
+          <aside className="lg:col-span-4 space-y-6">
+            {/* Breaking News Card */}
+            <div className="bg-gradient-to-br from-blue-950 to-blue-900 rounded-3xl p-6 text-white shadow-xl">
+              <div className="flex items-center gap-2 text-orange-400 font-bold text-xs uppercase tracking-wider mb-2">
+                <TrendingUp className="h-4 w-4" /> ट्रेंडिंग न्यूज़
+              </div>
+              <h4 className="text-xl font-bold mb-2">
+                स्वदेश वाणी लाइव अपडेट्स
+              </h4>
+              <p className="text-xs text-blue-200 mb-5 leading-relaxed">
+                झारखंड और देश-दुनिया की हर खबर से जुड़े रहने के लिए हमारे व्हाट्सएप चैनल से जुड़ें।
+              </p>
+
+              <button
+                onClick={handleShareWa}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-green-500 text-white font-bold text-xs shadow-lg shadow-green-500/30 hover:bg-green-600 transition"
+              >
+                <FaWhatsapp className="text-base" /> WhatsApp पर शेयर करें
+              </button>
+            </div>
+
+            {/* Related Articles List */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
+              <h4 className="text-base font-bold text-blue-950 mb-5 pb-3 border-b border-slate-100 flex items-center justify-between">
+                <span>संबंधित खबरें (Related)</span>
+                <span className="h-2 w-2 rounded-full bg-orange-500"></span>
+              </h4>
+
+              <div className="space-y-4">
+                {relatedArticles.map((rel) => (
+                  <Link
+                    key={rel.id}
+                    to={`/news/${rel.id}`}
+                    className="group flex gap-3 items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0"
+                  >
+                    {rel.image ? (
+                      <img
+                        src={rel.image}
+                        alt={rel.title}
+                        className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"
+                      />
+                    ) : (
+                      <div className="h-16 w-20 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        News
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider block mb-1">
+                        {rel.category}
+                      </span>
+                      <h5 className="text-xs font-bold text-blue-950 group-hover:text-orange-600 transition line-clamp-2 leading-snug">
+                        {rel.title}
+                      </h5>
+                      <span className="text-[11px] text-slate-400 mt-1 block">
+                        {rel.date}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}

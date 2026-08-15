@@ -33,6 +33,12 @@ import {
   FaDownload,
 } from "react-icons/fa";
 
+import {
+  getAllArticles,
+  saveArticleToStore,
+  deleteArticleFromStore,
+} from "../data/newsData";
+
 const categories = [
   "National",
   "International",
@@ -46,38 +52,13 @@ const categories = [
   "Jharkhand",
 ];
 
-const initialNews = [
-  {
-    id: 1,
-    title: "जरमुंडी प्रखंड के आमगाछी गांव में आकाशीय बिजली का शिकार हुआ विद्युत ट्रांसफार्मर",
-    category: "Jharkhand",
-    author: "Admin",
-    status: "Published",
-    date: "16 Aug 2026",
-    image: "",
-    excerpt: "जरमुंडी प्रखंड के आमगाछी में आकाशीय बिजली गिरने से 25 केवीए का ट्रांसफार्मर जल गया।",
-    content: "जरमुंडी प्रखंड के आमगाछी गांव में बीती रात आकाशीय बिजली गिरने से 25 केवीए का ट्रांसफार्मर जल गया, जिससे पूरे गांव में अंधेरा छा गया है। ग्रामीणों ने बिजली विभाग से जल्द नया ट्रांसफार्मर लगाने की मांग की है।",
-  },
-  {
-    id: 2,
-    title: "JPSC मुद्दे पर जारी आंदोलन को सोनम वांगचुक का समर्थन",
-    category: "Politics",
-    author: "Admin",
-    status: "Published",
-    date: "15 Aug 2026",
-    image: "",
-    excerpt: "छात्रों के आंदोलन को मिला पर्यावरणविद् सोनम वांगचुक का साथ।",
-    content: "झारखंड लोक सेवा आयोग (JPSC) की अनियमितताओं को लेकर अभ्यर्थियों द्वारा किए जा रहे शांतिपूर्ण आंदोलन को प्रसिद्ध पर्यावरणविद् और शिक्षा सुधारक सोनम वांगचुक ने अपना पूर्ण समर्थन दिया है।",
-  },
-];
-
 const WA_SERVER_URL = "http://localhost:5000";
 
 export default function Admin() {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [newsList, setNewsList] = useState(initialNews);
+  const [newsList, setNewsList] = useState(() => getAllArticles());
 
   // WhatsApp Automation States
   const [waStatus, setWaStatus] = useState("checking"); // 'connected' | 'waiting_for_scan' | 'disconnected' | 'offline' | 'checking'
@@ -319,7 +300,8 @@ export default function Admin() {
     }
 
     const newNews = {
-      id: Date.now(),
+      id: String(Date.now()),
+      slug: formData.title.toLowerCase().replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "-").slice(0, 50),
       title: formData.title,
       category: formData.category,
       author: "Admin",
@@ -329,18 +311,20 @@ export default function Admin() {
         month: "short",
         year: "numeric",
       }),
+      readTime: "3 मिनट",
       excerpt: formData.excerpt,
       image: formData.image,
       content: formData.content,
     };
 
-    setNewsList((previous) => [newNews, ...previous]);
+    saveArticleToStore(newNews);
+    setNewsList(getAllArticles());
 
     // Auto-broadcast if enabled and published
     if (autoPostWa && formData.status === "Published") {
       await broadcastToWhatsApp(newNews);
     } else {
-      showToast("Article saved successfully!", "success");
+      showToast("Article published and saved to store!", "success");
     }
 
     setFormData({
@@ -361,10 +345,9 @@ export default function Admin() {
     );
     if (!confirmed) return;
 
-    setNewsList((previous) =>
-      previous.filter((news) => news.id !== id)
-    );
-    showToast("Article deleted.", "info");
+    deleteArticleFromStore(id);
+    setNewsList(getAllArticles());
+    showToast("Article deleted from store.", "info");
   };
 
   return (
