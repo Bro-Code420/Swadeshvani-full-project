@@ -120,34 +120,49 @@ export default function Admin() {
     return `🔴 【 ${article.category?.toUpperCase() || "BREAKING NEWS"} 】\n\n*${headline}*${excerpt}\n\n👉 पूरी खबर यहां पढ़ें:\n${link}${tags}`;
   };
 
-  // Free Social Share Handlers (No Meta developer token required)
-  const shareToFacebook = (article) => {
+  // Free Social Share Handlers with Auto-Clipboard Copy
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const shareToFacebook = async (article) => {
+    const text = formatSocialText(article);
+    await copyToClipboard(text);
     const url = encodeURIComponent(getArticleShareUrl(article));
     const quote = encodeURIComponent(`${article.title}\n\n${article.excerpt || ""}`);
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${quote}`;
     window.open(fbUrl, "fbShare", "width=640,height=600,menubar=no,toolbar=no");
-    showToast("Opening Facebook Share dialog...", "info");
+    showToast("📋 Post text copied! Press Ctrl+V (Paste) in Facebook.", "success");
   };
 
-  const shareToLinkedIn = (article) => {
-    const url = encodeURIComponent(getArticleShareUrl(article));
-    const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
-    window.open(liUrl, "liShare", "width=640,height=620,menubar=no,toolbar=no");
-    showToast("Opening LinkedIn Share dialog...", "info");
-  };
-
-  const shareToTwitter = (article) => {
-    const text = encodeURIComponent(`🔴 ${article.title}`);
-    const url = encodeURIComponent(getArticleShareUrl(article));
-    const twUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=SwadeshVaani,JharkhandNews`;
-    window.open(twUrl, "twShare", "width=600,height=500,menubar=no,toolbar=no");
-    showToast("Opening Twitter/X Share dialog...", "info");
-  };
-
-  const copyInstagramCaption = (article) => {
+  const shareToLinkedIn = async (article) => {
     const text = formatSocialText(article);
-    navigator.clipboard.writeText(text);
-    showToast("📋 Caption copied to clipboard! Opening Instagram...", "success");
+    await copyToClipboard(text);
+    const url = encodeURIComponent(getArticleShareUrl(article));
+    const liUrl = `https://www.linkedin.com/feed/?shareActive=true&shareUrl=${url}`;
+    window.open(liUrl, "liShare", "width=640,height=620,menubar=no,toolbar=no");
+    showToast("📋 Content auto-copied! Press Ctrl+V (Paste) in LinkedIn.", "success");
+  };
+
+  const shareToTwitter = async (article) => {
+    const text = formatSocialText(article);
+    await copyToClipboard(text);
+    const tweetText = encodeURIComponent(`🔴 ${article.title}\n\n${article.excerpt ? article.excerpt.substring(0, 100) + '...' : ''}`);
+    const url = encodeURIComponent(getArticleShareUrl(article));
+    const twUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${url}&hashtags=SwadeshVaani,JharkhandNews`;
+    window.open(twUrl, "twShare", "width=600,height=500,menubar=no,toolbar=no");
+    showToast("📋 Content copied! Press Ctrl+V if you want to paste full text.", "success");
+  };
+
+  const copyInstagramCaption = async (article) => {
+    const text = formatSocialText(article);
+    await copyToClipboard(text);
+    showToast("📋 Caption auto-copied! Opening Instagram...", "success");
     window.open("https://www.instagram.com/", "_blank");
   };
 
