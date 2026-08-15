@@ -28,11 +28,11 @@ const Footer = () => {
   ];
 
   const newsLinks = [
-    { label: "Education", to: "/Education" },
-    { label: "World News", to: "/Worldnews" },
-    { label: "Technology", to: "/Technologynews" },
-    { label: "Sports", to: "/Sportsnews" },
-    { label: "Historic Jharkhand", to: "/HistoricJharkhand" },
+    { label: "Education", to: "/education" },
+    { label: "World News", to: "/world-news" },
+    { label: "Technology", to: "/technology-news" },
+    { label: "Sports", to: "/sports-news" },
+    { label: "Historic Jharkhand", to: "/historic-jharkhand" },
   ];
 
   const socialLinks = [
@@ -67,10 +67,8 @@ const Footer = () => {
 
   return (
     <footer className="bg-blue-950 text-white">
-      {/* Tricolor accent */}
       <div className="h-1 w-full bg-gradient-to-r from-orange-500 via-white to-green-600" />
 
-      {/* Main footer */}
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
@@ -78,7 +76,7 @@ const Footer = () => {
             <Link to="/" className="inline-block">
               <img
                 src={hindilogo}
-                alt="News Logo"
+                alt="NewsDesk logo"
                 className="h-24 w-auto object-contain"
               />
             </Link>
@@ -88,7 +86,6 @@ const Footer = () => {
               में आप तक पहुंचाने का हमारा प्रयास।
             </p>
 
-            {/* Social icons */}
             <div className="mt-6 flex items-center gap-3">
               {socialLinks.map((social) => (
                 <a
@@ -132,19 +129,19 @@ const Footer = () => {
               </div>
 
               <a
-                href="tel:+919999999999"
+                href="tel:+917979093015"
                 className="flex items-center gap-3 transition hover:text-orange-400"
               >
                 <Phone size={17} className="text-orange-400" />
-                +91 99999 99999
+                +91 79790 93015
               </a>
 
               <a
-                href="mailto:info@example.com"
-                className="flex items-center gap-3 transition hover:text-orange-400"
+                href="mailto:swaveshvaninewsnetwork@gmail.com"
+                className="flex items-center gap-3 break-all transition hover:text-orange-400"
               >
-                <Mail size={17} className="text-orange-400" />
-                info@example.com
+                <Mail size={17} className="shrink-0 text-orange-400" />
+                swaveshvaninewsnetwork@gmail.com
               </a>
             </div>
 
@@ -163,25 +160,26 @@ const Footer = () => {
       <div className="border-t border-blue-800">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-center sm:px-8 md:flex-row md:text-left">
           <p className="text-xs text-blue-200">
-            © 2026 NewsDesk. All Rights Reserved.
+            © {new Date().getFullYear()} NewsDesk. All Rights Reserved.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-blue-200">
             <Link
-              to="/privacy-policy"
+              to="/PrivacyPolicy"
               className="transition hover:text-orange-400"
             >
               Privacy Policy
             </Link>
 
             <Link
-              to="/terms"
+              to="/t&c"
               className="transition hover:text-orange-400"
             >
               Terms &amp; Conditions
             </Link>
 
             <button
+              type="button"
               onClick={scrollToTop}
               className="flex items-center gap-2 rounded-full border border-blue-800 px-3 py-2 transition hover:border-orange-500 hover:bg-orange-500 hover:text-white"
             >

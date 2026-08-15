@@ -17,9 +17,11 @@ import Login from "./Component/Login.jsx";
 import HistoricJharkhand from "./Component/HistoricJharkhand.jsx";
 import Admin from "./Component/Admin.jsx";
 import YouTubeVideos from "./Component/YouTubeVideos.jsx";
-import Advertisement from "./Component/Advertisement.jsx";
+import Advertisement from "./Component/Sponsors.jsx";
 import Footer from "./Component/Footer.jsx";
-
+import About from "./Component/About.jsx";
+import TermsConditions from "./Component/TermsConditions.jsx";
+import PrivacyPolicy from "./Component/LegalPrivacy.jsx";
 function AppLayout() {
   const location = useLocation();
 
@@ -39,6 +41,9 @@ function AppLayout() {
         <Route path="/Technologynews" element={<Technologynews />} />
         <Route path="/Sportsnews" element={<Sportsnews />} />
         <Route path="/Login" element={<Login />} />
+        <Route path="/About" element={<About />} />
+        <Route path="/t&c" element={<TermsConditions />} />
+        <Route path="/privacypolicy" element={<PrivacyPolicy />} />
         <Route
           path="/HistoricJharkhand"
           element={<HistoricJharkhand />}

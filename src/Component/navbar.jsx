@@ -51,7 +51,7 @@ const Navbar = () => {
     { label: "Historic Jharkhand", to: "/history" },
     { label: "Videos", to: "/videos" },
     { label: "Advertisement", to: "/advertisement" },
-    { label: "About", to: "/about" },
+    { label: "About", to: "/About" },
   ];
 
   const sidebarLinks = [
