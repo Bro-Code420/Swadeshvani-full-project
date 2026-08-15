@@ -23,6 +23,14 @@ import {
   FaSyncAlt,
   FaExclamationTriangle,
   FaCog,
+  FaFacebookF,
+  FaInstagram,
+  FaLinkedinIn,
+  FaTwitter,
+  FaCopy,
+  FaCheck,
+  FaShareAlt,
+  FaDownload,
 } from "react-icons/fa";
 
 const categories = [
@@ -81,6 +89,7 @@ export default function Admin() {
   const [autoPostWa, setAutoPostWa] = useState(true);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [toast, setToast] = useState(null); // { type: 'success' | 'error' | 'info', message: '' }
+  const [sharingArticle, setSharingArticle] = useState(null); // Article object for Social Share Modal
 
   const [formData, setFormData] = useState({
     title: "",
@@ -94,6 +103,52 @@ export default function Admin() {
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4500);
+  };
+
+  // Helper to get public article link
+  const getArticleShareUrl = (article) => {
+    return `${window.location.origin}/News`;
+  };
+
+  // Formatted caption for Instagram & LinkedIn
+  const formatSocialText = (article) => {
+    if (!article) return "";
+    const headline = article.title || "";
+    const excerpt = article.excerpt ? `\n\n${article.excerpt}` : "";
+    const link = getArticleShareUrl(article);
+    const tags = "\n\n#SwadeshVaani #JharkhandNews #BreakingNews #HindiNews #LatestUpdates";
+    return `🔴 【 ${article.category?.toUpperCase() || "BREAKING NEWS"} 】\n\n*${headline}*${excerpt}\n\n👉 पूरी खबर यहां पढ़ें:\n${link}${tags}`;
+  };
+
+  // Free Social Share Handlers (No Meta developer token required)
+  const shareToFacebook = (article) => {
+    const url = encodeURIComponent(getArticleShareUrl(article));
+    const quote = encodeURIComponent(`${article.title}\n\n${article.excerpt || ""}`);
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${quote}`;
+    window.open(fbUrl, "fbShare", "width=640,height=600,menubar=no,toolbar=no");
+    showToast("Opening Facebook Share dialog...", "info");
+  };
+
+  const shareToLinkedIn = (article) => {
+    const url = encodeURIComponent(getArticleShareUrl(article));
+    const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+    window.open(liUrl, "liShare", "width=640,height=620,menubar=no,toolbar=no");
+    showToast("Opening LinkedIn Share dialog...", "info");
+  };
+
+  const shareToTwitter = (article) => {
+    const text = encodeURIComponent(`🔴 ${article.title}`);
+    const url = encodeURIComponent(getArticleShareUrl(article));
+    const twUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=SwadeshVaani,JharkhandNews`;
+    window.open(twUrl, "twShare", "width=600,height=500,menubar=no,toolbar=no");
+    showToast("Opening Twitter/X Share dialog...", "info");
+  };
+
+  const copyInstagramCaption = (article) => {
+    const text = formatSocialText(article);
+    navigator.clipboard.writeText(text);
+    showToast("📋 Caption copied to clipboard! Opening Instagram...", "success");
+    window.open("https://www.instagram.com/", "_blank");
   };
 
   // Poll WhatsApp Status
@@ -516,6 +571,11 @@ export default function Admin() {
               onBroadcast={broadcastToWhatsApp}
               isBroadcasting={isBroadcasting}
               onOpenWhatsApp={() => changePage("whatsapp")}
+              onOpenSocialModal={(item, initialTab) => setSharingArticle({ ...item, initialTab })}
+              onShareFb={shareToFacebook}
+              onShareLi={shareToLinkedIn}
+              onShareTw={shareToTwitter}
+              onShareInsta={copyInstagramCaption}
             />
           )}
 
@@ -528,6 +588,11 @@ export default function Admin() {
               onDelete={handleDelete}
               onBroadcast={broadcastToWhatsApp}
               isBroadcasting={isBroadcasting}
+              onOpenSocialModal={(item, initialTab) => setSharingArticle({ ...item, initialTab })}
+              onShareFb={shareToFacebook}
+              onShareLi={shareToLinkedIn}
+              onShareTw={shareToTwitter}
+              onShareInsta={copyInstagramCaption}
             />
           )}
 
@@ -570,6 +635,22 @@ export default function Admin() {
           )}
         </div>
       </main>
+
+      {/* Social Media Share Hub Modal */}
+      {sharingArticle && (
+        <SocialShareModal
+          article={sharingArticle}
+          onClose={() => setSharingArticle(null)}
+          onShareFb={() => shareToFacebook(sharingArticle)}
+          onShareLi={() => shareToLinkedIn(sharingArticle)}
+          onShareTw={() => shareToTwitter(sharingArticle)}
+          onShareInsta={() => copyInstagramCaption(sharingArticle)}
+          onBroadcastWa={() => broadcastToWhatsApp(sharingArticle)}
+          waStatus={waStatus}
+          formatSocialText={formatSocialText}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 }
@@ -606,6 +687,11 @@ function Dashboard({
   onBroadcast,
   isBroadcasting,
   onOpenWhatsApp,
+  onOpenSocialModal,
+  onShareFb,
+  onShareLi,
+  onShareTw,
+  onShareInsta,
 }) {
   return (
     <>
@@ -618,7 +704,7 @@ function Dashboard({
             Welcome back, Admin
           </h3>
           <p className="mt-1 text-sm text-slate-500">
-            Publish news and auto-broadcast to WhatsApp channels in 1-click.
+            Publish news and auto-broadcast to WhatsApp, Facebook, Instagram &amp; LinkedIn.
           </p>
         </div>
 
@@ -675,7 +761,7 @@ function Dashboard({
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h4 className="text-lg font-bold text-blue-950">Recent News Articles</h4>
-            <p className="text-xs text-slate-500">Quickly broadcast any article to WhatsApp</p>
+            <p className="text-xs text-slate-500">Quickly broadcast any article to WhatsApp, Facebook, Instagram &amp; LinkedIn</p>
           </div>
           <button
             onClick={onViewAll}
@@ -690,6 +776,11 @@ function Dashboard({
           onDelete={onDelete}
           onBroadcast={onBroadcast}
           isBroadcasting={isBroadcasting}
+          onOpenSocialModal={onOpenSocialModal}
+          onShareFb={onShareFb}
+          onShareLi={onShareLi}
+          onShareTw={onShareTw}
+          onShareInsta={onShareInsta}
         />
       </section>
     </>
@@ -723,6 +814,11 @@ function NewsList({
   onDelete,
   onBroadcast,
   isBroadcasting,
+  onOpenSocialModal,
+  onShareFb,
+  onShareLi,
+  onShareTw,
+  onShareInsta,
 }) {
   return (
     <section className="rounded-2xl border border-orange-100 bg-white shadow-sm">
@@ -730,7 +826,7 @@ function NewsList({
         <div>
           <h3 className="text-xl font-bold text-blue-950">All News Articles</h3>
           <p className="mt-1 text-xs text-slate-500">
-            Manage your articles and broadcast them to your social channels.
+            Manage your articles and broadcast them across social media.
           </p>
         </div>
 
@@ -761,23 +857,39 @@ function NewsList({
         onDelete={onDelete}
         onBroadcast={onBroadcast}
         isBroadcasting={isBroadcasting}
+        onOpenSocialModal={onOpenSocialModal}
+        onShareFb={onShareFb}
+        onShareLi={onShareLi}
+        onShareTw={onShareTw}
+        onShareInsta={onShareInsta}
       />
     </section>
   );
 }
 
 /* News table */
-function NewsTable({ news, onDelete, onBroadcast, isBroadcasting }) {
+function NewsTable({
+  news,
+  onDelete,
+  onBroadcast,
+  isBroadcasting,
+  onOpenSocialModal,
+  onShareFb,
+  onShareLi,
+  onShareTw,
+  onShareInsta,
+}) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[800px] text-left text-sm">
+      <table className="w-full min-w-[850px] text-left text-sm">
         <thead className="bg-blue-50 text-xs uppercase tracking-wide text-blue-900">
           <tr>
             <th className="px-5 py-4 font-semibold">Article</th>
             <th className="px-5 py-4 font-semibold">Category</th>
             <th className="px-5 py-4 font-semibold">Status</th>
             <th className="px-5 py-4 font-semibold">Date</th>
-            <th className="px-5 py-4 text-center font-semibold text-green-700">WhatsApp Broadcast</th>
+            <th className="px-5 py-4 text-center font-semibold text-green-700">WhatsApp</th>
+            <th className="px-5 py-4 text-center font-semibold text-blue-700">Social Share</th>
             <th className="px-5 py-4 text-right font-semibold">Actions</th>
           </tr>
         </thead>
@@ -825,6 +937,7 @@ function NewsTable({ news, onDelete, onBroadcast, isBroadcasting }) {
                   {item.date}
                 </td>
 
+                {/* WhatsApp Action */}
                 <td className="px-5 py-4 text-center">
                   <button
                     disabled={isBroadcasting}
@@ -833,8 +946,58 @@ function NewsTable({ news, onDelete, onBroadcast, isBroadcasting }) {
                     className="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-green-600 active:scale-95 transition disabled:opacity-50"
                   >
                     <FaWhatsapp className="text-sm" />
-                    <span>Send to WhatsApp</span>
+                    <span>Send</span>
                   </button>
+                </td>
+
+                {/* Social Media 1-Click Share Hub */}
+                <td className="px-5 py-4 text-center">
+                  <div className="flex items-center justify-center gap-1.5">
+                    {/* Facebook 1-Click */}
+                    <button
+                      onClick={() => onShareFb(item)}
+                      title="Share directly on Facebook Feed/Page"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 active:scale-95 text-xs"
+                    >
+                      <FaFacebookF />
+                    </button>
+
+                    {/* Instagram Assistant */}
+                    <button
+                      onClick={() => onOpenSocialModal(item, "instagram")}
+                      title="Open Instagram Post Assistant (Copy & Create)"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white shadow-sm transition hover:opacity-90 active:scale-95 text-xs"
+                    >
+                      <FaInstagram />
+                    </button>
+
+                    {/* LinkedIn 1-Click */}
+                    <button
+                      onClick={() => onShareLi(item)}
+                      title="Share directly on LinkedIn"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0077b5] text-white shadow-sm transition hover:bg-[#005582] active:scale-95 text-xs"
+                    >
+                      <FaLinkedinIn />
+                    </button>
+
+                    {/* Twitter/X 1-Click */}
+                    <button
+                      onClick={() => onShareTw(item)}
+                      title="Share directly on Twitter / X"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm transition hover:bg-black active:scale-95 text-xs"
+                    >
+                      <FaTwitter />
+                    </button>
+
+                    {/* Social Hub Modal */}
+                    <button
+                      onClick={() => onOpenSocialModal(item)}
+                      title="Open Full Social Share Hub"
+                      className="ml-1 rounded-lg border border-blue-200 bg-blue-50/80 px-2 py-1 text-[11px] font-semibold text-blue-900 hover:bg-blue-100 transition"
+                    >
+                      Hub
+                    </button>
+                  </div>
                 </td>
 
                 <td className="px-5 py-4">
@@ -853,7 +1016,7 @@ function NewsTable({ news, onDelete, onBroadcast, isBroadcasting }) {
           ) : (
             <tr>
               <td
-                colSpan="6"
+                colSpan="7"
                 className="px-5 py-12 text-center text-sm text-slate-500"
               >
                 No news articles found.
@@ -1515,6 +1678,318 @@ function ToolbarButton({
       className={`rounded-md border border-transparent px-2.5 py-1.5 text-sm text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 ${className}`}
     >
       {label}
+    </button>
+  );
+}
+
+/* Social Media Multi-Platform Share Hub Modal */
+function SocialShareModal({
+  article,
+  onClose,
+  onShareFb,
+  onShareLi,
+  onShareTw,
+  onShareInsta,
+  onBroadcastWa,
+  waStatus,
+  formatSocialText,
+  showToast,
+}) {
+  const [activeTab, setActiveTab] = useState(article.initialTab || "facebook");
+  const [copied, setCopied] = useState(false);
+
+  const captionText = formatSocialText(article);
+  const shareUrl = `${window.location.origin}/News`;
+
+  const handleCopyCaption = () => {
+    navigator.clipboard.writeText(captionText);
+    setCopied(true);
+    showToast("📋 Caption copied to clipboard!", "success");
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    showToast("🔗 Article link copied!", "success");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-blue-950/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative flex flex-col w-full max-w-2xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-blue-100 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500 text-white shadow-sm">
+              <FaShareAlt className="text-sm" />
+            </div>
+            <div>
+              <h4 className="font-bold text-blue-950 text-base">Multi-Social Share Hub</h4>
+              <p className="text-xs text-slate-500">100% Free 1-Click Publishing</p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
+          >
+            <FaTimes />
+          </button>
+        </div>
+
+        {/* Platform Tabs */}
+        <div className="flex border-b border-slate-200 bg-slate-100/60 px-6 pt-3 gap-2 overflow-x-auto text-xs font-semibold">
+          <TabButton
+            active={activeTab === "facebook"}
+            onClick={() => setActiveTab("facebook")}
+            icon={<FaFacebookF className="text-blue-600" />}
+            label="Facebook"
+          />
+          <TabButton
+            active={activeTab === "instagram"}
+            onClick={() => setActiveTab("instagram")}
+            icon={<FaInstagram className="text-pink-600" />}
+            label="Instagram"
+          />
+          <TabButton
+            active={activeTab === "linkedin"}
+            onClick={() => setActiveTab("linkedin")}
+            icon={<FaLinkedinIn className="text-[#0077b5]" />}
+            label="LinkedIn"
+          />
+          <TabButton
+            active={activeTab === "twitter"}
+            onClick={() => setActiveTab("twitter")}
+            icon={<FaTwitter className="text-slate-900" />}
+            label="Twitter / X"
+          />
+          <TabButton
+            active={activeTab === "whatsapp"}
+            onClick={() => setActiveTab("whatsapp")}
+            icon={<FaWhatsapp className="text-green-600" />}
+            label="WhatsApp"
+          />
+        </div>
+
+        {/* Content Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Article Summary Card */}
+          <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-blue-50/50 border border-blue-100">
+            {article.image ? (
+              <img
+                src={article.image}
+                alt={article.title}
+                className="h-16 w-20 rounded-xl object-cover border border-blue-100 shadow-sm flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-16 w-20 items-center justify-center rounded-xl bg-blue-100 text-blue-500 flex-shrink-0">
+                <FaNewspaper className="text-xl" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <span className="inline-block rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 uppercase tracking-wider mb-1">
+                {article.category}
+              </span>
+              <h5 className="font-bold text-blue-950 text-sm line-clamp-2 leading-snug">
+                {article.title}
+              </h5>
+              <p className="mt-1 text-xs text-slate-500 line-clamp-1">
+                {article.excerpt || article.content?.replace(/<[^>]*>/g, "")}
+              </p>
+            </div>
+          </div>
+
+          {/* TAB 1: Facebook */}
+          {activeTab === "facebook" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/50 to-white p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaFacebookF className="text-blue-600" />
+                  <span className="text-xs font-bold text-blue-950">Facebook Feed &amp; Page Sharing</span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Opens Facebook's direct post creator with article headline, link preview, and thumbnail ready to publish on your Personal Feed, Groups, or Facebook Pages.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={onShareFb}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition"
+                >
+                  <FaFacebookF /> Open Facebook Post Dialog
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <FaCopy /> Copy Link
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Instagram */}
+          {activeTab === "instagram" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-pink-200 bg-pink-50/40 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <FaInstagram className="text-pink-600" />
+                  <span className="text-xs font-bold text-pink-950">Instagram Post Assistant</span>
+                </div>
+                <p className="text-xs text-pink-900 leading-relaxed">
+                  Instagram does not allow direct third-party publishing without enterprise accounts. Use our 1-click assistant: Copy formatted caption with hashtags, then paste it on Instagram!
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Formatted Hindi/English Caption with Hashtags:
+                </label>
+                <textarea
+                  readOnly
+                  rows="6"
+                  value={captionText}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs text-slate-800 font-mono outline-none leading-relaxed select-all"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={onShareInsta}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-pink-500/20 hover:opacity-95 active:scale-95 transition"
+                >
+                  <FaInstagram /> 📋 Copy Caption &amp; Open Instagram
+                </button>
+
+                <button
+                  onClick={handleCopyCaption}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  {copied ? <FaCheck className="text-green-600" /> : <FaCopy />}
+                  {copied ? "Copied!" : "Copy Text"}
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
+                <p className="font-bold text-slate-800">📸 3-Step Guide:</p>
+                <p>1. Click <strong>"Copy Caption &amp; Open Instagram"</strong>.</p>
+                <p>2. Tap <strong>+ (New Post)</strong> on Instagram and select your cover picture.</p>
+                <p>3. In the caption box, press <strong>Paste (Ctrl+V)</strong> and hit Share!</p>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: LinkedIn */}
+          {activeTab === "linkedin" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaLinkedinIn className="text-[#0077b5]" />
+                  <span className="text-xs font-bold text-blue-950">LinkedIn Professional Article Share</span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Share this news story directly to your LinkedIn personal network or Company/Organisation Page with automatic link preview.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={onShareLi}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0077b5] px-5 py-3 text-sm font-bold text-white shadow-md shadow-blue-800/20 hover:bg-[#005582] active:scale-95 transition"
+                >
+                  <FaLinkedinIn /> Share to LinkedIn
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <FaCopy /> Copy Link
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: Twitter / X */}
+          {activeTab === "twitter" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaTwitter className="text-slate-900" />
+                  <span className="text-xs font-bold text-slate-950">Twitter / X Tweet Creator</span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Opens Twitter/X with breaking news tag, headline, and hashtags pre-filled.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={onShareTw}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-black active:scale-95 transition"
+                >
+                  <FaTwitter /> Post Tweet on X
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: WhatsApp */}
+          {activeTab === "whatsapp" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-green-200 bg-green-50/50 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <FaWhatsapp className="text-green-600 text-lg" />
+                    <span className="text-xs font-bold text-green-950">WhatsApp Bot Integration</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    waStatus === "connected" ? "bg-green-200 text-green-800" : "bg-orange-200 text-orange-800"
+                  }`}>
+                    {waStatus === "connected" ? "BOT CONNECTED" : "OFFLINE"}
+                  </span>
+                </div>
+                <p className="text-xs text-green-900 leading-relaxed">
+                  Send this story straight to your WhatsApp Channel or Community followers using your connected Baileys bot!
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={onBroadcastWa}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-green-600/20 hover:bg-green-700 active:scale-95 transition"
+                >
+                  <FaWhatsapp /> ⚡ Send to WhatsApp Channel
+                </button>
+
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(captionText)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-xs font-bold text-green-800 hover:bg-green-100 transition"
+                >
+                  <FaExternalLinkAlt /> Open WA Web
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabButton({ active, onClick, icon, label }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 pb-3 px-3 border-b-2 transition font-bold whitespace-nowrap ${
+        active
+          ? "border-orange-500 text-orange-600"
+          : "border-transparent text-slate-500 hover:text-slate-800"
+      }`}
+    >
+      <span className="text-sm">{icon}</span>
+      <span>{label}</span>
     </button>
   );
 }
