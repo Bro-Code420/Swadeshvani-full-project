@@ -136,11 +136,20 @@ export default function ArticleDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Article Content */}
           <article className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-10 shadow-sm">
-            {/* Category & Badge */}
+            {/* Category & District Badges */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <span className="inline-flex items-center rounded-full bg-orange-100 px-3.5 py-1 text-xs font-bold text-orange-700 tracking-wide">
-                {article.category || "ताज़ा खबर"}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-orange-100 px-3.5 py-1 text-xs font-bold text-orange-700 tracking-wide">
+                  {article.category || "ताज़ा खबर"}
+                </span>
+
+                {article.district && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-semibold text-blue-800 border border-blue-100">
+                    <span className="text-orange-500">📍</span>
+                    <span>जिला: {article.district}</span>
+                  </span>
+                )}
+              </div>
 
               <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
                 <span className="flex items-center gap-1.5">
@@ -159,17 +168,19 @@ export default function ArticleDetail() {
               {article.title}
             </h1>
 
-            {/* Author & Date Bar */}
+            {/* Author / Reporter & Date Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 py-4 mb-6 border-y border-slate-100 text-xs text-slate-600">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                  {article.author ? article.author.charAt(0) : "S"}
+                  {(article.reporter || article.author || "S").charAt(0)}
                 </div>
                 <div>
                   <p className="font-bold text-blue-950 text-sm">
-                    {article.author || "स्वदेश वाणी ब्यूरो"}
+                    {article.reporter || article.author || "स्वदेश वाणी ब्यूरो"}
                   </p>
-                  <p className="text-slate-400 text-[11px]">वेरिफाइड जर्नलिस्ट • स्वदेश वाणी</p>
+                  <p className="text-slate-400 text-[11px]">
+                    {article.district ? `जिला संवाददाता • ${article.district}` : "वेरिफाइड जर्नलिस्ट • स्वदेश वाणी"}
+                  </p>
                 </div>
               </div>
 

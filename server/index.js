@@ -163,17 +163,24 @@ app.get("/api/whatsapp/channels", async (req, res) => {
   }
 });
 
-// Resolve a Channel link or JID
-async function resolveTargetJid(input) {
-  if (!input || input.trim() === "") return "status@broadcast";
-  let target = input.trim();
+// Get the self JID (linked WhatsApp number) for self-chat fallback
+function getSelfJid() {
+  if (!sock || !sock.user) return null;
+  // sock.user.id is like "919876543210:64@s.whatsapp.net" — strip device suffix
+  const rawId = sock.user.id || "";
+  const phone = rawId.split(":")[0]; // e.g. "919876543210"
+  return phone ? `${phone}@s.whatsapp.net` : null;
+}
 
-  // If already a valid JID (e.g. 120363xxx@newsletter, 120363xxx@g.us, or phone@s.whatsapp.net)
-  if (target.includes("@")) {
-    return target;
-  }
+// Resolve a WhatsApp Channel link/JID → returns JID string or null
+async function resolveChannelJid(input) {
+  if (!input || !input.trim()) return null;
+  const target = input.trim();
 
-  // If it is a WhatsApp channel link like https://whatsapp.com/channel/0029Va...
+  // Already a valid JID
+  if (target.includes("@")) return target;
+
+  // Channel invite link: https://whatsapp.com/channel/0029Va...
   let inviteCode = target;
   if (target.includes("whatsapp.com/channel/")) {
     const parts = target.split("whatsapp.com/channel/");
@@ -182,19 +189,87 @@ async function resolveTargetJid(input) {
 
   try {
     if (sock && sock.newsletterMetadata) {
-      console.log(`Resolving channel metadata for invite code: ${inviteCode}`);
+      console.log(`Resolving channel invite code: ${inviteCode}`);
       const meta = await sock.newsletterMetadata("invite", inviteCode);
       if (meta && meta.id) {
-        console.log(`Resolved channel JID: ${meta.id} (${meta.name || "Channel"})`);
+        console.log(`✅ Channel JID resolved: ${meta.id} (${meta.name || "Channel"})`);
         return meta.id;
       }
     }
   } catch (err) {
     console.error("Error resolving channel invite link:", err.message);
   }
+  return null;
+}
 
-  // Fallback
-  return target;
+// Resolve a WhatsApp Community/Group link/JID → returns JID string or null
+async function resolveCommunityJid(input) {
+  if (!input || !input.trim()) return null;
+  const target = input.trim();
+
+  // Already a valid group JID
+  if (target.includes("@g.us")) return target;
+  if (target.includes("@")) return target; // some other JID type
+
+  // Group/Community invite link: https://chat.whatsapp.com/XXXXXXXXXX
+  let inviteCode = target;
+  if (target.includes("chat.whatsapp.com/")) {
+    const parts = target.split("chat.whatsapp.com/");
+    inviteCode = parts[1].split("/")[0].split("?")[0].trim();
+  }
+
+  try {
+    if (sock && sock.groupGetInviteInfo) {
+      console.log(`Resolving community/group invite code: ${inviteCode}`);
+      const meta = await sock.groupGetInviteInfo(inviteCode);
+      if (meta && meta.id) {
+        console.log(`✅ Community/Group JID resolved: ${meta.id} (${meta.subject || "Group"})`);
+        return meta.id;
+      }
+    }
+  } catch (err) {
+    console.error("Error resolving community invite link:", err.message);
+  }
+  return null;
+}
+
+// Resolve all broadcast targets: self + channel (if set) + community (if set)
+async function resolveTargetJids(channelInput, communityInput) {
+  const selfJid = getSelfJid();
+  const targets = [];
+
+  // Always include self so admin always receives the message
+  if (selfJid) targets.push(selfJid);
+
+  // Resolve channel
+  const channelJid = await resolveChannelJid(channelInput);
+  if (channelJid && channelJid !== selfJid) targets.push(channelJid);
+
+  // Resolve community/group
+  const communityJid = await resolveCommunityJid(communityInput);
+  if (communityJid && communityJid !== selfJid && communityJid !== channelJid) {
+    targets.push(communityJid);
+  }
+
+  if (targets.length === 1 && targets[0] === selfJid) {
+    console.log(`No channel/community configured. Sending to self only: ${selfJid}`);
+  } else {
+    console.log(`Broadcasting to ${targets.length} target(s): ${targets.join(", ")}`);
+  }
+  return targets;
+}
+
+// Helper: send a formatted message to a single JID
+async function sendToJid(jid, { imageUrl, formattedMessage }) {
+  if (imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
+    return sock.sendMessage(jid, { image: { url: imageUrl }, caption: formattedMessage });
+  } else if (imageUrl && imageUrl.startsWith("data:image")) {
+    const base64Data = imageUrl.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+    return sock.sendMessage(jid, { image: buffer, caption: formattedMessage });
+  } else {
+    return sock.sendMessage(jid, { text: formattedMessage });
+  }
 }
 
 // Broadcast news to WhatsApp (Channel, Group, or Contact)
@@ -215,15 +290,23 @@ app.post("/api/whatsapp/send", async (req, res) => {
       imageUrl,
       link,
       targetJid,
+      communityJid,
     } = req.body;
 
     if (!title) {
       return res.status(400).json({ success: false, error: "Title is required" });
     }
 
-    // Resolve target JID (supports Channel Link, Invite code, or JID)
-    const jid = await resolveTargetJid(targetJid);
-    console.log(`Broadcasting news to target WhatsApp JID: ${jid}`);
+    // Resolve all target JIDs (self + channel + community)
+    const jids = await resolveTargetJids(targetJid, communityJid);
+    console.log(`Broadcasting news to ${jids.length} target(s): ${jids.join(", ")}`);
+
+    if (jids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Could not determine a WhatsApp target. Make sure you are connected.",
+      });
+    }
 
     // Format rich broadcast message
     const headline = title.trim();
@@ -231,36 +314,37 @@ app.post("/api/whatsapp/send", async (req, res) => {
     const desc = summary ? `\n\n${summary.trim()}` : (content ? `\n\n${content.substring(0, 180)}...` : "");
     const readMore = link ? `\n\n👉 पूरी खबर यहां पढ़ें:\n${link}` : "";
     const footer = `\n\n━━━━━━━━━━━━━━━\n📰 *स्वदेश वाणी* (Swadesh Vaani)\n🌐 सत्य, निष्पक्ष और सटीक पत्रकारिता\n#SwadeshVaani #JharkhandNews`;
-
     const formattedMessage = `🔴 ${catTag}\n*${headline}*${desc}${readMore}${footer}`;
 
-    let result;
+    // Send to all targets (self + channel)
+    const results = [];
+    for (const jid of jids) {
+      try {
+        const result = await sendToJid(jid, { imageUrl, formattedMessage });
+        results.push({ jid, messageId: result?.key?.id, status: "sent" });
+        console.log(`✅ Sent to ${jid}`);
+        // Small delay between sends to avoid rate limiting
+        if (jids.length > 1) await new Promise((r) => setTimeout(r, 800));
+      } catch (err) {
+        console.error(`❌ Failed to send to ${jid}:`, err.message);
+        results.push({ jid, status: "failed", error: err.message });
+      }
+    }
 
-    if (imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
-      // Send with image URL
-      result = await sock.sendMessage(jid, {
-        image: { url: imageUrl },
-        caption: formattedMessage,
-      });
-    } else if (imageUrl && imageUrl.startsWith("data:image")) {
-      // Send base64 image
-      const base64Data = imageUrl.split(",")[1];
-      const buffer = Buffer.from(base64Data, "base64");
-      result = await sock.sendMessage(jid, {
-        image: buffer,
-        caption: formattedMessage,
-      });
-    } else {
-      // Send text message
-      result = await sock.sendMessage(jid, {
-        text: formattedMessage,
+    const allFailed = results.every((r) => r.status === "failed");
+    if (allFailed) {
+      return res.status(500).json({
+        success: false,
+        error: results[0]?.error || "All sends failed",
+        results,
       });
     }
 
+    const sentTo = results.filter((r) => r.status === "sent").map((r) => r.jid);
     return res.json({
       success: true,
-      messageId: result?.key?.id,
-      targetJid: jid,
+      sentTo,
+      results,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

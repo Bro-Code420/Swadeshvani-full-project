@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaBars,
   FaBell,
@@ -17,1977 +17,1309 @@ import {
   FaTrash,
   FaUserCircle,
   FaTimes,
-  FaWhatsapp,
-  FaQrcode,
-  FaPaperPlane,
-  FaSyncAlt,
-  FaExclamationTriangle,
-  FaCog,
-  FaFacebookF,
-  FaInstagram,
-  FaLinkedinIn,
-  FaTwitter,
   FaCopy,
   FaCheck,
-  FaShareAlt,
-  FaDownload,
+  FaUsers,
+  FaPhoneAlt,
+  FaEnvelope,
+  FaMapMarkerAlt,
+  FaLink,
+  FaLayerGroup,
+  FaCalendarAlt,
+  FaBullhorn,
 } from "react-icons/fa";
 
 import {
   getAllArticles,
   saveArticleToStore,
   deleteArticleFromStore,
+  JHARKHAND_DISTRICTS,
+  NEWS_CATEGORIES,
+  getSubscribers,
+  deleteSubscriber,
+  getNotifications,
+  clearNotifications,
+  generateSlug,
 } from "../data/newsData";
 
-const categories = [
-  "National",
-  "International",
-  "Politics",
-  "Business",
-  "Technology",
-  "Sports",
-  "Entertainment",
-  "Weather",
-  "Education",
-  "Jharkhand",
-];
-
-const WA_SERVER_URL = "http://localhost:5000";
+import {
+  isAdminAuthenticated,
+  getAdminUser,
+  logoutAdmin,
+} from "../utils/auth";
 
 export default function Admin() {
-  const [activePage, setActivePage] = useState("dashboard");
+  const navigate = useNavigate();
+  const [adminUser, setAdminUser] = useState(null);
+
+  // Authentication Guard
+  useEffect(() => {
+    if (!isAdminAuthenticated()) {
+      navigate("/Login?redirect=/Admin", { replace: true });
+      return;
+    }
+    setAdminUser(getAdminUser());
+  }, [navigate]);
+
+  const [activePage, setActivePage] = useState("dashboard"); // 'dashboard' | 'news' | 'add-news' | 'subscribers' | 'notifications'
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [newsList, setNewsList] = useState(() => getAllArticles());
+  const [subscribersList, setSubscribersList] = useState(() => getSubscribers());
+  const [notificationsList, setNotificationsList] = useState(() => getNotifications());
+  const [editingArticleId, setEditingArticleId] = useState(null);
 
-  // WhatsApp Automation States
-  const [waStatus, setWaStatus] = useState("checking"); // 'connected' | 'waiting_for_scan' | 'disconnected' | 'offline' | 'checking'
-  const [waUser, setWaUser] = useState(null);
-  const [waQr, setWaQr] = useState(null);
-  const [waTargetJid, setWaTargetJid] = useState(
-    localStorage.getItem("savdeshvani_wa_jid") || ""
-  );
-  const [autoPostWa, setAutoPostWa] = useState(true);
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [toast, setToast] = useState(null); // { type: 'success' | 'error' | 'info', message: '' }
-  const [sharingArticle, setSharingArticle] = useState(null); // Article object for Social Share Modal
+  const [copiedLinkArticleId, setCopiedLinkArticleId] = useState(null);
+  const [publishedModalArticle, setPublishedModalArticle] = useState(null);
 
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     title: "",
-    category: "National",
+    category: "Jharkhand",
+    district: "Ranchi",
+    reporter: "स्वदेश वाणी ब्यूरो",
     excerpt: "",
     content: "",
     image: "",
     status: "Published",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4500);
   };
 
-  // Helper to get public article link
-  const getArticleShareUrl = (article) => {
-    return `${window.location.origin}/News`;
+  // Helper to get permanent article URL
+  const getArticleUrl = (article) => {
+    const origin = window.location.origin;
+    return `${origin}/news/${article?.id || ""}`;
   };
 
-  // Formatted caption for Instagram & LinkedIn
-  const formatSocialText = (article) => {
-    if (!article) return "";
-    const headline = article.title || "";
-    const excerpt = article.excerpt ? `\n\n${article.excerpt}` : "";
-    const link = getArticleShareUrl(article);
-    const tags = "\n\n#SwadeshVaani #JharkhandNews #BreakingNews #HindiNews #LatestUpdates";
-    return `🔴 【 ${article.category?.toUpperCase() || "BREAKING NEWS"} 】\n\n*${headline}*${excerpt}\n\n👉 पूरी खबर यहां पढ़ें:\n${link}${tags}`;
+  const handleCopyArticleLink = (article, e) => {
+    if (e) e.stopPropagation();
+    const url = getArticleUrl(article);
+    navigator.clipboard.writeText(url);
+    setCopiedLinkArticleId(article.id);
+    showToast("लेख का स्थायी लिंक कॉपी कर लिया गया (Link Copied)!", "success");
+    setTimeout(() => setCopiedLinkArticleId(null), 2500);
   };
 
-  // Free Social Share Handlers with Auto-Clipboard Copy
-  const copyToClipboard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch (err) {
-      return false;
-    }
+  const handleLogout = () => {
+    logoutAdmin();
+    navigate("/Login", { replace: true });
   };
 
-  const shareToFacebook = async (article) => {
-    const text = formatSocialText(article);
-    await copyToClipboard(text);
-    const url = encodeURIComponent(getArticleShareUrl(article));
-    const quote = encodeURIComponent(`${article.title}\n\n${article.excerpt || ""}`);
-    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${quote}`;
-    window.open(fbUrl, "fbShare", "width=640,height=600,menubar=no,toolbar=no");
-    showToast("📋 Post text copied! Press Ctrl+V (Paste) in Facebook.", "success");
+  // Sync articles list
+  const refreshArticles = () => {
+    setNewsList(getAllArticles());
+    setNotificationsList(getNotifications());
   };
 
-  const shareToLinkedIn = async (article) => {
-    const text = formatSocialText(article);
-    await copyToClipboard(text);
-    const url = encodeURIComponent(getArticleShareUrl(article));
-    const liUrl = `https://www.linkedin.com/feed/?shareActive=true&shareUrl=${url}`;
-    window.open(liUrl, "liShare", "width=640,height=620,menubar=no,toolbar=no");
-    showToast("📋 Content auto-copied! Press Ctrl+V (Paste) in LinkedIn.", "success");
-  };
-
-  const shareToTwitter = async (article) => {
-    const text = formatSocialText(article);
-    await copyToClipboard(text);
-    const tweetText = encodeURIComponent(`🔴 ${article.title}\n\n${article.excerpt ? article.excerpt.substring(0, 100) + '...' : ''}`);
-    const url = encodeURIComponent(getArticleShareUrl(article));
-    const twUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${url}&hashtags=SwadeshVaani,JharkhandNews`;
-    window.open(twUrl, "twShare", "width=600,height=500,menubar=no,toolbar=no");
-    showToast("📋 Content copied! Press Ctrl+V if you want to paste full text.", "success");
-  };
-
-  const copyInstagramCaption = async (article) => {
-    const text = formatSocialText(article);
-    await copyToClipboard(text);
-    showToast("📋 Caption auto-copied! Opening Instagram...", "success");
-    window.open("https://www.instagram.com/", "_blank");
-  };
-
-  // Poll WhatsApp Status
-  const checkWaStatus = async () => {
-    try {
-      const res = await fetch(`${WA_SERVER_URL}/api/whatsapp/status`);
-      if (!res.ok) throw new Error("Server error");
-      const data = await res.json();
-      setWaStatus(data.status);
-      setWaUser(data.user);
-      if (data.status === "waiting_for_scan" || data.status === "disconnected") {
-        fetchWaQr();
-      } else if (data.status === "connected") {
-        setWaQr(null);
-      }
-    } catch (err) {
-      setWaStatus("offline");
-    }
-  };
-
-  const fetchWaQr = async () => {
-    try {
-      const res = await fetch(`${WA_SERVER_URL}/api/whatsapp/qr`);
-      const data = await res.json();
-      if (data.qr) {
-        setWaQr(data.qr);
-      }
-    } catch (err) {
-      // Backend might be starting up
-    }
-  };
-
-  const handleDisconnectWa = async () => {
-    if (!window.confirm("Are you sure you want to unlink and log out WhatsApp?")) return;
-    try {
-      await fetch(`${WA_SERVER_URL}/api/whatsapp/disconnect`, { method: "POST" });
-      showToast("WhatsApp unlinked successfully. Scan QR to reconnect.", "info");
-      checkWaStatus();
-    } catch (err) {
-      showToast("Failed to disconnect: " + err.message, "error");
-    }
-  };
-
-  // Check status on mount and poll
-  useEffect(() => {
-    checkWaStatus();
-    const interval = setInterval(checkWaStatus, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const saveTargetJid = (jid) => {
-    setWaTargetJid(jid);
-    localStorage.setItem("savdeshvani_wa_jid", jid);
-    showToast("WhatsApp target channel saved!", "success");
-  };
-
-  // Broadcast function
-  const broadcastToWhatsApp = async (article) => {
-    if (waStatus !== "connected") {
-      showToast("WhatsApp is not connected! Please scan QR code in WhatsApp tab.", "error");
-      return false;
-    }
-
-    setIsBroadcasting(true);
-    try {
-      const res = await fetch(`${WA_SERVER_URL}/api/whatsapp/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: article.title,
-          summary: article.excerpt,
-          content: article.content,
-          category: article.category,
-          imageUrl: article.image,
-          link: window.location.origin + "/News",
-          targetJid: waTargetJid,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        showToast("🚀 News broadcasted to WhatsApp Channel successfully!", "success");
-        setIsBroadcasting(false);
-        return true;
-      } else {
-        throw new Error(data.error || "Broadcast failed");
-      }
-    } catch (err) {
-      showToast("WhatsApp Broadcast failed: " + err.message, "error");
-      setIsBroadcasting(false);
-      return false;
-    }
-  };
-
+  // Search filtered news
   const filteredNews = useMemo(() => {
-    return newsList.filter((news) =>
-      news.title.toLowerCase().includes(searchTerm.toLowerCase())
+    if (!searchTerm.trim()) return newsList;
+    const term = searchTerm.toLowerCase();
+    return newsList.filter(
+      (item) =>
+        (item.title && item.title.toLowerCase().includes(term)) ||
+        (item.category && item.category.toLowerCase().includes(term)) ||
+        (item.district && item.district.toLowerCase().includes(term)) ||
+        (item.reporter && item.reporter.toLowerCase().includes(term)) ||
+        (item.id && String(item.id).toLowerCase().includes(term))
     );
   }, [newsList, searchTerm]);
 
-  const publishedNews = newsList.filter(
-    (news) => news.status === "Published"
-  ).length;
-
-  const draftNews = newsList.filter(
-    (news) => news.status === "Draft"
-  ).length;
-
-  const changePage = (page) => {
-    setActivePage(page);
-    setSidebarOpen(false);
-  };
-
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((previous) => ({
-      ...previous,
+  // Form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
     }));
   };
 
-  const handleContentChange = (content) => {
-    setFormData((previous) => ({
-      ...previous,
-      content,
-    }));
-  };
-
-  const handleImageChange = (event) => {
-    const file = event.target.files[0];
+  // Image Upload Handler
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("कृपया 10MB से छोटी तस्वीर अपलोड करें।", "error");
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setFormData((previous) => ({
-        ...previous,
-        image: e.target.result, // base64 string
+    reader.onload = () => {
+      setFormData((prev) => ({
+        ...prev,
+        image: reader.result,
       }));
+      showToast("तस्वीर सफलतापूर्वक अपलोड हो गई!", "success");
+    };
+    reader.onerror = () => {
+      showToast("तस्वीर अपलोड करने में विफल।", "error");
     };
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  // Submit Article (Save or Edit)
+  const handleSubmitArticle = (e) => {
+    e.preventDefault();
 
-    const plainContent = formData.content
-      .replace(/<[^>]*>/g, "")
-      .trim();
-
-    if (!formData.title.trim() || !plainContent) {
-      alert("Please add a title and news content.");
+    if (!formData.title.trim()) {
+      showToast("कृपया समाचार का शीर्षक (Title) दर्ज करें।", "error");
       return;
     }
 
-    const newNews = {
-      id: String(Date.now()),
-      slug: formData.title.toLowerCase().replace(/[^a-zA-Z0-9\u0900-\u097F]/g, "-").slice(0, 50),
-      title: formData.title,
-      category: formData.category,
-      author: "Admin",
-      status: formData.status,
+    if (!formData.content.trim() && !formData.excerpt.trim()) {
+      showToast("कृपया समाचार का विवरण (Content/Excerpt) दर्ज करें।", "error");
+      return;
+    }
+
+    const isEdit = !!editingArticleId;
+    const articlePayload = {
+      ...formData,
+      id: isEdit ? editingArticleId : `art-${Date.now()}`,
+      slug: generateSlug(formData.title),
       date: new Date().toLocaleDateString("en-GB", {
         day: "2-digit",
         month: "short",
         year: "numeric",
       }),
-      readTime: "3 मिनट",
-      excerpt: formData.excerpt,
-      image: formData.image,
-      content: formData.content,
     };
 
-    saveArticleToStore(newNews);
-    setNewsList(getAllArticles());
+    const res = saveArticleToStore(articlePayload);
+    refreshArticles();
 
-    // Auto-broadcast if enabled and published
-    if (autoPostWa && formData.status === "Published") {
-      await broadcastToWhatsApp(newNews);
+    const saved = res.savedArticle || articlePayload;
+
+    if (isEdit) {
+      showToast("समाचार सफलतापूर्वक अपडेट किया गया!", "success");
     } else {
-      showToast("Article published and saved to store!", "success");
+      showToast("समाचार प्रकाशित हुआ एवं पाठकों को सूचना (Notification) भेज दी गई!", "success");
+      setPublishedModalArticle(saved);
     }
 
-    setFormData({
-      title: "",
-      category: "National",
-      excerpt: "",
-      content: "",
-      image: "",
-      status: "Published",
-    });
-
-    changePage("news");
+    setFormData(initialFormState);
+    setEditingArticleId(null);
+    if (isEdit) {
+      setActivePage("news");
+    }
   };
 
-  const handleDelete = (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this news article?"
-    );
-    if (!confirmed) return;
+  // Edit existing article
+  const handleEditClick = (article) => {
+    setEditingArticleId(article.id);
+    setFormData({
+      title: article.title || "",
+      category: article.category || "Jharkhand",
+      district: article.district || "Ranchi",
+      reporter: article.reporter || article.author || "स्वदेश वाणी ब्यूरो",
+      excerpt: article.excerpt || "",
+      content: article.content || "",
+      image: article.image || "",
+      status: article.status || "Published",
+    });
+    setActivePage("add-news");
+  };
 
-    deleteArticleFromStore(id);
-    setNewsList(getAllArticles());
-    showToast("Article deleted from store.", "info");
+  // Delete article
+  const handleDeleteArticle = (id) => {
+    if (window.confirm("क्या आप वाकई इस समाचार को हटाना चाहते हैं?")) {
+      deleteArticleFromStore(id);
+      refreshArticles();
+      showToast("समाचार सफलतापूर्वक हटा दिया गया।", "info");
+    }
+  };
+
+  // Delete subscriber
+  const handleDeleteSubscriber = (subId) => {
+    if (window.confirm("क्या आप इस सब्सक्राइबर को हटाना चाहते हैं?")) {
+      const updated = deleteSubscriber(subId);
+      setSubscribersList(updated);
+      showToast("सब्सक्राइबर हटा दिया गया।", "info");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 text-slate-800">
-      {/* Toast Notification */}
+    <div className="flex h-screen bg-slate-100 overflow-hidden font-sans text-slate-800">
+      {/* Toast Notification Popup */}
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-2xl transition-all duration-300 ${
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-semibold transition-all duration-300 transform translate-y-0 ${
             toast.type === "success"
-              ? "bg-green-600 text-white"
+              ? "bg-emerald-600 border-emerald-500 text-white"
               : toast.type === "error"
-              ? "bg-red-600 text-white"
-              : "bg-blue-900 text-white"
+              ? "bg-red-600 border-red-500 text-white"
+              : "bg-blue-600 border-blue-500 text-white"
           }`}
         >
-          {toast.type === "success" && <FaCheckCircle className="text-xl" />}
-          {toast.type === "error" && <FaExclamationTriangle className="text-xl" />}
-          {toast.type === "info" && <FaWhatsapp className="text-xl" />}
-          <span className="text-sm font-semibold">{toast.message}</span>
+          <FaCheckCircle className="text-lg shrink-0" />
+          <span>{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            className="ml-3 text-white/80 hover:text-white"
+          >
+            <FaTimes />
+          </button>
         </div>
       )}
 
-      {/* Mobile overlay */}
+      {/* Published Confirmation Modal with Distinct Link */}
+      {publishedModalArticle && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fadeIn">
+            <div className="text-center">
+              <div className="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaCheckCircle className="text-3xl" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                Published &bull; सूचना प्रसारित
+              </span>
+              <h3 className="text-xl font-bold text-slate-900 mt-3">
+                समाचार सफलतापूर्वक प्रकाशित हुआ!
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 mt-2 line-clamp-2">
+                &ldquo;{publishedModalArticle.title}&rdquo;
+              </p>
+            </div>
+
+            {/* Distinct Permanent Link Box */}
+            <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <FaLink className="text-orange-500" />
+                <span>इस लेख का स्थायी लिंक (Distinct Live URL)</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={getArticleUrl(publishedModalArticle)}
+                  className="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono text-slate-700 select-all outline-none"
+                />
+                <button
+                  onClick={() => handleCopyArticleLink(publishedModalArticle)}
+                  className="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <FaCopy /> कॉपी करें
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Link
+                to={`/news/${publishedModalArticle.id}`}
+                target="_blank"
+                className="flex-1 py-3 px-4 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs text-center flex items-center justify-center gap-2 transition"
+              >
+                <span>लाइव पेज देखें (View Live Article)</span>
+                <FaExternalLinkAlt size={11} />
+              </Link>
+
+              <button
+                onClick={() => setPublishedModalArticle(null)}
+                className="py-3 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+              >
+                बंद करें (Close)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar Overlay (Mobile) */}
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-blue-950/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden backdrop-blur-sm"
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b from-blue-950 to-blue-900 text-white shadow-2xl transition-transform duration-300 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col justify-between transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
-          <div>
-            <h1 className="text-xl font-bold tracking-wide">
-              स्वदेश वाणी
-            </h1>
-            <p className="mt-1 text-xs text-blue-200">
-              Admin Portal
+        <div>
+          {/* Sidebar Header */}
+          <div className="h-20 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-orange-600 to-orange-400 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-orange-500/20">
+                स्व
+              </div>
+              <div>
+                <h1 className="font-extrabold text-white text-base tracking-tight leading-tight">
+                  स्वदेश वाणी
+                </h1>
+                <p className="text-[11px] text-orange-400 font-semibold tracking-wider uppercase">
+                  Admin Panel
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-slate-400 hover:text-white"
+            >
+              <FaTimes className="text-xl" />
+            </button>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="p-4 space-y-1.5">
+            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+              Main Menu
             </p>
-          </div>
 
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="text-blue-200 hover:text-white lg:hidden"
-            aria-label="Close sidebar"
-          >
-            <FaTimes />
-          </button>
-        </div>
-
-        <nav className="flex-1 space-y-2 px-4 py-7">
-          <SidebarItem
-            icon={<FaHome />}
-            label="Dashboard"
-            active={activePage === "dashboard"}
-            onClick={() => changePage("dashboard")}
-          />
-
-          <SidebarItem
-            icon={<FaNewspaper />}
-            label="All News"
-            active={activePage === "news"}
-            onClick={() => changePage("news")}
-          />
-
-          <SidebarItem
-            icon={<FaPlus />}
-            label="Add News"
-            active={activePage === "add-news"}
-            onClick={() => changePage("add-news")}
-          />
-
-          <SidebarItem
-            icon={<FaWhatsapp className="text-green-400 text-lg" />}
-            label="WhatsApp Bot"
-            badge={
-              waStatus === "connected" ? (
-                <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-bold text-green-300 border border-green-500/30">
-                  ON
-                </span>
-              ) : (
-                <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-bold text-orange-300 border border-orange-500/30">
-                  OFF
-                </span>
-              )
-            }
-            active={activePage === "whatsapp"}
-            onClick={() => changePage("whatsapp")}
-          />
-        </nav>
-
-        {/* WhatsApp Quick Status Card in Sidebar */}
-        <div className="mx-4 mb-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 font-semibold text-blue-200">
-              <FaWhatsapp className="text-green-400" /> WhatsApp Status
-            </span>
-            <span
-              className={`h-2 w-2 rounded-full ${
-                waStatus === "connected"
-                  ? "bg-green-400 animate-pulse"
-                  : waStatus === "waiting_for_scan"
-                  ? "bg-yellow-400 animate-ping"
-                  : "bg-red-400"
+            <button
+              onClick={() => {
+                setActivePage("dashboard");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                activePage === "dashboard"
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
               }`}
-            />
-          </div>
-          <p className="mt-1 text-[11px] text-slate-300 capitalize">
-            {waStatus === "connected"
-              ? `Linked (${waUser?.name || "Ready"})`
-              : waStatus === "waiting_for_scan"
-              ? "Scan QR Code"
-              : waStatus === "offline"
-              ? "Server Offline"
-              : "Disconnected"}
-          </p>
+            >
+              <FaHome className="text-base" />
+              <span>डैशबोर्ड (Dashboard)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActivePage("news");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                activePage === "news"
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <FaNewspaper className="text-base" />
+                <span>सभी समाचार (News List)</span>
+              </div>
+              <span className="text-xs bg-slate-800 px-2.5 py-0.5 rounded-full font-bold">
+                {newsList.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setEditingArticleId(null);
+                setFormData(initialFormState);
+                setActivePage("add-news");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                activePage === "add-news"
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <FaPlus className="text-base" />
+              <span>नया लेख लिखें (Add News)</span>
+            </button>
+
+            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2">
+              Audience &amp; Alerts
+            </p>
+
+            <button
+              onClick={() => {
+                setActivePage("notifications");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                activePage === "notifications"
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <FaBell className="text-base" />
+                <span>सूचनाएं (Notifications)</span>
+              </div>
+              <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full font-bold">
+                {notificationsList.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActivePage("subscribers");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                activePage === "subscribers"
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <FaUsers className="text-base" />
+                <span>सब्सक्राइबर्स (Subscribers)</span>
+              </div>
+              <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full font-bold">
+                {subscribersList.length}
+              </span>
+            </button>
+          </nav>
         </div>
 
-        <div className="space-y-2 border-t border-white/10 p-4">
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950/40 space-y-2">
           <Link
             to="/"
-            onClick={() => setSidebarOpen(false)}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-blue-100 transition hover:bg-orange-500 hover:text-white"
+            target="_blank"
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition"
           >
-            <FaExternalLinkAlt />
-            Go to Website
+            <FaExternalLinkAlt size={12} />
+            <span>वेबसाइट देखें (Visit Website)</span>
           </Link>
 
           <button
-            onClick={() => alert("Logged out from admin panel.")}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-blue-200 transition hover:bg-red-500/10 hover:text-red-300"
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-bold transition cursor-pointer"
           >
-            <FaSignOutAlt />
-            Logout
+            <FaSignOutAlt size={13} />
+            <span>लॉगआउट (Logout)</span>
           </button>
         </div>
       </aside>
 
-      {/* Navbar */}
-      <header className="fixed left-0 right-0 top-0 z-30 h-20 border-b border-orange-100 bg-white/95 shadow-sm backdrop-blur-xl lg:left-64">
-        <div className="flex h-full items-center justify-between px-5 sm:px-8">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Top Navbar */}
+        <header className="h-20 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-xl text-blue-900 lg:hidden"
+              className="lg:hidden p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
               aria-label="Open sidebar"
             >
-              <FaBars />
+              <FaBars className="text-lg" />
             </button>
 
             <div>
-              <h2 className="text-lg font-bold text-blue-950">
-                {activePage === "dashboard" && "Dashboard Overview"}
-                {activePage === "news" && "All Published News"}
-                {activePage === "add-news" && "Publish New Article"}
-                {activePage === "whatsapp" && "WhatsApp Channel Automation"}
+              <h2 className="text-lg font-extrabold text-blue-950 capitalize">
+                {activePage === "dashboard" && "संपादकीय डैशबोर्ड (Dashboard)"}
+                {activePage === "news" && "समाचार प्रबंधन (All News Articles)"}
+                {activePage === "add-news" && (editingArticleId ? "समाचार संपादित करें (Edit News)" : "नया समाचार प्रकाशित करें (Publish News)")}
+                {activePage === "notifications" && "प्रकाशन सूचनाएं (Notification History)"}
+                {activePage === "subscribers" && "सब्सक्राइबर सूची (Reader Subscriptions)"}
               </h2>
-
-              <p className="hidden text-xs text-slate-500 sm:block">
-                Swadesh Vaani Content & Broadcast Manager
+              <p className="text-xs text-slate-500">
+                सत्य, निष्पक्ष और सटीक पत्रकारिता &bull; स्वदेश वाणी
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-5">
-            {/* WhatsApp live badge */}
+          <div className="flex items-center gap-3">
+            {/* Quick Action Button */}
             <button
-              onClick={() => changePage("whatsapp")}
-              className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold border transition ${
-                waStatus === "connected"
-                  ? "border-green-300 bg-green-50 text-green-700 hover:bg-green-100"
-                  : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
-              }`}
+              onClick={() => {
+                setEditingArticleId(null);
+                setFormData(initialFormState);
+                setActivePage("add-news");
+              }}
+              className="hidden sm:flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
             >
-              <FaWhatsapp className={waStatus === "connected" ? "text-green-600 text-sm" : "text-orange-500 text-sm"} />
-              <span className="hidden sm:inline">
-                {waStatus === "connected" ? "WA Auto-Post Active" : "Connect WhatsApp"}
-              </span>
+              <FaPlus /> नया समाचार जोड़ें
             </button>
 
-            <Link
-              to="/"
-              className="hidden items-center gap-2 rounded-lg border border-blue-100 px-3 py-2 text-sm font-medium text-blue-800 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 sm:flex"
-            >
-              <FaExternalLinkAlt size={13} />
-              Website
-            </Link>
-
-            <div className="hidden h-7 w-px bg-slate-200 sm:block" />
-
-            <div className="flex items-center gap-2">
-              <FaUserCircle className="text-3xl text-blue-800" />
-              <div className="hidden sm:block">
-                <p className="text-sm font-semibold text-blue-950">Admin User</p>
-                <p className="text-xs text-slate-500">Administrator</p>
+            {/* Admin Profile Details */}
+            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+              <div className="text-right hidden md:block">
+                <p className="text-xs font-bold text-slate-800">
+                  {adminUser?.name || "Chief Editor"}
+                </p>
+                <p className="text-[11px] text-emerald-600 font-semibold">
+                  {adminUser?.role || "Super Admin"}
+                </p>
               </div>
+
+              <div className="h-10 w-10 rounded-xl bg-blue-950 text-white flex items-center justify-center font-bold text-sm shadow-inner">
+                {adminUser?.name?.charAt(0) || "A"}
+              </div>
+
+              <button
+                onClick={handleLogout}
+                title="Logout"
+                className="p-2.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+              >
+                <FaSignOutAlt size={16} />
+              </button>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main content */}
-      <main className="min-h-screen pt-20 lg:ml-64">
-        <div className="p-5 sm:p-8">
+        {/* Scrollable Page Body */}
+        <main className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6">
+          {/* ==================================================== */}
+          {/* TAB 1: DASHBOARD                                    */}
+          {/* ==================================================== */}
           {activePage === "dashboard" && (
-            <Dashboard
-              news={newsList}
-              publishedNews={publishedNews}
-              draftNews={draftNews}
-              waStatus={waStatus}
-              onAdd={() => changePage("add-news")}
-              onViewAll={() => changePage("news")}
-              onDelete={handleDelete}
-              onBroadcast={broadcastToWhatsApp}
-              isBroadcasting={isBroadcasting}
-              onOpenWhatsApp={() => changePage("whatsapp")}
-              onOpenSocialModal={(item, initialTab) => setSharingArticle({ ...item, initialTab })}
-              onShareFb={shareToFacebook}
-              onShareLi={shareToLinkedIn}
-              onShareTw={shareToTwitter}
-              onShareInsta={copyInstagramCaption}
-            />
-          )}
-
-          {activePage === "news" && (
-            <NewsList
-              news={filteredNews}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              onAdd={() => changePage("add-news")}
-              onDelete={handleDelete}
-              onBroadcast={broadcastToWhatsApp}
-              isBroadcasting={isBroadcasting}
-              onOpenSocialModal={(item, initialTab) => setSharingArticle({ ...item, initialTab })}
-              onShareFb={shareToFacebook}
-              onShareLi={shareToLinkedIn}
-              onShareTw={shareToTwitter}
-              onShareInsta={copyInstagramCaption}
-            />
-          )}
-
-          {activePage === "add-news" && (
-            <AddNewsForm
-              formData={formData}
-              categories={categories}
-              autoPostWa={autoPostWa}
-              setAutoPostWa={setAutoPostWa}
-              waStatus={waStatus}
-              onChange={handleInputChange}
-              onContentChange={handleContentChange}
-              onImageChange={handleImageChange}
-              onSubmit={handleSubmit}
-              onCancel={() => changePage("news")}
-              isBroadcasting={isBroadcasting}
-            />
-          )}
-
-          {activePage === "whatsapp" && (
-            <WhatsAppManager
-              waStatus={waStatus}
-              waUser={waUser}
-              waQr={waQr}
-              waTargetJid={waTargetJid}
-              onSaveTargetJid={saveTargetJid}
-              onRefresh={checkWaStatus}
-              onDisconnect={handleDisconnectWa}
-              onTestBroadcast={() =>
-                broadcastToWhatsApp({
-                  title: "स्वदेश वाणी लाइव टेस्ट प्रसारण",
-                  excerpt: "यह एडमिन पैनल से व्हाट्सएप चैनल/ग्रुप में भेजा गया एक सफल टेस्ट मैसेज है।",
-                  content: "स्वदेश वाणी न्यूज़ पोर्टल - निष्पक्ष, सटीक और विश्वसनीय।",
-                  category: "Live Test",
-                  image: "",
-                })
-              }
-              isBroadcasting={isBroadcasting}
-            />
-          )}
-        </div>
-      </main>
-
-      {/* Social Media Share Hub Modal */}
-      {sharingArticle && (
-        <SocialShareModal
-          article={sharingArticle}
-          onClose={() => setSharingArticle(null)}
-          onShareFb={() => shareToFacebook(sharingArticle)}
-          onShareLi={() => shareToLinkedIn(sharingArticle)}
-          onShareTw={() => shareToTwitter(sharingArticle)}
-          onShareInsta={() => copyInstagramCaption(sharingArticle)}
-          onBroadcastWa={() => broadcastToWhatsApp(sharingArticle)}
-          waStatus={waStatus}
-          formatSocialText={formatSocialText}
-          showToast={showToast}
-        />
-      )}
-    </div>
-  );
-}
-
-/* Sidebar item */
-function SidebarItem({ icon, label, badge, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm transition ${
-        active
-          ? "bg-orange-500 font-semibold text-white shadow-lg shadow-orange-900/20"
-          : "text-blue-100 hover:bg-white/10 hover:text-white"
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <span className="text-base">{icon}</span>
-        {label}
-      </div>
-      {badge && <div>{badge}</div>}
-    </button>
-  );
-}
-
-/* Dashboard */
-function Dashboard({
-  news,
-  publishedNews,
-  draftNews,
-  waStatus,
-  onAdd,
-  onViewAll,
-  onDelete,
-  onBroadcast,
-  isBroadcasting,
-  onOpenWhatsApp,
-  onOpenSocialModal,
-  onShareFb,
-  onShareLi,
-  onShareTw,
-  onShareInsta,
-}) {
-  return (
-    <>
-      <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
-          <p className="mb-2 text-sm font-semibold text-orange-500 uppercase tracking-wider">
-            Admin Overview
-          </p>
-          <h3 className="text-2xl font-bold text-blue-950">
-            Welcome back, Admin
-          </h3>
-          <p className="mt-1 text-sm text-slate-500">
-            Publish news and auto-broadcast to WhatsApp, Facebook, Instagram &amp; LinkedIn.
-          </p>
-        </div>
-
-        <button
-          onClick={onAdd}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
-        >
-          <FaPlus />
-          Create New Article
-        </button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          icon={<FaNewspaper className="text-2xl text-blue-600" />}
-          label="Total Articles"
-          value={news.length}
-          color="bg-blue-50 border-blue-100"
-        />
-        <StatCard
-          icon={<FaCheckCircle className="text-2xl text-green-600" />}
-          label="Published Articles"
-          value={publishedNews}
-          color="bg-green-50 border-green-100"
-        />
-        <div
-          onClick={onOpenWhatsApp}
-          className="cursor-pointer rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-100/60 p-6 shadow-sm transition hover:shadow-md hover:border-green-400"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-green-800">
-                WhatsApp Bot Auto-Post
-              </p>
-              <h4 className="mt-2 text-xl font-extrabold text-green-950">
-                {waStatus === "connected" ? "🟢 Connected & Active" : "🟡 Needs Pairing"}
-              </h4>
-              <p className="mt-1 text-xs text-green-700">
-                {waStatus === "connected"
-                  ? "Articles auto-publish to Channel"
-                  : "Click here to scan QR code"}
-              </p>
-            </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500 text-white shadow-lg shadow-green-500/30 text-2xl">
-              <FaWhatsapp />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent News Table */}
-      <section className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm sm:p-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h4 className="text-lg font-bold text-blue-950">Recent News Articles</h4>
-            <p className="text-xs text-slate-500">Quickly broadcast any article to WhatsApp, Facebook, Instagram &amp; LinkedIn</p>
-          </div>
-          <button
-            onClick={onViewAll}
-            className="text-sm font-semibold text-orange-500 hover:text-orange-600"
-          >
-            View All →
-          </button>
-        </div>
-
-        <NewsTable
-          news={news.slice(0, 5)}
-          onDelete={onDelete}
-          onBroadcast={onBroadcast}
-          isBroadcasting={isBroadcasting}
-          onOpenSocialModal={onOpenSocialModal}
-          onShareFb={onShareFb}
-          onShareLi={onShareLi}
-          onShareTw={onShareTw}
-          onShareInsta={onShareInsta}
-        />
-      </section>
-    </>
-  );
-}
-
-function StatCard({ icon, label, value, color }) {
-  return (
-    <div className={`rounded-2xl border p-6 shadow-sm ${color}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            {label}
-          </p>
-          <h4 className="mt-2 text-3xl font-extrabold text-blue-950">{value}</h4>
-        </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* News list */
-function NewsList({
-  news,
-  searchTerm,
-  setSearchTerm,
-  onAdd,
-  onDelete,
-  onBroadcast,
-  isBroadcasting,
-  onOpenSocialModal,
-  onShareFb,
-  onShareLi,
-  onShareTw,
-  onShareInsta,
-}) {
-  return (
-    <section className="rounded-2xl border border-orange-100 bg-white shadow-sm">
-      <div className="flex flex-col justify-between gap-4 border-b border-orange-100 p-5 sm:flex-row sm:items-center sm:p-8">
-        <div>
-          <h3 className="text-xl font-bold text-blue-950">All News Articles</h3>
-          <p className="mt-1 text-xs text-slate-500">
-            Manage your articles and broadcast them across social media.
-          </p>
-        </div>
-
-        <button
-          onClick={onAdd}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-        >
-          <FaPlus />
-          Add News
-        </button>
-      </div>
-
-      <div className="border-b border-orange-100 p-5">
-        <div className="relative max-w-md">
-          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" />
-          <input
-            type="search"
-            placeholder="Search news by headline..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            className="w-full rounded-xl border border-blue-100 bg-blue-50/30 py-2.5 pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-          />
-        </div>
-      </div>
-
-      <NewsTable
-        news={news}
-        onDelete={onDelete}
-        onBroadcast={onBroadcast}
-        isBroadcasting={isBroadcasting}
-        onOpenSocialModal={onOpenSocialModal}
-        onShareFb={onShareFb}
-        onShareLi={onShareLi}
-        onShareTw={onShareTw}
-        onShareInsta={onShareInsta}
-      />
-    </section>
-  );
-}
-
-/* News table */
-function NewsTable({
-  news,
-  onDelete,
-  onBroadcast,
-  isBroadcasting,
-  onOpenSocialModal,
-  onShareFb,
-  onShareLi,
-  onShareTw,
-  onShareInsta,
-}) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[850px] text-left text-sm">
-        <thead className="bg-blue-50 text-xs uppercase tracking-wide text-blue-900">
-          <tr>
-            <th className="px-5 py-4 font-semibold">Article</th>
-            <th className="px-5 py-4 font-semibold">Category</th>
-            <th className="px-5 py-4 font-semibold">Status</th>
-            <th className="px-5 py-4 font-semibold">Date</th>
-            <th className="px-5 py-4 text-center font-semibold text-green-700">WhatsApp</th>
-            <th className="px-5 py-4 text-center font-semibold text-blue-700">Social Share</th>
-            <th className="px-5 py-4 text-right font-semibold">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody className="divide-y divide-orange-50">
-          {news.length > 0 ? (
-            news.map((item) => (
-              <tr key={item.id} className="transition hover:bg-orange-50/40">
-                <td className="max-w-xs px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="h-11 w-14 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-11 w-14 items-center justify-center rounded-lg bg-blue-50 text-blue-400">
-                        <FaNewspaper />
-                      </div>
-                    )}
-                    <p className="line-clamp-2 font-semibold text-blue-950">
-                      {item.title}
+            <div className="space-y-6 animate-fadeIn">
+              {/* Stat Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      कुल प्रकाशित समाचार
+                    </p>
+                    <h3 className="text-3xl font-extrabold text-blue-950 mt-1">
+                      {newsList.length}
+                    </h3>
+                    <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+                      सक्रिय एवं लाइव
                     </p>
                   </div>
-                </td>
+                  <div className="h-12 w-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
+                    <FaNewspaper />
+                  </div>
+                </div>
 
-                <td className="px-5 py-4 text-slate-500 font-medium">
-                  {item.category}
-                </td>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      झारखंड के जिले
+                    </p>
+                    <h3 className="text-3xl font-extrabold text-blue-950 mt-1">
+                      24
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-semibold mt-1">
+                      कवरेज क्षेत्र
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 rounded-2xl bg-blue-100 text-blue-900 flex items-center justify-center text-xl">
+                    <FaMapMarkerAlt />
+                  </div>
+                </div>
 
-                <td className="px-5 py-4">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      item.status === "Published"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-orange-100 text-orange-700"
-                    }`}
-                  >
-                    {item.status}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      कुल सब्सक्राइबर्स
+                    </p>
+                    <h3 className="text-3xl font-extrabold text-blue-950 mt-1">
+                      {subscribersList.length}
+                    </h3>
+                    <p className="text-[11px] text-blue-600 font-semibold mt-1">
+                      ईमेल एवं मोबाइल
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl">
+                    <FaUsers />
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      भेजी गई सूचनाएं
+                    </p>
+                    <h3 className="text-3xl font-extrabold text-blue-950 mt-1">
+                      {notificationsList.length}
+                    </h3>
+                    <p className="text-[11px] text-orange-600 font-semibold mt-1">
+                      ऑटो-नोटिफिकेशन सक्रिय
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+                    <FaBullhorn />
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Publish Banner */}
+              <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-blue-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-2 text-center md:text-left">
+                  <span className="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs font-bold border border-orange-500/30 uppercase tracking-wider">
+                    Instant Publishing &bull; स्थायी लिंक
                   </span>
-                </td>
+                  <h3 className="text-2xl font-extrabold tracking-tight">
+                    ताज़ा खबर तुरंत प्रकाशित करें
+                  </h3>
+                  <p className="text-slate-300 text-xs sm:text-sm max-w-xl">
+                    प्रत्येक प्रकाशित समाचार को एक स्थायी लिंक प्राप्त होता है और सभी पाठकों को तुरंत नोटिफिकेशन भेजा जाता है।
+                  </p>
+                </div>
 
-                <td className="px-5 py-4 text-slate-500 text-xs">
-                  {item.date}
-                </td>
+                <button
+                  onClick={() => {
+                    setEditingArticleId(null);
+                    setFormData(initialFormState);
+                    setActivePage("add-news");
+                  }}
+                  className="px-6 py-3.5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-600/30 transition flex items-center gap-2.5 shrink-0 cursor-pointer"
+                >
+                  <FaPlus />
+                  <span>नया समाचार लिखें</span>
+                </button>
+              </div>
 
-                {/* WhatsApp Action */}
-                <td className="px-5 py-4 text-center">
+              {/* Recent Articles with Distinct Live Links */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-lg font-bold text-blue-950">
+                      हाल ही में प्रकाशित समाचार (Recent Articles &amp; Links)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Click to copy or open distinct permanent article URLs
+                    </p>
+                  </div>
+
                   <button
-                    disabled={isBroadcasting}
-                    onClick={() => onBroadcast(item)}
-                    title="Send instant broadcast to WhatsApp Channel"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-green-600 active:scale-95 transition disabled:opacity-50"
+                    onClick={() => setActivePage("news")}
+                    className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
                   >
-                    <FaWhatsapp className="text-sm" />
-                    <span>Send</span>
+                    <span>सभी देखें ({newsList.length})</span> &rarr;
                   </button>
-                </td>
+                </div>
 
-                {/* Social Media 1-Click Share Hub */}
-                <td className="px-5 py-4 text-center">
-                  <div className="flex items-center justify-center gap-1.5">
-                    {/* Facebook 1-Click */}
-                    <button
-                      onClick={() => onShareFb(item)}
-                      title="Share directly on Facebook Feed/Page"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 active:scale-95 text-xs"
+                <div className="divide-y divide-slate-100">
+                  {newsList.slice(0, 6).map((article) => (
+                    <div
+                      key={article.id}
+                      className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 p-2 rounded-xl transition"
                     >
-                      <FaFacebookF />
-                    </button>
+                      <div className="flex items-center gap-3 min-w-0">
+                        {article.image ? (
+                          <img
+                            src={article.image}
+                            alt=""
+                            className="h-12 w-16 object-cover rounded-lg shrink-0 border border-slate-200"
+                          />
+                        ) : (
+                          <div className="h-12 w-16 bg-slate-100 rounded-lg shrink-0 flex items-center justify-center text-slate-400">
+                            <FaNewspaper />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {article.title}
+                          </p>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1">
+                            <span className="px-2 py-0.5 bg-orange-50 text-orange-600 font-semibold rounded-md border border-orange-100">
+                              {article.category}
+                            </span>
+                            {article.district && (
+                              <span className="text-slate-600">
+                                &bull; {article.district}
+                              </span>
+                            )}
+                            <span>&bull; {article.date}</span>
+                          </div>
+                        </div>
+                      </div>
 
-                    {/* Instagram Assistant */}
-                    <button
-                      onClick={() => onOpenSocialModal(item, "instagram")}
-                      title="Open Instagram Post Assistant (Copy & Create)"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white shadow-sm transition hover:opacity-90 active:scale-95 text-xs"
-                    >
-                      <FaInstagram />
-                    </button>
+                      {/* Distinct Link Action Buttons */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={(e) => handleCopyArticleLink(article, e)}
+                          title="Copy Permanent Link"
+                          className="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-orange-300 bg-white text-slate-700 hover:text-orange-600 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                        >
+                          {copiedLinkArticleId === article.id ? (
+                            <>
+                              <FaCheck className="text-emerald-600" />
+                              <span className="text-emerald-600">कॉपी हो गया</span>
+                            </>
+                          ) : (
+                            <>
+                              <FaCopy />
+                              <span>लिंक कॉपी करें</span>
+                            </>
+                          )}
+                        </button>
 
-                    {/* LinkedIn 1-Click */}
-                    <button
-                      onClick={() => onShareLi(item)}
-                      title="Share directly on LinkedIn"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0077b5] text-white shadow-sm transition hover:bg-[#005582] active:scale-95 text-xs"
-                    >
-                      <FaLinkedinIn />
-                    </button>
-
-                    {/* Twitter/X 1-Click */}
-                    <button
-                      onClick={() => onShareTw(item)}
-                      title="Share directly on Twitter / X"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm transition hover:bg-black active:scale-95 text-xs"
-                    >
-                      <FaTwitter />
-                    </button>
-
-                    {/* Social Hub Modal */}
-                    <button
-                      onClick={() => onOpenSocialModal(item)}
-                      title="Open Full Social Share Hub"
-                      className="ml-1 rounded-lg border border-blue-200 bg-blue-50/80 px-2 py-1 text-[11px] font-semibold text-blue-900 hover:bg-blue-100 transition"
-                    >
-                      Hub
-                    </button>
-                  </div>
-                </td>
-
-                <td className="px-5 py-4">
-                  <div className="flex justify-end gap-3 text-base">
-                    <button
-                      title="Delete"
-                      onClick={() => onDelete(item.id)}
-                      className="text-slate-400 transition hover:text-red-600"
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan="7"
-                className="px-5 py-12 text-center text-sm text-slate-500"
-              >
-                No news articles found.
-              </td>
-            </tr>
+                        <Link
+                          to={`/news/${article.id}`}
+                          target="_blank"
+                          title="View Live Article Page"
+                          className="px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-950 text-white text-xs font-semibold flex items-center gap-1.5 transition"
+                        >
+                          <FaExternalLinkAlt size={10} />
+                          <span>देखें</span>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
-/* Add news form */
-function AddNewsForm({
-  formData,
-  categories,
-  autoPostWa,
-  setAutoPostWa,
-  waStatus,
-  onChange,
-  onContentChange,
-  onImageChange,
-  onSubmit,
-  onCancel,
-  isBroadcasting,
-}) {
-  return (
-    <section className="mx-auto max-w-4xl">
-      <div className="mb-6">
-        <p className="mb-2 text-sm font-semibold text-orange-500 uppercase tracking-wider">
-          Content Management
-        </p>
-        <h3 className="text-2xl font-bold text-blue-950">Add New Article</h3>
-        <p className="mt-1 text-sm text-slate-500">
-          Create, publish, and optionally auto-post straight into WhatsApp.
-        </p>
-      </div>
+          {/* ==================================================== */}
+          {/* TAB 2: ALL NEWS ARTICLES TABLE                       */}
+          {/* ==================================================== */}
+          {activePage === "news" && (
+            <div className="space-y-5 animate-fadeIn">
+              {/* Filter and Search Bar */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="relative w-full sm:w-80">
+                  <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="शीर्षक, श्रेणी, जिला या ID से खोजें..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white transition"
+                  />
+                </div>
 
-      <form
-        onSubmit={onSubmit}
-        className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm sm:p-8"
-      >
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-semibold text-blue-950">
-              News Headline / Title *
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={onChange}
-              placeholder="e.g. जरमुंडी प्रखंड में विकास कार्यों का उद्घाटन..."
-              className="w-full rounded-xl border border-blue-100 bg-blue-50/20 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-blue-950">
-              Category
-            </label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={onChange}
-              className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-            >
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-blue-950">
-              Publication Status
-            </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={onChange}
-              className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-            >
-              <option value="Published">Publish Immediately</option>
-              <option value="Draft">Save as Draft</option>
-            </select>
-          </div>
-
-          {/* WhatsApp Auto-Post Banner / Switch */}
-          <div className="md:col-span-2 rounded-xl border border-green-200 bg-green-50/60 p-4">
-            <label className="flex cursor-pointer items-start gap-3">
-              <input
-                type="checkbox"
-                checked={autoPostWa}
-                onChange={(e) => setAutoPostWa(e.target.checked)}
-                className="mt-1 h-5 w-5 rounded border-green-300 text-green-600 focus:ring-green-500"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <FaWhatsapp className="text-green-600 text-lg" />
-                  <span className="text-sm font-bold text-green-950">
-                    Auto-Post to WhatsApp Channel / Group on Publish
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                  <span className="text-xs text-slate-500 font-semibold">
+                    कुल समाचार: <strong>{filteredNews.length}</strong>
                   </span>
+
+                  <button
+                    onClick={() => {
+                      setEditingArticleId(null);
+                      setFormData(initialFormState);
+                      setActivePage("add-news");
+                    }}
+                    className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <FaPlus /> नया लेख लिखें
+                  </button>
                 </div>
-                <p className="mt-0.5 text-xs text-green-800">
-                  {waStatus === "connected"
-                    ? "✅ Bot is active! When you click Save/Publish, formatted headline + summary + photo will be sent instantly."
-                    : "⚠️ WhatsApp bot is currently disconnected. Click 'WhatsApp Bot' in the sidebar to scan the QR code."}
-                </p>
-              </div>
-            </label>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-semibold text-blue-950">
-              Short Summary / Excerpt (Used in WhatsApp & Social preview)
-            </label>
-            <textarea
-              name="excerpt"
-              value={formData.excerpt}
-              onChange={onChange}
-              rows="2"
-              placeholder="1-2 lines summarizing the event for quick reader comprehension..."
-              className="w-full rounded-xl border border-blue-100 bg-blue-50/20 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100 resize-none"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-semibold text-blue-950">
-              Full News Content *
-            </label>
-            <RichTextEditor
-              value={formData.content}
-              onChange={onContentChange}
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-semibold text-blue-950">
-              Featured Image
-            </label>
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/30 px-6 py-8 text-center transition hover:border-orange-400 hover:bg-orange-50">
-              {formData.image ? (
-                <img
-                  src={formData.image}
-                  alt="News preview"
-                  className="mb-4 max-h-48 rounded-xl object-cover"
-                />
-              ) : (
-                <FaCloudUploadAlt className="mb-3 text-3xl text-orange-500" />
-              )}
-              <span className="text-sm font-semibold text-blue-950">
-                Upload article cover photo
-              </span>
-              <span className="mt-1 text-xs text-slate-400">
-                PNG, JPG or WEBP (Automatically sent with WhatsApp message)
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={onImageChange}
-                className="hidden"
-              />
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-8 flex flex-col-reverse gap-3 border-t border-orange-100 pt-6 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-xl border border-blue-100 px-5 py-3 text-sm font-semibold text-blue-900 transition hover:bg-blue-50"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            disabled={isBroadcasting}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600 disabled:opacity-50"
-          >
-            {isBroadcasting ? (
-              <>
-                <FaSyncAlt className="animate-spin" />
-                Publishing & Broadcasting...
-              </>
-            ) : (
-              <>
-                <FaPaperPlane />
-                Publish Article
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </section>
-  );
-}
-
-/* WhatsApp Manager Page */
-function WhatsAppManager({
-  waStatus,
-  waUser,
-  waQr,
-  waTargetJid,
-  onSaveTargetJid,
-  onRefresh,
-  onDisconnect,
-  onTestBroadcast,
-  isBroadcasting,
-}) {
-  const [jidInput, setJidInput] = useState(waTargetJid);
-  const [channels, setChannels] = useState([]);
-  const [groups, setGroups] = useState([]);
-  const [loadingChats, setLoadingChats] = useState(false);
-
-  const fetchChats = async () => {
-    if (waStatus !== "connected") return;
-    setLoadingChats(true);
-    try {
-      const res = await fetch("http://localhost:5000/api/whatsapp/channels");
-      const data = await res.json();
-      if (data.success) {
-        setChannels(data.channels || []);
-        setGroups(data.groups || []);
-      }
-    } catch (e) {
-      console.error("Failed to load chats:", e);
-    } finally {
-      setLoadingChats(false);
-    }
-  };
-
-  useEffect(() => {
-    if (waStatus === "connected") {
-      fetchChats();
-    }
-  }, [waStatus]);
-
-  const applyPreset = (target, name) => {
-    setJidInput(target);
-    onSaveTargetJid(target);
-  };
-
-  return (
-    <section className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <p className="mb-2 text-sm font-semibold text-green-600 uppercase tracking-wider">
-          Free WhatsApp Gateway (Baileys Engine)
-        </p>
-        <h3 className="text-2xl font-bold text-blue-950">
-          WhatsApp Auto-Broadcasting Setup
-        </h3>
-        <p className="mt-1 text-sm text-slate-500">
-          Link your WhatsApp account once to automatically post breaking news into your Channel or Groups.
-        </p>
-      </div>
-
-      {/* Connection Status Banner */}
-      <div
-        className={`rounded-2xl border p-6 shadow-sm ${
-          waStatus === "connected"
-            ? "border-green-200 bg-gradient-to-r from-green-50 to-emerald-50"
-            : waStatus === "waiting_for_scan"
-            ? "border-yellow-200 bg-yellow-50/70"
-            : waStatus === "offline"
-            ? "border-red-200 bg-red-50"
-            : "border-slate-200 bg-slate-50"
-        }`}
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div
-              className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl text-white shadow-md ${
-                waStatus === "connected"
-                  ? "bg-green-600 shadow-green-600/30"
-                  : waStatus === "waiting_for_scan"
-                  ? "bg-yellow-500 shadow-yellow-500/30"
-                  : "bg-red-500 shadow-red-500/30"
-              }`}
-            >
-              <FaWhatsapp />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-lg font-bold text-blue-950">
-                  {waStatus === "connected"
-                    ? "WhatsApp Bot Connected"
-                    : waStatus === "waiting_for_scan"
-                    ? "Pairing Required (Scan QR)"
-                    : waStatus === "offline"
-                    ? "WhatsApp Server Offline"
-                    : "Disconnected"}
-                </h4>
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    waStatus === "connected"
-                      ? "bg-green-500"
-                      : waStatus === "waiting_for_scan"
-                      ? "bg-yellow-500 animate-ping"
-                      : "bg-red-500"
-                  }`}
-                />
               </div>
 
-              <p className="mt-0.5 text-xs text-slate-600">
-                {waStatus === "connected"
-                  ? `Logged in as: ${waUser?.name || "Admin"} (${waUser?.id || "Primary Number"})`
-                  : waStatus === "waiting_for_scan"
-                  ? "Scan the QR code below from WhatsApp > Linked Devices."
-                  : waStatus === "offline"
-                  ? "Ensure 'pnpm server' or 'npm run server' is running on port 5000."
-                  : "Click refresh to generate pairing session."}
-              </p>
-            </div>
-          </div>
+              {/* Table */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px] tracking-wider">
+                      <tr>
+                        <th className="py-4 px-5">समाचार (Article &amp; ID)</th>
+                        <th className="py-4 px-4">श्रेणी (Category)</th>
+                        <th className="py-4 px-4">जिला (District)</th>
+                        <th className="py-4 px-4">तारीख (Date)</th>
+                        <th className="py-4 px-4">स्थायी लिंक (Live Link)</th>
+                        <th className="py-4 px-5 text-right">कार्रवाई (Actions)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredNews.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            कोई समाचार नहीं मिला।
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredNews.map((article) => (
+                          <tr
+                            key={article.id}
+                            className="hover:bg-slate-50/80 transition"
+                          >
+                            {/* Article Title & Thumbnail */}
+                            <td className="py-3.5 px-5">
+                              <div className="flex items-center gap-3 max-w-md">
+                                {article.image ? (
+                                  <img
+                                    src={article.image}
+                                    alt=""
+                                    className="h-11 w-14 object-cover rounded-lg shrink-0 border border-slate-200"
+                                  />
+                                ) : (
+                                  <div className="h-11 w-14 bg-slate-100 rounded-lg shrink-0 flex items-center justify-center text-slate-400">
+                                    <FaNewspaper />
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-900 truncate">
+                                    {article.title}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                    ID: {article.id}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
 
-          <div className="flex gap-2">
-            <button
-              onClick={onRefresh}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3.5 py-2 text-xs font-semibold text-blue-900 shadow-sm transition hover:bg-blue-50"
-            >
-              <FaSyncAlt /> Refresh Status
-            </button>
+                            {/* Category */}
+                            <td className="py-3.5 px-4">
+                              <span className="px-2.5 py-1 bg-orange-50 text-orange-600 font-bold rounded-full border border-orange-200">
+                                {article.category}
+                              </span>
+                            </td>
 
-            {waStatus === "connected" && (
-              <button
-                onClick={onDisconnect}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3.5 py-2 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
-              >
-                <FaSignOutAlt /> Unlink
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+                            {/* District */}
+                            <td className="py-3.5 px-4 font-semibold text-slate-700">
+                              {article.district || "—"}
+                            </td>
 
-      {/* QR Code Scanner Section (Shown when pairing is required) */}
-      {waStatus !== "connected" && (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-orange-100 bg-white p-6 shadow-sm text-center">
-            <h5 className="font-bold text-blue-950 mb-2">Scan with WhatsApp</h5>
-            <p className="text-xs text-slate-500 mb-4 max-w-xs">
-              Open WhatsApp on your mobile phone &gt; Settings / 3-dots &gt; <strong>Linked Devices</strong> &gt; <strong>Link a Device</strong>.
-            </p>
+                            {/* Date */}
+                            <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                              {article.date}
+                            </td>
 
-            <div className="relative flex h-64 w-64 items-center justify-center rounded-2xl border-4 border-dashed border-green-300 bg-green-50/50 p-2">
-              {waQr ? (
-                <img
-                  src={waQr}
-                  alt="WhatsApp QR Code"
-                  className="h-full w-full rounded-xl object-contain shadow-md"
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-3 text-slate-400">
-                  <FaSyncAlt className="animate-spin text-3xl text-green-600" />
-                  <span className="text-xs font-medium">Generating fresh QR code...</span>
+                            {/* Distinct Live URL */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={(e) => handleCopyArticleLink(article, e)}
+                                  title="Copy Distinct URL"
+                                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-orange-600 transition"
+                                >
+                                  {copiedLinkArticleId === article.id ? (
+                                    <FaCheck className="text-emerald-600" />
+                                  ) : (
+                                    <FaCopy />
+                                  )}
+                                </button>
+                                <Link
+                                  to={`/news/${article.id}`}
+                                  target="_blank"
+                                  className="text-blue-600 hover:text-blue-800 font-semibold hover:underline flex items-center gap-1 text-xs"
+                                >
+                                  <span>/news/{article.id}</span>
+                                  <FaExternalLinkAlt size={10} />
+                                </Link>
+                              </div>
+                            </td>
+
+                            {/* Actions */}
+                            <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleEditClick(article)}
+                                  title="Edit"
+                                  className="p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition cursor-pointer"
+                                >
+                                  <FaEdit />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteArticle(article.id)}
+                                  title="Delete"
+                                  className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition cursor-pointer"
+                                >
+                                  <FaTrash />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              )}
-            </div>
-
-            <button
-              onClick={onRefresh}
-              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-green-700 hover:text-green-800"
-            >
-              <FaSyncAlt /> Reload QR Code
-            </button>
-          </div>
-
-          <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm flex flex-col justify-between">
-            <div>
-              <h5 className="font-bold text-blue-950 mb-3">📱 How to Link:</h5>
-              <ol className="list-decimal list-inside space-y-2.5 text-xs text-slate-600 leading-relaxed">
-                <li>Open <strong>WhatsApp</strong> on your phone.</li>
-                <li>Tap <strong>Menu (⋮)</strong> on Android or <strong>Settings</strong> on iPhone.</li>
-                <li>Select <strong>Linked Devices</strong>.</li>
-                <li>Tap <strong>Link a Device</strong> and authenticate with Fingerprint/FaceID.</li>
-                <li>Point your camera at the QR code on the left.</li>
-              </ol>
-            </div>
-
-            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-              💡 <strong>100% Free &amp; Private:</strong> Your session credentials stay securely stored on your own local server (`server/auth_state/`).
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Target Channel Configuration & Test Broadcast */}
-      <div className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm space-y-5">
-        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-          <div>
-            <h4 className="font-bold text-blue-950">Target WhatsApp Channel Configuration</h4>
-            <p className="text-xs text-slate-500">
-              Specify your WhatsApp Channel link or ID to auto-post news directly into it.
-            </p>
-          </div>
-          {waStatus === "connected" && (
-            <button
-              onClick={fetchChats}
-              disabled={loadingChats}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-800"
-            >
-              <FaSyncAlt className={loadingChats ? "animate-spin" : ""} />
-              {loadingChats ? "Fetching Channels..." : "Auto-Detect My Channels"}
-            </button>
-          )}
-        </div>
-
-        {/* Quick Detected Channels Dropdown */}
-        {channels.length > 0 && (
-          <div className="rounded-xl border border-green-200 bg-green-50/50 p-3">
-            <p className="text-xs font-bold text-green-900 mb-2">
-              ⚡ Detected Channels on your WhatsApp account:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {channels.map((ch) => (
-                <button
-                  key={ch.id}
-                  type="button"
-                  onClick={() => applyPreset(ch.id, ch.name)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition ${
-                    jidInput === ch.id
-                      ? "border-green-600 bg-green-600 text-white font-bold"
-                      : "border-green-300 bg-white text-green-800 hover:bg-green-100"
-                  }`}
-                >
-                  📢 {ch.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              WhatsApp Channel Link or Channel ID
-            </label>
-            <input
-              type="text"
-              value={jidInput}
-              onChange={(e) => setJidInput(e.target.value)}
-              placeholder="e.g. https://whatsapp.com/channel/0029VaXXXXXX"
-              className="w-full rounded-xl border border-blue-100 bg-blue-50/20 px-4 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
-            />
-            <p className="mt-1 text-[11px] text-slate-500">
-              💡 <strong>How to get this:</strong> Open your Channel in WhatsApp ➔ Tap the Channel Name at the top ➔ Tap <strong>"Forward / Share link"</strong> ➔ Paste the link here!
-            </p>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={() => onSaveTargetJid(jidInput)}
-              className="w-full rounded-xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-950 transition"
-            >
-              Save Channel Target
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Presets */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
-          <span className="font-semibold text-slate-700">Quick Targets:</span>
-          <button
-            type="button"
-            onClick={() => applyPreset("status@broadcast", "WhatsApp Status")}
-            className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 hover:bg-slate-100"
-          >
-            📸 WhatsApp Status (Story)
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset("", "My Number (Self)")}
-            className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 hover:bg-slate-100"
-          >
-            💬 My Chat (Test)
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
-          <div className="text-xs text-slate-500">
-            Click test to broadcast a live test headline into your target channel.
-          </div>
-
-          <button
-            onClick={onTestBroadcast}
-            disabled={waStatus !== "connected" || isBroadcasting}
-            className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-green-600/20 hover:bg-green-700 active:scale-95 transition disabled:opacity-50"
-          >
-            {isBroadcasting ? (
-              <>
-                <FaSyncAlt className="animate-spin" /> Sending Test...
-              </>
-            ) : (
-              <>
-                <FaPaperPlane /> ⚡ Send Test Broadcast to Channel
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* Rich text editor */
-function RichTextEditor({ value, onChange }) {
-  const editorRef = useRef(null);
-
-  const runCommand = (command, commandValue = null) => {
-    editorRef.current?.focus();
-    document.execCommand(command, false, commandValue);
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  };
-
-  const handleEditorInput = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  };
-
-  const preventFocusLoss = (event) => {
-    event.preventDefault();
-  };
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-blue-100 bg-white focus-within:border-orange-400 focus-within:ring-4 focus-within:ring-orange-100">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-blue-100 bg-blue-50/50 p-2">
-        <ToolbarButton
-          label="B"
-          title="Bold"
-          className="font-bold"
-          onMouseDown={preventFocusLoss}
-          onClick={() => runCommand("bold")}
-        />
-
-        <ToolbarButton
-          label="I"
-          title="Italic"
-          className="italic"
-          onMouseDown={preventFocusLoss}
-          onClick={() => runCommand("italic")}
-        />
-
-        <ToolbarButton
-          label="U"
-          title="Underline"
-          className="underline"
-          onMouseDown={preventFocusLoss}
-          onClick={() => runCommand("underline")}
-        />
-
-        <div className="mx-1 h-6 w-px bg-blue-100" />
-
-        <select
-          title="Font size"
-          defaultValue="3"
-          onMouseDown={preventFocusLoss}
-          onChange={(event) =>
-            runCommand("fontSize", event.target.value)
-          }
-          className="rounded-md border border-blue-100 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-orange-400"
-        >
-          <option value="2">Small</option>
-          <option value="3">Normal</option>
-          <option value="4">Large</option>
-          <option value="5">Heading</option>
-        </select>
-
-        <label className="flex cursor-pointer items-center gap-1 rounded-md border border-blue-100 bg-white px-2 py-1.5 text-xs text-slate-700 hover:bg-orange-50">
-          <span className="font-bold">A</span>
-          <input
-            type="color"
-            defaultValue="#1e293b"
-            onChange={(event) =>
-              runCommand("foreColor", event.target.value)
-            }
-            className="h-5 w-5 cursor-pointer border-0 bg-transparent p-0"
-          />
-        </label>
-
-        <div className="mx-1 h-6 w-px bg-blue-100" />
-
-        <ToolbarButton
-          label="Left"
-          title="Align left"
-          onMouseDown={preventFocusLoss}
-          onClick={() => runCommand("justifyLeft")}
-        />
-
-        <ToolbarButton
-          label="Center"
-          title="Align center"
-          onMouseDown={preventFocusLoss}
-          onClick={() => runCommand("justifyCenter")}
-        />
-
-        <ToolbarButton
-          label="Right"
-          title="Align right"
-          onMouseDown={preventFocusLoss}
-          onClick={() => runCommand("justifyRight")}
-        />
-
-        <ToolbarButton
-          label="• List"
-          title="Bullet list"
-          className="px-2 text-xs"
-          onMouseDown={preventFocusLoss}
-          onClick={() => runCommand("insertUnorderedList")}
-        />
-
-        <button
-          type="button"
-          title="Clear formatting"
-          onMouseDown={preventFocusLoss}
-          onClick={() => runCommand("removeFormat")}
-          className="ml-auto rounded-md px-2 py-1.5 text-xs text-slate-500 transition hover:bg-red-50 hover:text-red-600"
-        >
-          Clear
-        </button>
-      </div>
-
-      {/* Editable content */}
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleEditorInput}
-        dangerouslySetInnerHTML={{ __html: value }}
-        data-placeholder="Write your complete news article here..."
-        className="rich-editor min-h-[220px] bg-white px-4 py-4 text-sm leading-7 text-slate-800 outline-none"
-      />
-    </div>
-  );
-}
-
-function ToolbarButton({
-  label,
-  title,
-  onClick,
-  onMouseDown,
-  className = "",
-}) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onMouseDown={onMouseDown}
-      onClick={onClick}
-      className={`rounded-md border border-transparent px-2.5 py-1.5 text-sm text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 ${className}`}
-    >
-      {label}
-    </button>
-  );
-}
-
-/* Social Media Multi-Platform Share Hub Modal */
-function SocialShareModal({
-  article,
-  onClose,
-  onShareFb,
-  onShareLi,
-  onShareTw,
-  onShareInsta,
-  onBroadcastWa,
-  waStatus,
-  formatSocialText,
-  showToast,
-}) {
-  const [activeTab, setActiveTab] = useState(article.initialTab || "facebook");
-  const [copied, setCopied] = useState(false);
-
-  const captionText = formatSocialText(article);
-  const shareUrl = `${window.location.origin}/News`;
-
-  const handleCopyCaption = () => {
-    navigator.clipboard.writeText(captionText);
-    setCopied(true);
-    showToast("📋 Caption copied to clipboard!", "success");
-    setTimeout(() => setCopied(false), 2500);
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
-    showToast("🔗 Article link copied!", "success");
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-blue-950/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative flex flex-col w-full max-w-2xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-blue-100 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500 text-white shadow-sm">
-              <FaShareAlt className="text-sm" />
-            </div>
-            <div>
-              <h4 className="font-bold text-blue-950 text-base">Multi-Social Share Hub</h4>
-              <p className="text-xs text-slate-500">100% Free 1-Click Publishing</p>
-            </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
-          >
-            <FaTimes />
-          </button>
-        </div>
-
-        {/* Platform Tabs */}
-        <div className="flex border-b border-slate-200 bg-slate-100/60 px-6 pt-3 gap-2 overflow-x-auto text-xs font-semibold">
-          <TabButton
-            active={activeTab === "facebook"}
-            onClick={() => setActiveTab("facebook")}
-            icon={<FaFacebookF className="text-blue-600" />}
-            label="Facebook"
-          />
-          <TabButton
-            active={activeTab === "instagram"}
-            onClick={() => setActiveTab("instagram")}
-            icon={<FaInstagram className="text-pink-600" />}
-            label="Instagram"
-          />
-          <TabButton
-            active={activeTab === "linkedin"}
-            onClick={() => setActiveTab("linkedin")}
-            icon={<FaLinkedinIn className="text-[#0077b5]" />}
-            label="LinkedIn"
-          />
-          <TabButton
-            active={activeTab === "twitter"}
-            onClick={() => setActiveTab("twitter")}
-            icon={<FaTwitter className="text-slate-900" />}
-            label="Twitter / X"
-          />
-          <TabButton
-            active={activeTab === "whatsapp"}
-            onClick={() => setActiveTab("whatsapp")}
-            icon={<FaWhatsapp className="text-green-600" />}
-            label="WhatsApp"
-          />
-        </div>
-
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Article Summary Card */}
-          <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-blue-50/50 border border-blue-100">
-            {article.image ? (
-              <img
-                src={article.image}
-                alt={article.title}
-                className="h-16 w-20 rounded-xl object-cover border border-blue-100 shadow-sm flex-shrink-0"
-              />
-            ) : (
-              <div className="flex h-16 w-20 items-center justify-center rounded-xl bg-blue-100 text-blue-500 flex-shrink-0">
-                <FaNewspaper className="text-xl" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <span className="inline-block rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 uppercase tracking-wider mb-1">
-                {article.category}
-              </span>
-              <h5 className="font-bold text-blue-950 text-sm line-clamp-2 leading-snug">
-                {article.title}
-              </h5>
-              <p className="mt-1 text-xs text-slate-500 line-clamp-1">
-                {article.excerpt || article.content?.replace(/<[^>]*>/g, "")}
-              </p>
-            </div>
-          </div>
-
-          {/* TAB 1: Facebook */}
-          {activeTab === "facebook" && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/50 to-white p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaFacebookF className="text-blue-600" />
-                  <span className="text-xs font-bold text-blue-950">Facebook Feed &amp; Page Sharing</span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Opens Facebook's direct post creator with article headline, link preview, and thumbnail ready to publish on your Personal Feed, Groups, or Facebook Pages.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={onShareFb}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition"
-                >
-                  <FaFacebookF /> Open Facebook Post Dialog
-                </button>
-                <button
-                  onClick={handleCopyLink}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <FaCopy /> Copy Link
-                </button>
               </div>
             </div>
           )}
 
-          {/* TAB 2: Instagram */}
-          {activeTab === "instagram" && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-pink-200 bg-pink-50/40 p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <FaInstagram className="text-pink-600" />
-                  <span className="text-xs font-bold text-pink-950">Instagram Post Assistant</span>
-                </div>
-                <p className="text-xs text-pink-900 leading-relaxed">
-                  Instagram does not allow direct third-party publishing without enterprise accounts. Use our 1-click assistant: Copy formatted caption with hashtags, then paste it on Instagram!
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Formatted Hindi/English Caption with Hashtags:
-                </label>
-                <textarea
-                  readOnly
-                  rows="6"
-                  value={captionText}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs text-slate-800 font-mono outline-none leading-relaxed select-all"
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={onShareInsta}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-pink-500/20 hover:opacity-95 active:scale-95 transition"
-                >
-                  <FaInstagram /> 📋 Copy Caption &amp; Open Instagram
-                </button>
-
-                <button
-                  onClick={handleCopyCaption}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                >
-                  {copied ? <FaCheck className="text-green-600" /> : <FaCopy />}
-                  {copied ? "Copied!" : "Copy Text"}
-                </button>
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
-                <p className="font-bold text-slate-800">📸 3-Step Guide:</p>
-                <p>1. Click <strong>"Copy Caption &amp; Open Instagram"</strong>.</p>
-                <p>2. Tap <strong>+ (New Post)</strong> on Instagram and select your cover picture.</p>
-                <p>3. In the caption box, press <strong>Paste (Ctrl+V)</strong> and hit Share!</p>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: LinkedIn */}
-          {activeTab === "linkedin" && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaLinkedinIn className="text-[#0077b5]" />
-                  <span className="text-xs font-bold text-blue-950">LinkedIn Professional Article Share</span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Share this news story directly to your LinkedIn personal network or Company/Organisation Page with automatic link preview.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={onShareLi}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#0077b5] px-5 py-3 text-sm font-bold text-white shadow-md shadow-blue-800/20 hover:bg-[#005582] active:scale-95 transition"
-                >
-                  <FaLinkedinIn /> Share to LinkedIn
-                </button>
-                <button
-                  onClick={handleCopyLink}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                >
-                  <FaCopy /> Copy Link
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: Twitter / X */}
-          {activeTab === "twitter" && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FaTwitter className="text-slate-900" />
-                  <span className="text-xs font-bold text-slate-950">Twitter / X Tweet Creator</span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Opens Twitter/X with breaking news tag, headline, and hashtags pre-filled.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={onShareTw}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-black active:scale-95 transition"
-                >
-                  <FaTwitter /> Post Tweet on X
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: WhatsApp */}
-          {activeTab === "whatsapp" && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-green-200 bg-green-50/50 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <FaWhatsapp className="text-green-600 text-lg" />
-                    <span className="text-xs font-bold text-green-950">WhatsApp Bot Integration</span>
+          {/* ==================================================== */}
+          {/* TAB 3: ADD OR EDIT NEWS FORM                         */}
+          {/* ==================================================== */}
+          {activePage === "add-news" && (
+            <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn">
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
+                <div className="flex items-center justify-between pb-5 mb-6 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-blue-950">
+                      {editingArticleId
+                        ? "समाचार संपादित करें (Edit News Article)"
+                        : "नया समाचार प्रकाशित करें (Publish News Article)"}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      शीर्षक, विवरण, जिला और तस्वीर भरें &bull; प्रकाशित होते ही स्थायी लिंक बनेगा
+                    </p>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    waStatus === "connected" ? "bg-green-200 text-green-800" : "bg-orange-200 text-orange-800"
-                  }`}>
-                    {waStatus === "connected" ? "BOT CONNECTED" : "OFFLINE"}
-                  </span>
+
+                  {editingArticleId && (
+                    <button
+                      onClick={() => {
+                        setEditingArticleId(null);
+                        setFormData(initialFormState);
+                      }}
+                      className="text-xs text-slate-500 hover:text-slate-800 underline"
+                    >
+                      रद्द करें (Cancel Edit)
+                    </button>
+                  )}
                 </div>
-                <p className="text-xs text-green-900 leading-relaxed">
-                  Send this story straight to your WhatsApp Channel or Community followers using your connected Baileys bot!
-                </p>
-              </div>
 
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={onBroadcastWa}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-green-600/20 hover:bg-green-700 active:scale-95 transition"
-                >
-                  <FaWhatsapp /> ⚡ Send to WhatsApp Channel
-                </button>
+                <form onSubmit={handleSubmitArticle} className="space-y-6">
+                  {/* Title */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                      समाचार का मुख्य शीर्षक (Title / Headline) *
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      placeholder="उदा. रांची में आयोजित हुआ राज्यस्तरीय युवा संवाद कार्यक्रम..."
+                      required
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 outline-none focus:border-orange-500 focus:bg-white transition"
+                    />
+                  </div>
 
-                <a
-                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(captionText)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-xs font-bold text-green-800 hover:bg-green-100 transition"
-                >
-                  <FaExternalLinkAlt /> Open WA Web
-                </a>
+                  {/* Slug & Distinct Permanent URL Preview */}
+                  <div className="p-4 bg-orange-50/60 border border-orange-200 rounded-2xl text-xs space-y-1">
+                    <p className="font-bold text-orange-900 flex items-center gap-1.5">
+                      <FaLink />
+                      <span>स्थायी लिंक पूर्वावलोकन (Distinct URL Preview):</span>
+                    </p>
+                    <p className="text-orange-800 font-mono">
+                      {window.location.origin}/news/
+                      <span className="font-bold">
+                        {editingArticleId || generateSlug(formData.title || "unique-article-id")}
+                      </span>
+                    </p>
+                  </div>
+
+                  {/* Category & District Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        श्रेणी (Category)
+                      </label>
+                      <select
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
+                      >
+                        {NEWS_CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        झारखंड जिला (District)
+                      </label>
+                      <select
+                        name="district"
+                        value={formData.district}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
+                      >
+                        {JHARKHAND_DISTRICTS.map((dist) => (
+                          <option key={dist} value={dist}>
+                            {dist}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Reporter & Status */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        रिपोर्टर / ब्यूरो (Reporter / Author)
+                      </label>
+                      <input
+                        type="text"
+                        name="reporter"
+                        value={formData.reporter}
+                        onChange={handleInputChange}
+                        placeholder="स्वदेश वाणी ब्यूरो"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        स्थिति (Status)
+                      </label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
+                      >
+                        <option value="Published">Published (लाइव प्रकाशित)</option>
+                        <option value="Draft">Draft (ड्राफ्ट रखें)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Excerpt / Summary */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                      संक्षिप्त सारांश (Excerpt / Short Summary)
+                    </label>
+                    <textarea
+                      name="excerpt"
+                      rows={2}
+                      value={formData.excerpt}
+                      onChange={handleInputChange}
+                      placeholder="समाचार का 1-2 पंक्तियों में मुख्य सार..."
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Full Story Content */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                      विस्तृत समाचार (Full Story Content) *
+                    </label>
+                    <textarea
+                      name="content"
+                      rows={8}
+                      value={formData.content}
+                      onChange={handleInputChange}
+                      placeholder="पूरी खबर विस्तार से यहां लिखें..."
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white leading-relaxed"
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                      मुख्य तस्वीर (Featured Image)
+                    </label>
+
+                    <div className="flex flex-col sm:flex-row gap-4 items-start">
+                      <label className="flex-1 w-full border-2 border-dashed border-slate-300 hover:border-orange-500 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-50/50 hover:bg-orange-50/20">
+                        <FaCloudUploadAlt className="text-3xl text-orange-500 mx-auto mb-2" />
+                        <span className="text-xs font-bold text-slate-700 block">
+                          कंप्यूटर / मोबाइल से तस्वीर चुनें (Click to Upload)
+                        </span>
+                        <span className="text-[11px] text-slate-400 block mt-1">
+                          PNG, JPG, JPEG (Max 10MB)
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* Image Preview */}
+                      {formData.image && (
+                        <div className="relative shrink-0">
+                          <img
+                            src={formData.image}
+                            alt="Preview"
+                            className="h-28 w-36 object-cover rounded-2xl border border-slate-300 shadow-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, image: "" }))}
+                            className="absolute -top-2 -right-2 p-1.5 bg-red-600 text-white rounded-full text-xs shadow hover:bg-red-700"
+                          >
+                            <FaTimes />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Or Image URL */}
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        name="image"
+                        value={formData.image}
+                        onChange={handleInputChange}
+                        placeholder="या फिर इमेज URL पेस्ट करें (e.g. https://...)"
+                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-orange-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(initialFormState);
+                        setEditingArticleId(null);
+                        setActivePage("news");
+                      }}
+                      className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition"
+                    >
+                      रद्द करें (Cancel)
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="px-7 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-lg shadow-orange-600/30 transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <FaCheckCircle />
+                      <span>
+                        {editingArticleId
+                          ? "अपडेट करें (Update Article)"
+                          : "प्रकाशित करें एवं सूचना भेजें (Publish & Notify)"}
+                      </span>
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
-        </div>
+
+          {/* ==================================================== */}
+          {/* TAB 4: NOTIFICATIONS HISTORY                         */}
+          {/* ==================================================== */}
+          {activePage === "notifications" && (
+            <div className="space-y-5 animate-fadeIn">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-blue-950">
+                    प्रकाशन सूचनाएं (Notification History)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    प्रत्येक प्रकाशित लेख पर पाठकों को भेजी गई सूचनाएं
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (window.confirm("क्या आप सभी सूचनाएं मिटाना चाहते हैं?")) {
+                      clearNotifications();
+                      setNotificationsList([]);
+                      showToast("सभी सूचनाएं साफ कर दी गईं।", "info");
+                    }
+                  }}
+                  className="px-4 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  सभी मिटाएं (Clear All)
+                </button>
+              </div>
+
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                {notificationsList.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 text-sm">
+                    कोई सूचना उपलब्ध नहीं है।
+                  </div>
+                ) : (
+                  notificationsList.map((n) => (
+                    <div
+                      key={n.id}
+                      className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-slate-50/80 transition"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-10 w-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                          <FaBell />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {n.title}
+                          </p>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                            <span className="font-semibold text-orange-600">{n.category}</span>
+                            <span>&bull;</span>
+                            <span>{n.district}</span>
+                            <span>&bull;</span>
+                            <span>{n.timestamp || n.date}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Link
+                        to={`/news/${n.articleId}`}
+                        target="_blank"
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold shrink-0 flex items-center gap-1.5 transition"
+                      >
+                        <FaExternalLinkAlt size={10} />
+                        <span>लेख देखें</span>
+                      </Link>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ==================================================== */}
+          {/* TAB 5: SUBSCRIBERS LIST                             */}
+          {/* ==================================================== */}
+          {activePage === "subscribers" && (
+            <div className="space-y-5 animate-fadeIn">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-blue-950">
+                    सब्सक्राइबर्स सूची (Audience &amp; Readers)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    वेबसाइट से दैनिक समाचार अलर्ट के लिए सब्सक्राइब किए गए पाठक
+                  </p>
+                </div>
+
+                <span className="px-3.5 py-1.5 bg-purple-50 text-purple-700 font-bold text-xs rounded-full border border-purple-200">
+                  कुल: {subscribersList.length}
+                </span>
+              </div>
+
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px] tracking-wider">
+                      <tr>
+                        <th className="py-4 px-5">मोबाइल नंबर</th>
+                        <th className="py-4 px-4">ईमेल आईडी</th>
+                        <th className="py-4 px-4">सब्सक्रिप्शन दिनांक</th>
+                        <th className="py-4 px-4">स्थिति</th>
+                        <th className="py-4 px-5 text-right">कार्रवाई</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {subscribersList.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-slate-400">
+                            कोई सब्सक्राइबर नहीं मिला।
+                          </td>
+                        </tr>
+                      ) : (
+                        subscribersList.map((sub) => (
+                          <tr key={sub.id} className="hover:bg-slate-50 transition">
+                            <td className="py-3.5 px-5 font-bold text-slate-800">
+                              <span className="flex items-center gap-2">
+                                <FaPhoneAlt className="text-orange-500 text-xs" />
+                                {sub.phone || "—"}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600">
+                              <span className="flex items-center gap-2">
+                                <FaEnvelope className="text-blue-500 text-xs" />
+                                {sub.email || "—"}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-500">
+                              {sub.subscribedAt}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200 text-[11px]">
+                                {sub.status || "Active"}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-5 text-right">
+                              <button
+                                onClick={() => handleDeleteSubscriber(sub.id)}
+                                className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition cursor-pointer"
+                                title="Remove"
+                              >
+                                <FaTrash />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
     </div>
-  );
-}
-
-function TabButton({ active, onClick, icon, label }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 pb-3 px-3 border-b-2 transition font-bold whitespace-nowrap ${
-        active
-          ? "border-orange-500 text-orange-600"
-          : "border-transparent text-slate-500 hover:text-slate-800"
-      }`}
-    >
-      <span className="text-sm">{icon}</span>
-      <span>{label}</span>
-    </button>
   );
 }

@@ -23,6 +23,7 @@ import About from "./Component/About.jsx";
 import TermsConditions from "./Component/TermsConditions.jsx";
 import PrivacyPolicy from "./Component/LegalPrivacy.jsx";
 import ArticleDetail from "./Component/ArticleDetail.jsx";
+import District from "./Component/District.jsx"
 function AppLayout() {
   const location = useLocation();
 
@@ -37,27 +38,49 @@ function AppLayout() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/News" element={<News />} />
+        <Route path="/news" element={<News />} />
         <Route path="/news/:id" element={<ArticleDetail />} />
         <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/Education" element={<Education />} />
+        <Route path="/education" element={<Education />} />
         <Route path="/Worldnews" element={<Worldnews />} />
+        <Route path="/worldnews" element={<Worldnews />} />
         <Route path="/Technologynews" element={<Technologynews />} />
+        <Route path="/technologynews" element={<Technologynews />} />
         <Route path="/Sportsnews" element={<Sportsnews />} />
+        <Route path="/sportsnews" element={<Sportsnews />} />
         <Route path="/Login" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/About" element={<About />} />
+        <Route path="/about" element={<About />} />
         <Route path="/t&c" element={<TermsConditions />} />
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+        <Route path="/District" element={<District />} />
+        <Route path="/district" element={<District />} />
         <Route
           path="/HistoricJharkhand"
           element={<HistoricJharkhand />}
         />
+        <Route
+          path="/historicjharkhand"
+          element={<HistoricJharkhand />}
+        />
         <Route path="/Admin" element={<Admin />} />
+        <Route path="/admin" element={<Admin />} />
         <Route
           path="/YouTubeVideos"
           element={<YouTubeVideos />}
         />
         <Route
+          path="/youtubevideos"
+          element={<YouTubeVideos />}
+        />
+        <Route
           path="/Advertisement"
+          element={<Advertisement />}
+        />
+        <Route
+          path="/advertisement"
           element={<Advertisement />}
         />
       </Routes>

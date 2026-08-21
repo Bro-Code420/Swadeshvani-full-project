@@ -9,13 +9,59 @@ import news8 from "../Component/photos/news8.jpeg";
 import news9 from "../Component/photos/news9.jpeg";
 import news10 from "../Component/photos/news10.jpeg";
 
+export const JHARKHAND_DISTRICTS = [
+  "Ranchi",
+  "Dhanbad",
+  "Bokaro",
+  "East Singhbhum (Jamshedpur)",
+  "West Singhbhum (Chaibasa)",
+  "Deoghar",
+  "Dumka",
+  "Hazaribagh",
+  "Giridih",
+  "Latehar",
+  "Palamu",
+  "Garhwa",
+  "Chatra",
+  "Koderma",
+  "Jamtara",
+  "Godda",
+  "Sahibganj",
+  "Pakur",
+  "Ramgarh",
+  "Lohardaga",
+  "Gumla",
+  "Simdega",
+  "Khunti",
+  "Seraikela Kharsawan",
+  "State / National / Other",
+];
+
+export const NEWS_CATEGORIES = [
+  "Jharkhand",
+  "National",
+  "International",
+  "Politics",
+  "Education",
+  "Sports",
+  "Technology",
+  "Business",
+  "Entertainment",
+  "Historic Jharkhand",
+  "Crime & Law",
+  "Health & Wellness",
+  "Weather & Agriculture",
+];
+
 export const initialArticles = [
   {
     id: "1",
     slug: "aamagachi-transformer",
     title: "जरमुंडी प्रखंड के आमगाछी गांव में आकाशीय बिजली का शिकार हुआ विद्युत ट्रांसफार्मर",
-    category: "जरमुंडी",
+    category: "Jharkhand",
+    district: "Dumka",
     author: "स्वदेश वाणी ब्यूरो",
+    reporter: "स्वदेश वाणी ब्यूरो",
     date: "16 Aug 2026",
     readTime: "3 मिनट",
     image: news1,
@@ -29,8 +75,10 @@ export const initialArticles = [
     id: "2",
     slug: "jpsc-student-movement",
     title: "JPSC मुद्दे पर जारी आंदोलन को सोनम वांगचुक का समर्थन",
-    category: "राजनीति",
-    author: "स्वदेश वाणी ब्यूरो",
+    category: "Politics",
+    district: "Ranchi",
+    author: "अमित कुमार",
+    reporter: "अमित कुमार (विशेष संवाददाता)",
     date: "15 Aug 2026",
     readTime: "4 मिनट",
     image: news2,
@@ -44,8 +92,10 @@ export const initialArticles = [
     id: "3",
     slug: "mohan-bhagwat-students",
     title: "देश की शिक्षा व्यवस्था में सुधार की जरूरत: मोहन भागवत",
-    category: "देश",
-    author: "विशेष संवाददाता",
+    category: "National",
+    district: "State / National / Other",
+    author: "स्वदेश वाणी ब्यूरो",
+    reporter: "स्वदेश वाणी ब्यूरो (नई दिल्ली)",
     date: "14 Aug 2026",
     readTime: "3 मिनट",
     image: news3,
@@ -58,8 +108,10 @@ export const initialArticles = [
     id: "4",
     slug: "tinghara-school-problem",
     title: "जर्जर शौचालय और बंद बिजली से परेशान तीनघरा विद्यालय के 132 छात्र-छात्राएं",
-    category: "शिक्षा",
-    author: "स्वदेश वाणी संवाददाता",
+    category: "Education",
+    district: "Dumka",
+    author: "संजय मुर्मू",
+    reporter: "संजय मुर्मू (शिक्षा संवाददाता)",
     date: "13 Aug 2026",
     readTime: "3 मिनट",
     image: news4,
@@ -71,8 +123,10 @@ export const initialArticles = [
     id: "5",
     slug: "ramgarh-football-tournament",
     title: "स्वतंत्रता दिवस पर दो दिवसीय फुटबॉल प्रतियोगिता की तैयारी",
-    category: "खेल",
-    author: "खेल संवाददाता",
+    category: "Sports",
+    district: "Ramgarh",
+    author: "राकेश महतो",
+    reporter: "राकेश महतो (खेल संवाददाता)",
     date: "12 Aug 2026",
     readTime: "2 मिनट",
     image: news5,
@@ -84,8 +138,10 @@ export const initialArticles = [
     id: "6",
     slug: "nizhor-malaria-survey",
     title: "निझोर गांव में मलेरिया मास सर्वे, 34 लोगों की जांच",
-    category: "स्वास्थ्य",
-    author: "स्वास्थ्य डेस्क",
+    category: "Health & Wellness",
+    district: "Dumka",
+    author: "डॉ. विकास गुप्ता",
+    reporter: "डॉ. विकास गुप्ता (स्वास्थ्य डेस्क)",
     date: "11 Aug 2026",
     readTime: "2 मिनट",
     image: news6,
@@ -97,8 +153,10 @@ export const initialArticles = [
     id: "7",
     slug: "sir-2026-review-meeting",
     title: "मसलिया में SIR-2026 के द्वितीय चरण की तैयारियों को लेकर समीक्षा बैठक",
-    category: "प्रशासन",
+    category: "Jharkhand",
+    district: "Dumka",
     author: "प्रशासनिक संवाददाता",
+    reporter: "प्रशासनिक संवाददाता",
     date: "10 Aug 2026",
     readTime: "3 मिनट",
     image: news7,
@@ -110,8 +168,10 @@ export const initialArticles = [
     id: "8",
     slug: "maternity-rest-homes",
     title: "श्रावणी मेला क्षेत्र के 10 स्थलों पर संचालित मातृत्व विश्राम गृह",
-    category: "देवघर",
+    category: "Jharkhand",
+    district: "Deoghar",
     author: "स्वदेश वाणी ब्यूरो",
+    reporter: "स्वदेश वाणी ब्यूरो (देवघर)",
     date: "09 Aug 2026",
     readTime: "3 मिनट",
     image: news8,
@@ -123,8 +183,10 @@ export const initialArticles = [
     id: "9",
     slug: "sp-college-student-protest",
     title: "एस.पी. कॉलेज, दुमका में छात्र समन्वय समिति की अनिश्चितकालीन तालाबंदी शुरू",
-    category: "शिक्षा",
-    author: "स्वदेश वाणी संवाददाता",
+    category: "Education",
+    district: "Dumka",
+    author: "संजय मुर्मू",
+    reporter: "संजय मुर्मू (छात्र प्रतिनिधि)",
     date: "08 Aug 2026",
     readTime: "3 मिनट",
     image: news9,
@@ -136,8 +198,10 @@ export const initialArticles = [
     id: "10",
     slug: "basko-transformer-restored",
     title: "बास्को गांव में 63 केवीए का नया ट्रांसफार्मर लगते ही बहाल हुई बिजली",
-    category: "रामगढ़",
+    category: "Jharkhand",
+    district: "Ramgarh",
     author: "ग्रामीण संवाददाता",
+    reporter: "ग्रामीण संवाददाता",
     date: "07 Aug 2026",
     readTime: "2 मिनट",
     image: news10,
@@ -152,7 +216,9 @@ export const initialArticles = [
     slug: "curriculum-overhaul",
     title: "Government unveils major overhaul of national curriculum",
     category: "Education",
+    district: "Ranchi",
     author: "Education Desk",
+    reporter: "Education Desk",
     date: "15 Aug 2026",
     readTime: "3 min",
     image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80",
@@ -164,7 +230,9 @@ export const initialArticles = [
     slug: "hybrid-learning",
     title: "Top universities embrace hybrid learning for upcoming session",
     category: "Education",
+    district: "Ranchi",
     author: "Academic Bureau",
+    reporter: "Academic Bureau",
     date: "14 Aug 2026",
     readTime: "4 min",
     image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1200&q=80",
@@ -176,7 +244,9 @@ export const initialArticles = [
     slug: "cricket-dramatic-final",
     title: "National cricket team clinches series in dramatic final over",
     category: "Sports",
+    district: "Ranchi",
     author: "Sports Bureau",
+    reporter: "Sports Bureau",
     date: "15 Aug 2026",
     readTime: "3 min",
     image: "https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?auto=format&fit=crop&w=1200&q=80",
@@ -187,8 +257,10 @@ export const initialArticles = [
     id: "world-1",
     slug: "global-climate-summit",
     title: "Global summit agrees on new climate action roadmap",
-    category: "World",
+    category: "International",
+    district: "State / National / Other",
     author: "International Desk",
+    reporter: "International Desk",
     date: "15 Aug 2026",
     readTime: "4 min",
     image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
@@ -200,7 +272,9 @@ export const initialArticles = [
     slug: "ai-advancements-2026",
     title: "New generation AI models transform software development and research",
     category: "Technology",
+    district: "East Singhbhum (Jamshedpur)",
     author: "Tech Bureau",
+    reporter: "Tech Bureau",
     date: "15 Aug 2026",
     readTime: "3 min",
     image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
@@ -209,8 +283,145 @@ export const initialArticles = [
   },
 ];
 
-// LocalStorage key for admin-published articles
+// LocalStorage keys
 const STORAGE_KEY = "savdeshvani_articles_store";
+const SUBSCRIBERS_KEY = "savdeshvani_subscribers";
+const NOTIFICATIONS_KEY = "savdeshvani_notifications";
+
+// Helper to generate URL-safe slug
+export const generateSlug = (text) => {
+  if (!text) return "news-" + Date.now();
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[\s\W-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .substring(0, 60) || "news-" + Date.now();
+};
+
+// ----------------------------------------------------
+// NOTIFICATION SYSTEM APIS
+// ----------------------------------------------------
+
+export const getNotifications = () => {
+  try {
+    const saved = localStorage.getItem(NOTIFICATIONS_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error reading notifications:", e);
+  }
+  // Default seed notification
+  return [
+    {
+      id: "notif-init-1",
+      articleId: "1",
+      title: "जरमुंडी प्रखंड के आमगाछी गांव में आकाशीय बिजली का शिकार हुआ विद्युत ट्रांसफार्मर",
+      category: "Jharkhand",
+      district: "Dumka",
+      image: "",
+      timestamp: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+      date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
+      read: false,
+    },
+  ];
+};
+
+export const requestNotificationPermission = async () => {
+  if (!("Notification" in window)) {
+    return "unsupported";
+  }
+  if (Notification.permission === "granted") {
+    return "granted";
+  }
+  if (Notification.permission !== "denied") {
+    const perm = await Notification.requestPermission();
+    return perm;
+  }
+  return Notification.permission;
+};
+
+export const addNotification = (article) => {
+  try {
+    if (!article) return;
+    const notifications = getNotifications();
+    const newNotif = {
+      id: "notif-" + Date.now(),
+      articleId: String(article.id),
+      title: article.title || "ताज़ा समाचार प्रकाशित हुआ",
+      category: article.category || "Jharkhand",
+      district: article.district || "Ranchi",
+      image: article.image || "",
+      timestamp: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+      date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
+      read: false,
+    };
+
+    const updated = [newNotif, ...notifications].slice(0, 30); // keep last 30
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+
+    // Dispatch global custom event for Navbar & UI reactivity
+    window.dispatchEvent(new CustomEvent("sv_notification_received", { detail: newNotif }));
+
+    // Browser Push / Web Notification
+    if ("Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification("📰 स्वदेश वाणी - ताज़ा समाचार", {
+          body: article.title,
+          icon: "/photos/logo.jpeg",
+          tag: `news-${article.id}`,
+        });
+      } catch (err) {
+        console.log("Desktop notification suppressed or not supported:", err);
+      }
+    }
+
+    return newNotif;
+  } catch (e) {
+    console.error("Error adding notification:", e);
+  }
+};
+
+export const markNotificationAsRead = (id) => {
+  try {
+    const notifications = getNotifications();
+    const updated = notifications.map((n) =>
+      String(n.id) === String(id) ? { ...n, read: true } : n
+    );
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("sv_notifications_change"));
+    return updated;
+  } catch (e) {
+    console.error("Error marking notification as read:", e);
+    return [];
+  }
+};
+
+export const markAllNotificationsAsRead = () => {
+  try {
+    const notifications = getNotifications();
+    const updated = notifications.map((n) => ({ ...n, read: true }));
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("sv_notifications_change"));
+    return updated;
+  } catch (e) {
+    console.error("Error marking all notifications as read:", e);
+    return [];
+  }
+};
+
+export const clearNotifications = () => {
+  try {
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify([]));
+    window.dispatchEvent(new Event("sv_notifications_change"));
+    return [];
+  } catch (e) {
+    console.error("Error clearing notifications:", e);
+    return [];
+  }
+};
 
 // Get all articles (Merged base + LocalStorage custom created articles)
 export const getAllArticles = () => {
@@ -246,25 +457,73 @@ export const getArticleById = (idOrSlug) => {
   );
 };
 
-// Save a new or updated article (used when Admin publishes)
-export const saveArticleToStore = (newArticle) => {
+// Filter articles by category (handles aliases and multilingual matching)
+export const getArticlesByCategory = (categoryQuery) => {
+  if (!categoryQuery) return getAllArticles();
+  const q = categoryQuery.toLowerCase().trim();
+  const articles = getAllArticles();
+
+  return articles.filter((a) => {
+    const cat = (a.category || "").toLowerCase();
+    if (cat === q) return true;
+    if (q === "sports" && (cat.includes("sport") || cat.includes("खेल"))) return true;
+    if (q === "technology" && (cat.includes("tech") || cat.includes("तकनीक"))) return true;
+    if (q === "education" && (cat.includes("edu") || cat.includes("शिक्षा"))) return true;
+    if (q === "world" && (cat.includes("world") || cat.includes("international") || cat.includes("विदेश") || cat.includes("अंतरराष्ट्रीय"))) return true;
+    if (q === "historic jharkhand" && (cat.includes("historic") || cat.includes("heritage") || cat.includes("jharkhand") || cat.includes("झारखंड"))) return true;
+    if (q === "jharkhand" && (cat.includes("jharkhand") || cat.includes("झारखंड") || cat.includes("दुमका") || cat.includes("देवघर") || cat.includes("रांची") || cat.includes("रामगढ़") || cat.includes("जरमुंडी"))) return true;
+    return cat.includes(q);
+  });
+};
+
+// Save a new or updated article (used when Admin publishes or edits)
+export const saveArticleToStore = (articleData) => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     let customArticles = saved ? JSON.parse(saved) : [];
-    
+
+    const articleId = String(articleData.id || `art-${Date.now()}`);
+    const articleSlug = articleData.slug || generateSlug(articleData.title || articleId);
+
+    const articleToSave = {
+      ...articleData,
+      id: articleId,
+      slug: articleSlug,
+      link: `/news/${articleId}`,
+      category: articleData.category || "Jharkhand",
+      district: articleData.district || "Ranchi",
+      reporter: articleData.reporter || articleData.author || "स्वदेश वाणी ब्यूरो",
+      author: articleData.reporter || articleData.author || "स्वदेश वाणी ब्यूरो",
+      status: articleData.status || "Published",
+      date:
+        articleData.date ||
+        new Date().toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+    };
+
     // Check if exists, update or prepend
-    const index = customArticles.findIndex((a) => String(a.id) === String(newArticle.id));
+    const index = customArticles.findIndex((a) => String(a.id) === String(articleToSave.id));
+    const isNew = index < 0;
     if (index >= 0) {
-      customArticles[index] = newArticle;
+      customArticles[index] = articleToSave;
     } else {
-      customArticles = [newArticle, ...customArticles];
+      customArticles = [articleToSave, ...customArticles];
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
-    return customArticles;
+
+    // If published, trigger notification
+    if (articleToSave.status === "Published") {
+      addNotification(articleToSave);
+    }
+
+    return { articles: customArticles, savedArticle: articleToSave, isNew };
   } catch (e) {
     console.error("Error saving article:", e);
   }
-  return [];
+  return { articles: [], savedArticle: null, isNew: false };
 };
 
 // Delete article from store
@@ -277,5 +536,91 @@ export const deleteArticleFromStore = (id) => {
     }
   } catch (e) {
     console.error("Error deleting article:", e);
+  }
+};
+
+// ----------------------------------------------------
+// SUBSCRIBERS STORE APIS (Email + Mobile Number)
+// ----------------------------------------------------
+
+export const getSubscribers = () => {
+  try {
+    const saved = localStorage.getItem(SUBSCRIBERS_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error("Error reading subscribers:", e);
+  }
+  // Default sample seed for subscribers demo
+  return [
+    {
+      id: "sub-1",
+      phone: "9876543210",
+      email: "reader1@swadeshvaani.in",
+      subscribedAt: "16 Aug 2026, 10:30 AM",
+      status: "Active",
+    },
+    {
+      id: "sub-2",
+      phone: "9123456789",
+      email: "jharkhand.news@gmail.com",
+      subscribedAt: "15 Aug 2026, 04:15 PM",
+      status: "Active",
+    },
+  ];
+};
+
+export const saveSubscriber = ({ email, phone }) => {
+  try {
+    const subscribers = getSubscribers();
+    const cleanEmail = email ? email.trim().toLowerCase() : "";
+    const cleanPhone = phone ? phone.trim().replace(/\D/g, "") : "";
+
+    // Check for duplicates
+    const alreadyExists = subscribers.some(
+      (s) =>
+        (cleanEmail && s.email && s.email.toLowerCase() === cleanEmail) ||
+        (cleanPhone && s.phone && s.phone === cleanPhone)
+    );
+
+    if (alreadyExists) {
+      return { success: false, message: "यह ईमेल या मोबाइल नंबर पहले से सब्सक्राइब है।" };
+    }
+
+    const newSub = {
+      id: "sub-" + Date.now(),
+      phone: cleanPhone,
+      email: cleanEmail,
+      subscribedAt: new Date().toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      status: "Active",
+    };
+
+    const updated = [newSub, ...subscribers];
+    localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(updated));
+    return { success: true, message: "सफलतापूर्वक सब्सक्राइब किया गया!", subscriber: newSub };
+  } catch (e) {
+    console.error("Error saving subscriber:", e);
+    return { success: false, message: "सब्सक्रिप्शन में त्रुटि आई।" };
+  }
+};
+
+export const deleteSubscriber = (idOrPhone) => {
+  try {
+    const subscribers = getSubscribers();
+    const filtered = subscribers.filter(
+      (s) => String(s.id) !== String(idOrPhone) && String(s.phone) !== String(idOrPhone)
+    );
+    localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(filtered));
+    return filtered;
+  } catch (e) {
+    console.error("Error deleting subscriber:", e);
+    return [];
   }
 };
