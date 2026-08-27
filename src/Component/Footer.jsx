@@ -21,18 +21,18 @@ const Footer = () => {
   const quickLinks = [
     { label: "Home", to: "/" },
     { label: "District News", to: "/district" },
-    { label: "Journal", to: "/journal" },
-    { label: "Videos", to: "/videos" },
+    { label: "Latest News", to: "/news" },
+    { label: "Videos", to: "/youtubevideos" },
     { label: "Advertisement", to: "/advertisement" },
     { label: "About Us", to: "/about" },
   ];
 
   const newsLinks = [
     { label: "Education", to: "/education" },
-    { label: "World News", to: "/world-news" },
-    { label: "Technology", to: "/technology-news" },
-    { label: "Sports", to: "/sports-news" },
-    { label: "Historic Jharkhand", to: "/historic-jharkhand" },
+    { label: "World News", to: "/worldnews" },
+    { label: "Technology", to: "/technologynews" },
+    { label: "Sports", to: "/sportsnews" },
+    { label: "Historic Jharkhand", to: "/historicjharkhand" },
   ];
 
   const socialLinks = [
@@ -76,14 +76,13 @@ const Footer = () => {
             <Link to="/" className="inline-block">
               <img
                 src={hindilogo}
-                alt="NewsDesk logo"
-                className="h-24 w-auto object-contain"
+                alt="Swadesh Vani logo"
+                className="h-24 w-auto object-contain bg-white rounded-xl p-1 shadow-md"
               />
             </Link>
 
             <p className="mt-5 max-w-xs text-sm leading-7 text-blue-100">
-              आपके क्षेत्र, राज्य और देश की महत्वपूर्ण खबरें सही और सरल भाषा
-              में आप तक पहुंचाने का हमारा प्रयास।
+              आपके क्षेत्र, राज्य और देश की महत्वपूर्ण खबरें सही और सरल भाषा में आप तक पहुंचाने का हमारा प्रयास।
             </p>
 
             <div className="mt-6 flex items-center gap-3">
@@ -137,11 +136,11 @@ const Footer = () => {
               </a>
 
               <a
-                href="mailto:swaveshvaninewsnetwork@gmail.com"
+                href="mailto:swadeshvaaniofficial@gmail.com"
                 className="flex items-center gap-3 break-all transition hover:text-orange-400"
               >
                 <Mail size={17} className="shrink-0 text-orange-400" />
-                swaveshvaninewsnetwork@gmail.com
+                swadeshvaaniofficial@gmail.com
               </a>
             </div>
 
@@ -160,12 +159,12 @@ const Footer = () => {
       <div className="border-t border-blue-800">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-center sm:px-8 md:flex-row md:text-left">
           <p className="text-xs text-blue-200">
-            © {new Date().getFullYear()} NewsDesk. All Rights Reserved.
+            © {new Date().getFullYear()} Swadesh Vani (स्वदेश वाणी). All Rights Reserved.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-blue-200">
             <Link
-              to="/PrivacyPolicy"
+              to="/privacypolicy"
               className="transition hover:text-orange-400"
             >
               Privacy Policy

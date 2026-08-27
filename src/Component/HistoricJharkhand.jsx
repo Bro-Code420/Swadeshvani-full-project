@@ -1,86 +1,134 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { MapPin, User, Clock, ArrowRight, History, Compass } from "lucide-react";
-import { getArticlesByCategory } from "../data/newsData";
+import React from "react";
+import { MapPin, History, Compass } from "lucide-react";
+
+import palamuFortImage from "./photos/palamu.jpeg"
+import malutiTemplesImage from "./photos/maluti.jpeg";
+import ratuPalaceImage from "./photos/ratu.jpeg";
+import hundruFallsImage from "./photos/Hundrufalls.jpeg";
+import betlaParkImage from "./photos/Betla.jpeg";
+import basukinathTempleImage from "./photos/baba.jpeg";
+import hijlaMelaImage from "./photos/hijla.jpeg";
+import dumkaRailwayImage from "./photos/railwaystation.jpeg";
+import dumkaCityImage from "./photos/dumka.jpeg";
 
 const historicPlaces = [
   {
     id: 1,
-    name: "Palamu Fort",
-    location: "Latehar / Palamu district",
-    image: "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=800&q=80",
+    name: "पलामू किला",
+    location: "लातेहार / पलामू जिला",
+    image: palamuFortImage,
     description:
-      "Set on a hill near Betla National Park, Palamu Fort is a ruined fortress that once guarded the region. Its massive gateways, bastions and vantage views echo the military architecture of the Cheros and later rulers.",
+      "बेतला राष्ट्रीय उद्यान के पास पहाड़ी पर स्थित पलामू किला क्षेत्र के महत्वपूर्ण ऐतिहासिक किलों में से एक है। इसके विशाल प्रवेश द्वार, बुर्ज और ऊंचाई से दिखने वाले प्राकृतिक दृश्य पुराने शासकों की स्थापत्य कला की याद दिलाते हैं।",
     highlight:
-      "Combine a visit to the fort with wildlife safaris in Betla National Park for history and nature in one trip.",
+      "पलामू किले के साथ बेतला राष्ट्रीय उद्यान की यात्रा करके इतिहास और प्रकृति दोनों का आनंद लें।",
   },
   {
     id: 2,
-    name: "Maluti Terracotta Temples",
-    location: "Maluti, Dumka district",
-    image: "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    name: "मलूटी टेराकोटा मंदिर",
+    location: "मलूटी, शिकारीपाड़ा, दुमका जिला",
+    image: malutiTemplesImage,
     description:
-      "A cluster of terracotta temples famed for detailed panels depicting epics like the Ramayana and Mahabharata. Maluti is one of Jharkhand’s most important heritage sites, with a unique temple-town atmosphere.",
+      "मलूटी अपने ऐतिहासिक टेराकोटा मंदिरों के लिए प्रसिद्ध है। मंदिरों की दीवारों पर रामायण, महाभारत और हिंदू पौराणिक कथाओं से जुड़े सुंदर चित्र और कलाकृतियां बनाई गई हैं।",
     highlight:
-      "Visit early morning or late afternoon for soft light on the terracotta panels and quieter lanes.",
+      "टेराकोटा कलाकृतियों को देखने के लिए सुबह या शाम का समय सबसे अच्छा रहता है।",
   },
   {
     id: 3,
-    name: "Ratu Palace",
-    location: "Ranchi district",
-    image: "https://images.unsplash.com/photo-1566837945700-30057527ade0?auto=format&fit=crop&w=800&q=80",
+    name: "रातू राजमहल",
+    location: "रांची जिला",
+    image: ratuPalaceImage,
     description:
-      "Once the seat of the Nagvanshi rulers, Ratu Palace combines colonial influences and local styles. Its courtyards and halls recall the royal and administrative history of the region.",
+      "रातू राजमहल नागवंशी शासकों की ऐतिहासिक विरासत से जुड़ा हुआ है। राजमहल में स्थानीय वास्तुकला के साथ औपनिवेशिक शैली का भी प्रभाव दिखाई देता है।",
     highlight:
-      "Explore nearby temples and traditional neighbourhoods to see how royal heritage blends with everyday life.",
+      "राजमहल के आसपास स्थित मंदिरों और पारंपरिक बस्तियों को भी अपनी यात्रा में शामिल करें।",
   },
   {
     id: 4,
-    name: "Hundru Falls",
-    location: "Near Ranchi, Angara block",
-    image: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&q=80",
+    name: "हुंडरू जलप्रपात",
+    location: "अंगड़ा प्रखंड, रांची के पास",
+    image: hundruFallsImage,
     description:
-      "Formed by the Swarnarekha River plunging over rocky cliffs, Hundru Falls is one of Jharkhand’s most iconic waterfalls, surrounded by forested trails and natural rock formations.",
+      "स्वर्णरेखा नदी के ऊंची चट्टानों से गिरने के कारण बना हुंडरू जलप्रपात झारखंड के सबसे प्रसिद्ध प्राकृतिक स्थलों में से एक है। यहां जंगल, चट्टानें और सुंदर जलधारा पर्यटकों को आकर्षित करती हैं।",
     highlight:
-      "Post‑monsoon is ideal for full water flow; use designated view points and steps for safe photography.",
+      "बारिश के बाद जलप्रपात का दृश्य बेहद सुंदर होता है। फोटोग्राफी के दौरान निर्धारित स्थानों पर ही रहें।",
   },
   {
     id: 5,
-    name: "Betla National Park & Ruins",
-    location: "Latehar district",
-    image: "https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80",
+    name: "बेतला राष्ट्रीय उद्यान एवं ऐतिहासिक अवशेष",
+    location: "लातेहार जिला",
+    image: betlaParkImage,
     description:
-      "One of India’s earliest national parks, Betla combines rich wildlife with old watchtowers, forest rest houses and historical remains linked to Palamu’s past.",
+      "बेतला राष्ट्रीय उद्यान अपने वन्यजीवों के साथ-साथ पुराने प्रहरी टावरों, वन विश्राम गृहों और पलामू क्षेत्र से जुड़े ऐतिहासिक अवशेषों के लिए भी जाना जाता है।",
     highlight:
-      "Early morning safaris offer chances to spot deer, bison and birds, with misty views of ruins in the background.",
+      "सुबह की सफारी के दौरान हिरण, गौर, पक्षियों और अन्य वन्यजीवों को देखने का अवसर मिल सकता है।",
+  },
+  {
+    id: 6,
+    name: "बाबा बासुकीनाथ मंदिर",
+    location: "बासुकीनाथ, दुमका जिला",
+    image: basukinathTempleImage,
+    description:
+      "बाबा बासुकीनाथ मंदिर झारखंड के प्रमुख धार्मिक स्थलों में से एक है। सावन के महीने में देशभर से श्रद्धालु भगवान शिव के दर्शन और पूजा-अर्चना के लिए यहां पहुंचते हैं।",
+    highlight:
+      "सावन और श्रावणी मेले के दौरान यहां काफी भीड़ रहती है, इसलिए यात्रा की योजना पहले बनाएं।",
+  },
+  {
+    id: 7,
+    name: "हिजला मेला स्थल",
+    location: "हिजला, दुमका जिला",
+    image: hijlaMelaImage,
+    description:
+      "हिजला मेला दुमका की आदिवासी संस्कृति, लोककला, हस्तशिल्प, लोकनृत्य और पारंपरिक जीवनशैली का महत्वपूर्ण उत्सव है। यह मेला मयूराक्षी नदी के आसपास आयोजित किया जाता है।",
+    highlight:
+      "मेले में स्थानीय हस्तशिल्प, पारंपरिक व्यंजन, लोकनृत्य और सांस्कृतिक कार्यक्रमों का आनंद लें।",
+  },
+  {
+    id: 8,
+    name: "दुमका रेलवे स्टेशन",
+    location: "दुमका शहर, दुमका जिला",
+    image: dumkaRailwayImage,
+    description:
+      "दुमका रेलवे स्टेशन संताल परगना क्षेत्र का एक महत्वपूर्ण परिवहन केंद्र है। रेलवे कनेक्टिविटी ने दुमका को झारखंड के कई प्रमुख शहरों और धार्मिक स्थलों से जोड़ा है।",
+    highlight:
+      "दुमका शहर, बासुकीनाथ और आसपास के पर्यटन स्थलों की यात्रा के लिए रेलवे स्टेशन एक सुविधाजनक प्रारंभिक स्थान है।",
+  },
+  {
+    id: 9,
+    name: "दुमका शहर",
+    location: "दुमका जिला",
+    image: dumkaCityImage,
+    description:
+      "दुमका संताल परगना का प्रमुख शहर और झारखंड की उपराजधानी है। यहां आदिवासी संस्कृति, स्थानीय बाजार, धार्मिक स्थल और प्राकृतिक वातावरण का सुंदर मेल देखने को मिलता है।",
+    highlight:
+      "स्थानीय बाजारों और आसपास के गांवों की यात्रा करके क्षेत्र की संस्कृति और पारंपरिक जीवनशैली को करीब से जानें।",
   },
 ];
 
 export default function HistoricJharkhandPage() {
-  const [heritageArticles, setHeritageArticles] = useState([]);
-
-  useEffect(() => {
-    const data = getArticlesByCategory("Historic Jharkhand");
-    setHeritageArticles(data);
-  }, []);
-
   return (
-    <main className="bg-white min-h-screen">
-      {/* Hero section */}
+    <main className="min-h-screen bg-white">
+      {/* मुख्य परिचय */}
       <section className="border-b border-slate-200 bg-slate-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-3">
-                <History size={14} /> धरोहर एवं पर्यटन (Historic Jharkhand)
+              <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-800">
+                <History size={14} />
+                झारखंड की धरोहर एवं पर्यटन
               </span>
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-                <span className="text-orange-500">Historic</span> Jharkhand &amp; Culture
+
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                <span className="text-orange-500">ऐतिहासिक</span> झारखंड एवं
+                संस्कृति
               </h1>
-              <p className="mt-3 max-w-xl text-sm sm:text-base text-slate-600">
-                किले, टेराकोटा मंदिर, राजप्रासाद, जलप्रपात और पवित्र पहाड़—झारखंड के गौरवशाली इतिहास, संस्कृति और पुरातात्विक धरोहरों का संग्रह।
+
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+                किले, टेराकोटा मंदिर, राजमहल, जलप्रपात, धार्मिक स्थल और
+                सांस्कृतिक मेले—झारखंड के गौरवशाली इतिहास, संस्कृति और
+                पर्यटन स्थलों का परिचय।
               </p>
             </div>
+
             <div className="text-sm text-slate-500">
               <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -91,92 +139,52 @@ export default function HistoricJharkhandPage() {
         </div>
       </section>
 
-      {/* Dynamic News & Stories under Historic Jharkhand if any */}
-      {heritageArticles.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10 border-b border-slate-100">
-          <h2 className="text-xl font-bold text-blue-950 mb-6 flex items-center gap-2">
-            <span className="h-5 w-2 bg-orange-500 rounded-full"></span>
-            धरोहर एवं इतिहास से जुड़े ताजा लेख
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {heritageArticles.map((art) => (
-              <article
-                key={art.id}
-                className="group flex gap-4 p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-orange-200 hover:shadow-md transition"
-              >
-                {art.image && (
-                  <Link to={`/news/${art.id}`} className="w-32 h-28 shrink-0 overflow-hidden rounded-xl block">
-                    <img
-                      src={art.image}
-                      alt={art.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition"
-                    />
-                  </Link>
-                )}
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 text-xs mb-1">
-                      <span className="font-bold text-orange-600">{art.category}</span>
-                      {art.district && <span className="text-slate-400">• 📍 {art.district}</span>}
-                    </div>
-                    <h3 className="font-bold text-sm sm:text-base text-blue-950 line-clamp-2 group-hover:text-orange-600 transition">
-                      <Link to={`/news/${art.id}`}>{art.title}</Link>
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100">
-                    <span>👤 {art.reporter || art.author || "स्वदेश वाणी"}</span>
-                    <Link to={`/news/${art.id}`} className="text-orange-600 font-semibold flex items-center gap-1">
-                      पढ़ें <ArrowRight size={12} />
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Featured Heritage Grid */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
-        <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+      {/* सभी धरोहर स्थल */}
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+        <h2 className="mb-6 flex items-center gap-2 text-xl font-bold text-slate-900">
           <Compass className="text-orange-500" size={20} />
-          झारखंड के प्रमुख ऐतिहासिक स्थल (Heritage Destinations)
+          झारखंड के प्रमुख ऐतिहासिक एवं पर्यटन स्थल
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          {historicPlaces.slice(0, 4).map((place) => (
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+          {historicPlaces.map((place) => (
             <article
               key={place.id}
-              className="group flex flex-col gap-4 border border-slate-100 rounded-3xl p-4 bg-slate-50/40 hover:bg-white hover:border-orange-200 hover:shadow-md transition duration-300"
+              className="group flex flex-col gap-4 rounded-3xl border border-slate-100 bg-slate-50/40 p-4 transition duration-300 hover:border-orange-200 hover:bg-white hover:shadow-md"
             >
               <div className="overflow-hidden rounded-2xl bg-slate-100">
                 <img
                   src={place.image}
                   alt={place.name}
-                  className="w-full h-[260px] md:h-[280px] object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  loading="lazy"
+                  className="h-[260px] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] md:h-[280px]"
                 />
               </div>
+
               <div className="space-y-2 p-2">
-                <div className="flex items-center gap-2 text-xs sm:text-sm">
-                  <span className="font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
-                    ऐतिहासिक स्थल
+                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                  <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 font-bold tracking-wider text-emerald-700">
+                    धरोहर स्थल
                   </span>
+
                   <span className="text-slate-400">•</span>
-                  <span className="text-slate-500 font-medium flex items-center gap-1">
+
+                  <span className="flex items-center gap-1 font-medium text-slate-500">
                     <MapPin size={13} className="text-orange-500" />
                     {place.location}
                   </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold leading-snug text-slate-900 group-hover:text-orange-600 transition">
+
+                <h3 className="text-xl font-bold leading-snug text-slate-900 transition group-hover:text-orange-600 sm:text-2xl">
                   {place.name}
                 </h3>
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+
+                <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
                   {place.description}
                 </p>
-                <div className="text-xs sm:text-sm text-emerald-800 bg-emerald-50/70 p-3 rounded-xl border border-emerald-100">
-                  <strong>यात्रा सुझाव (Tip):</strong> {place.highlight}
+
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-xs text-emerald-800 sm:text-sm">
+                  <strong>यात्रा सुझाव:</strong> {place.highlight}
                 </div>
               </div>
             </article>

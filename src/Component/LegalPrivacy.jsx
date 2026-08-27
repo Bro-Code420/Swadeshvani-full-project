@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 
 const PrivacyPolicy = () => {
   return (
@@ -107,24 +107,24 @@ const PrivacyPolicy = () => {
 
           <ul>
             <li>
-              <strong>Essential cookies</strong> — required for the site to
+              <strong>Essential cookies</strong> â€” required for the site to
               function.
             </li>
 
             <li>
-              <strong>Analytics cookies</strong> — to understand which stories
+              <strong>Analytics cookies</strong> â€” to understand which stories
               readers are reading and how the site performs.
             </li>
 
             <li>
-              <strong>Advertising cookies</strong> — set by our advertising
+              <strong>Advertising cookies</strong> â€” set by our advertising
               partners, to serve and measure advertisements. These partners
               may use cookies to show you ads based on your prior visits to
               this and other websites.
             </li>
 
             <li>
-              <strong>Social media and embed cookies</strong> — set when we
+              <strong>Social media and embed cookies</strong> â€” set when we
               embed content such as YouTube videos, X (Twitter) posts, or
               Facebook posts.
             </li>
@@ -217,8 +217,8 @@ const PrivacyPolicy = () => {
               <strong>
                 Service providers who operate the website on our behalf
               </strong>{" "}
-              — hosting, email delivery, analytics, comment moderation and
-              customer support — under obligations of confidentiality;
+              â€” hosting, email delivery, analytics, comment moderation and
+              customer support â€” under obligations of confidentiality;
             </li>
 
             <li>
@@ -251,28 +251,28 @@ const PrivacyPolicy = () => {
 
           <ul>
             <li>
-              <strong>Newsletter data</strong> — until you unsubscribe, plus a
+              <strong>Newsletter data</strong> â€” until you unsubscribe, plus a
               short period to honour the unsubscribe request;
             </li>
 
             <li>
-              <strong>Comments</strong> — for as long as the comment remains
+              <strong>Comments</strong> â€” for as long as the comment remains
               published, unless you request removal;
             </li>
 
             <li>
-              <strong>News tips and source material</strong> — for as long as
+              <strong>News tips and source material</strong> â€” for as long as
               editorially necessary, and longer where needed to defend the
               accuracy of a published story;
             </li>
 
             <li>
-              <strong>Analytics and log data</strong> — typically [14 / 26]
+              <strong>Analytics and log data</strong> â€” typically [14 / 26]
               months;
             </li>
 
             <li>
-              <strong>Records we are legally required to keep</strong> — for
+              <strong>Records we are legally required to keep</strong> â€” for
               the period the law requires.
             </li>
           </ul>
@@ -295,7 +295,7 @@ const PrivacyPolicy = () => {
             </li>
 
             <li>
-              withdraw consent at any time — every newsletter contains an
+              withdraw consent at any time â€” every newsletter contains an
               unsubscribe link;
             </li>
 
@@ -317,12 +317,12 @@ const PrivacyPolicy = () => {
 
           <p>
             Corrections to published articles are handled separately by our
-            editorial team — write to{" "}
+            editorial team â€” write to{" "}
             <a
-              href="mailto:swaveshvaninewsnetwork@gmail.com"
+              href="mailto:swadeshvaaniofficial@gmail.com"
               className="text-blue-600 hover:underline"
             >
-              swaveshvaninewsnetwork@gmail.com
+              swadeshvaaniofficial@gmail.com
             </a>{" "}
             and we will review and correct factual errors promptly.
           </p>
@@ -414,10 +414,10 @@ const PrivacyPolicy = () => {
             <p>
               <strong>Email:</strong>{" "}
               <a
-                href="mailto:swaveshvaninewsnetwork@gmail.com"
+                href="mailto:swadeshvaaniofficial@gmail.com"
                 className="text-blue-600 hover:underline"
               >
-                swaveshvaninewsnetwork@gmail.com
+                swadeshvaaniofficial@gmail.com
               </a>
             </p>
 

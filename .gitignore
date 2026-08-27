@@ -14,6 +14,9 @@ dist-ssr
 server/auth_state
 server/node_modules
 
+# Environment secrets — never commit these
+server/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -27,6 +27,8 @@ import {
   FaLayerGroup,
   FaCalendarAlt,
   FaBullhorn,
+  FaImage,
+  FaMousePointer,
 } from "react-icons/fa";
 
 import {
@@ -40,6 +42,10 @@ import {
   getNotifications,
   clearNotifications,
   generateSlug,
+  getAdvertisements,
+  saveAdvertisement,
+  deleteAdvertisement,
+  toggleAdStatus,
 } from "../data/newsData";
 
 import {
@@ -61,13 +67,31 @@ export default function Admin() {
     setAdminUser(getAdminUser());
   }, [navigate]);
 
-  const [activePage, setActivePage] = useState("dashboard"); // 'dashboard' | 'news' | 'add-news' | 'subscribers' | 'notifications'
+  const [activePage, setActivePage] = useState("dashboard"); // 'dashboard' | 'news' | 'add-news' | 'ads' | 'subscribers' | 'notifications'
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [newsList, setNewsList] = useState(() => getAllArticles());
   const [subscribersList, setSubscribersList] = useState(() => getSubscribers());
   const [notificationsList, setNotificationsList] = useState(() => getNotifications());
   const [editingArticleId, setEditingArticleId] = useState(null);
+
+  // Advertisements state
+  const [adsList, setAdsList] = useState(() => getAdvertisements());
+  const [editingAdId, setEditingAdId] = useState(null);
+  const [adFilterPosition, setAdFilterPosition] = useState("all");
+  const [showAdFormModal, setShowAdFormModal] = useState(false);
+  const [previewAdModal, setPreviewAdModal] = useState(null);
+
+  const initialAdForm = {
+    title: "",
+    sponsor: "",
+    tagline: "",
+    position: "top_banner",
+    image: "",
+    link: "/advertisement",
+    status: "Active",
+  };
+  const [adForm, setAdForm] = useState(initialAdForm);
 
   const [toast, setToast] = useState(null); // { type: 'success' | 'error' | 'info', message: '' }
   const [copiedLinkArticleId, setCopiedLinkArticleId] = useState(null);
@@ -244,17 +268,16 @@ export default function Admin() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-100 overflow-hidden font-sans text-slate-800">
+    <div className="admin-container allow-select flex h-screen bg-slate-100 overflow-hidden font-sans text-slate-800">
       {/* Toast Notification Popup */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-semibold transition-all duration-300 transform translate-y-0 ${
-            toast.type === "success"
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-semibold transition-all duration-300 transform translate-y-0 ${toast.type === "success"
               ? "bg-emerald-600 border-emerald-500 text-white"
               : toast.type === "error"
-              ? "bg-red-600 border-red-500 text-white"
-              : "bg-blue-600 border-blue-500 text-white"
-          }`}
+                ? "bg-red-600 border-red-500 text-white"
+                : "bg-blue-600 border-blue-500 text-white"
+            }`}
         >
           <FaCheckCircle className="text-lg shrink-0" />
           <span>{toast.message}</span>
@@ -339,9 +362,8 @@ export default function Admin() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col justify-between transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col justify-between transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          }`}
       >
         <div>
           {/* Sidebar Header */}
@@ -379,11 +401,10 @@ export default function Admin() {
                 setActivePage("dashboard");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                activePage === "dashboard"
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${activePage === "dashboard"
                   ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
                   : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
+                }`}
             >
               <FaHome className="text-base" />
               <span>डैशबोर्ड (Dashboard)</span>
@@ -394,11 +415,10 @@ export default function Admin() {
                 setActivePage("news");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                activePage === "news"
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${activePage === "news"
                   ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
                   : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3.5">
                 <FaNewspaper className="text-base" />
@@ -416,11 +436,10 @@ export default function Admin() {
                 setActivePage("add-news");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                activePage === "add-news"
+              className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${activePage === "add-news"
                   ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
                   : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
+                }`}
             >
               <FaPlus className="text-base" />
               <span>नया लेख लिखें (Add News)</span>
@@ -435,11 +454,10 @@ export default function Admin() {
                 setActivePage("notifications");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                activePage === "notifications"
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${activePage === "notifications"
                   ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
                   : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3.5">
                 <FaBell className="text-base" />
@@ -455,11 +473,10 @@ export default function Admin() {
                 setActivePage("subscribers");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                activePage === "subscribers"
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${activePage === "subscribers"
                   ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
                   : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3.5">
                 <FaUsers className="text-base" />
@@ -467,6 +484,25 @@ export default function Admin() {
               </div>
               <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full font-bold">
                 {subscribersList.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActivePage("ads");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${activePage === "ads"
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <FaBullhorn className="text-base" />
+                <span>विज्ञापन (Advertisements)</span>
+              </div>
+              <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full font-bold">
+                {adsList.length}
               </span>
             </button>
           </nav>
@@ -511,6 +547,7 @@ export default function Admin() {
                 {activePage === "dashboard" && "संपादकीय डैशबोर्ड (Dashboard)"}
                 {activePage === "news" && "समाचार प्रबंधन (All News Articles)"}
                 {activePage === "add-news" && (editingArticleId ? "समाचार संपादित करें (Edit News)" : "नया समाचार प्रकाशित करें (Publish News)")}
+                {activePage === "ads" && "विज्ञापन प्रबंधन एवं अपलोड (Advertisement Manager)"}
                 {activePage === "notifications" && "प्रकाशन सूचनाएं (Notification History)"}
                 {activePage === "subscribers" && "सब्सक्राइबर सूची (Reader Subscriptions)"}
               </h2>
@@ -521,17 +558,29 @@ export default function Admin() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Quick Action Button */}
-            <button
-              onClick={() => {
-                setEditingArticleId(null);
-                setFormData(initialFormState);
-                setActivePage("add-news");
-              }}
-              className="hidden sm:flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
-            >
-              <FaPlus /> नया समाचार जोड़ें
-            </button>
+            {activePage === "ads" ? (
+              <button
+                onClick={() => {
+                  setEditingAdId(null);
+                  setAdForm(initialAdForm);
+                  setShowAdFormModal(true);
+                }}
+                className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
+              >
+                <FaPlus /> नया विज्ञापन अपलोड करें
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setEditingArticleId(null);
+                  setFormData(initialFormState);
+                  setActivePage("add-news");
+                }}
+                className="hidden sm:flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
+              >
+                <FaPlus /> नया समाचार जोड़ें
+              </button>
+            )}
 
             {/* Admin Profile Details */}
             <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
@@ -1318,8 +1367,570 @@ export default function Admin() {
               </div>
             </div>
           )}
+
+          {/* ==================================================== */}
+          {/* TAB 5: ADVERTISEMENT MANAGEMENT                      */}
+          {/* ==================================================== */}
+          {activePage === "ads" && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Top Banner & Header */}
+              <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-2 text-center md:text-left">
+                  <span className="inline-block px-3 py-1 bg-white/20 text-white rounded-full text-xs font-bold border border-white/30 uppercase tracking-wider">
+                    Homepage &amp; Site Ads &bull; विज्ञापन प्रबंधन
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                    विज्ञापन अपलोड एवं प्रबंधन
+                  </h3>
+                  <p className="text-orange-100 text-xs sm:text-sm max-w-xl">
+                    होमपेज और वेबसाइट पर प्रायोजित विज्ञापन, व्यापारिक बैनर और प्रमोशनल कैंपेन अपलोड करें और उनका लाइव प्रदर्शन नियंत्रित करें।
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setEditingAdId(null);
+                    setAdForm(initialAdForm);
+                    setShowAdFormModal(!showAdFormModal);
+                  }}
+                  className="px-5 py-3 rounded-2xl bg-white text-orange-600 hover:bg-orange-50 font-bold text-xs sm:text-sm shadow-lg transition flex items-center gap-2 cursor-pointer shrink-0"
+                >
+                  <FaPlus />
+                  <span>{showAdFormModal ? "फॉर्म छुपाएं (Hide Form)" : "नया विज्ञापन अपलोड करें (Upload Ad)"}</span>
+                </button>
+              </div>
+
+              {/* Upload / Edit Ad Form */}
+              {showAdFormModal && (
+                <div className="bg-white rounded-3xl border border-orange-200 p-6 sm:p-8 shadow-lg animate-fadeIn">
+                  <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+                    <div>
+                      <h3 className="text-lg font-bold text-blue-950">
+                        {editingAdId ? "विज्ञापन संपादित करें (Edit Advertisement)" : "नया विज्ञापन अपलोड करें (Upload Advertisement Banner)"}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        विवरण भरें और विज्ञापन बैनर तुरंत वेबसाइट पर लाइव प्रकाशित करें
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setShowAdFormModal(false);
+                        setEditingAdId(null);
+                      }}
+                      className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                    >
+                      <FaTimes size={16} />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSubmitAd} className="space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {/* Ad Title / Campaign Name */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                          विज्ञापन शीर्षक / अभियान का नाम (Title / Campaign) *
+                        </label>
+                        <input
+                          type="text"
+                          name="title"
+                          value={adForm.title}
+                          onChange={handleAdInputChange}
+                          placeholder="उदा. झारखंड पर्यटन महोत्सव 2026 या विशेष डिस्काउंट ऑफर"
+                          required
+                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
+                        />
+                      </div>
+
+                      {/* Sponsor / Business Name */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                          प्रायोजक / कंपनी का नाम (Sponsor / Brand Name)
+                        </label>
+                        <input
+                          type="text"
+                          name="sponsor"
+                          value={adForm.sponsor}
+                          onChange={handleAdInputChange}
+                          placeholder="उदा. संकल्प IAS Academy / Tata Motors / Swadesh Media"
+                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
+                        />
+                      </div>
+
+                      {/* Tagline / Subtitle */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                          टैगलाइन / संक्षिप्त विवरण (Tagline / Subtext)
+                        </label>
+                        <input
+                          type="text"
+                          name="tagline"
+                          value={adForm.tagline}
+                          onChange={handleAdInputChange}
+                          placeholder="उदा. सीमित सीटें उपलब्ध • तुरंत संपर्क करें"
+                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
+                        />
+                      </div>
+
+                      {/* Banner Placement Slot */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                          वेबसाइट पर विज्ञापन का स्थान (Placement Slot) *
+                        </label>
+                        <select
+                          name="position"
+                          value={adForm.position}
+                          onChange={handleAdInputChange}
+                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
+                        >
+                          <option value="top_banner">📌 शीर्ष हेडर बैनर (Top Hero Header Banner - 1200x200)</option>
+                          <option value="sidebar">📌 साइडबार विज्ञापन (Sidebar Ad Box - 400x300)</option>
+                          <option value="middle_banner">📌 मुख्य फ़ीड मध्य बैनर (Middle Feed Banner - 1200x250)</option>
+                          <option value="bottom_banner">📌 बॉटम न्यूज़लेटर बैनर (Bottom Section Banner - 1200x250)</option>
+                        </select>
+                      </div>
+
+                      {/* Click Target URL / Link */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                          टारगेट लिंक (Click Target URL / Phone / WhatsApp)
+                        </label>
+                        <input
+                          type="text"
+                          name="link"
+                          value={adForm.link}
+                          onChange={handleAdInputChange}
+                          placeholder="https://example.com या tel:+917979093015 या /advertisement"
+                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
+                        />
+                        <span className="text-[11px] text-slate-400 mt-1 block">
+                          क्लिक करने पर यूजर इस लिंक/वेबसाइट/फोन पर पहुंचेगा
+                        </span>
+                      </div>
+
+                      {/* Status */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                          विज्ञापन स्थिति (Status)
+                        </label>
+                        <select
+                          name="status"
+                          value={adForm.status}
+                          onChange={handleAdInputChange}
+                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
+                        >
+                          <option value="Active">🟢 Active (लाइव प्रदर्शित करें)</option>
+                          <option value="Paused">🟡 Paused (अस्थायी रोकें)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Image Upload Area */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        विज्ञापन बैनर तस्वीर (Upload Banner Image) *
+                      </label>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                        <label className="border-2 border-dashed border-slate-300 hover:border-orange-500 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-50/50 hover:bg-orange-50/20 block">
+                          <FaCloudUploadAlt className="text-3xl text-orange-500 mx-auto mb-2" />
+                          <span className="text-xs font-bold text-slate-700 block">
+                            कंप्यूटर / मोबाइल से बैनर तस्वीर चुनें
+                          </span>
+                          <span className="text-[11px] text-slate-400 block mt-1">
+                            PNG, JPG, WebP (Max 10MB)
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAdImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-slate-600">
+                            या सीधे इमेज URL दर्ज करें (Or Image Web URL):
+                          </label>
+                          <input
+                            type="url"
+                            name="image"
+                            value={adForm.image}
+                            onChange={handleAdInputChange}
+                            placeholder="https://images.unsplash.com/..."
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Real-time Preview */}
+                    {adForm.image && (
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                          <FaEye className="text-orange-500" />
+                          <span>लाइव प्रीव्यू (Real-time Preview on Website)</span>
+                        </p>
+                        <div className="relative overflow-hidden rounded-2xl border border-slate-300 bg-slate-900 max-h-56 group">
+                          <img
+                            src={adForm.image}
+                            alt="Banner Preview"
+                            className="w-full h-48 object-cover opacity-85 group-hover:scale-105 transition duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent p-5 flex flex-col justify-between text-white">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-orange-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                Sponsored / विज्ञापन
+                              </span>
+                              <span className="text-xs text-orange-200 font-semibold">
+                                {adForm.sponsor || "प्रायोजक"}
+                              </span>
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-bold line-clamp-1">
+                                {adForm.title || "विज्ञापन का शीर्षक"}
+                              </h4>
+                              {adForm.tagline && (
+                                <p className="text-xs text-slate-200 mt-0.5 line-clamp-1">
+                                  {adForm.tagline}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <span className="inline-block text-xs bg-white text-slate-900 font-bold px-3 py-1 rounded-lg">
+                                अधिक जानें &rarr;
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Form Buttons */}
+                    <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAdFormModal(false);
+                          setEditingAdId(null);
+                          setAdForm(initialAdForm);
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                      >
+                        रद्द करें (Cancel)
+                      </button>
+
+                      <button
+                        type="submit"
+                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-bold shadow-lg shadow-orange-500/20 transition flex items-center gap-2 cursor-pointer"
+                      >
+                        <FaCheck />
+                        <span>{editingAdId ? "विज्ञापन अपडेट करें (Save Changes)" : "विज्ञापन प्रकाशित करें (Publish Ad)"}</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Position Filter Tabs */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    onClick={() => setAdFilterPosition("all")}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                      adFilterPosition === "all"
+                        ? "bg-blue-950 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    सभी ({adsList.length})
+                  </button>
+                  <button
+                    onClick={() => setAdFilterPosition("top_banner")}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                      adFilterPosition === "top_banner"
+                        ? "bg-orange-600 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    शीर्ष बैनर ({adsList.filter((a) => a.position === "top_banner").length})
+                  </button>
+                  <button
+                    onClick={() => setAdFilterPosition("sidebar")}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                      adFilterPosition === "sidebar"
+                        ? "bg-orange-600 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    साइडबार ({adsList.filter((a) => a.position === "sidebar").length})
+                  </button>
+                  <button
+                    onClick={() => setAdFilterPosition("middle_banner")}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                      adFilterPosition === "middle_banner"
+                        ? "bg-orange-600 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    मध्य बैनर ({adsList.filter((a) => a.position === "middle_banner").length})
+                  </button>
+                  <button
+                    onClick={() => setAdFilterPosition("bottom_banner")}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                      adFilterPosition === "bottom_banner"
+                        ? "bg-orange-600 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    बॉटम बैनर ({adsList.filter((a) => a.position === "bottom_banner").length})
+                  </button>
+                </div>
+
+                <span className="text-xs font-semibold text-slate-500">
+                  कुल सक्रिय विज्ञापन: {adsList.filter((a) => a.status === "Active").length}
+                </span>
+              </div>
+
+              {/* Advertisements Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {adsList
+                  .filter((a) => adFilterPosition === "all" || a.position === adFilterPosition)
+                  .map((ad) => {
+                    const positionLabel =
+                      ad.position === "top_banner"
+                        ? "शीर्ष हेडर (Top Header)"
+                        : ad.position === "sidebar"
+                        ? "साइडबार (Sidebar)"
+                        : ad.position === "middle_banner"
+                        ? "मध्य फ़ीड (Middle Feed)"
+                        : "बॉटम अनुभाग (Bottom)";
+
+                    return (
+                      <div
+                        key={ad.id}
+                        className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                      >
+                        {/* Banner Image with Overlays */}
+                        <div className="relative h-44 bg-slate-100 overflow-hidden group">
+                          <img
+                            src={ad.image}
+                            alt={ad.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                          {/* Top Badges */}
+                          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                            <span className="px-2.5 py-1 bg-blue-950/90 text-white rounded-full text-[11px] font-bold backdrop-blur-sm shadow-sm flex items-center gap-1">
+                              <FaImage className="text-orange-400" />
+                              {positionLabel}
+                            </span>
+
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider ${
+                                ad.status === "Active"
+                                  ? "bg-emerald-500 text-white shadow-sm"
+                                  : "bg-amber-500 text-white shadow-sm"
+                              }`}
+                            >
+                              {ad.status === "Active" ? "🟢 Live Active" : "🟡 Paused"}
+                            </span>
+                          </div>
+
+                          {/* Overlay text */}
+                          <div className="absolute bottom-3 left-3 right-3 text-white">
+                            <p className="text-xs text-orange-300 font-bold truncate">
+                              {ad.sponsor || "प्रायोजक"}
+                            </p>
+                            <h4 className="text-sm font-extrabold line-clamp-1 drop-shadow">
+                              {ad.title}
+                            </h4>
+                          </div>
+                        </div>
+
+                        {/* Card Body */}
+                        <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                          <div>
+                            {ad.tagline && (
+                              <p className="text-xs text-slate-600 font-medium line-clamp-2">
+                                {ad.tagline}
+                              </p>
+                            )}
+
+                            <div className="mt-2.5 flex items-center gap-2 text-xs text-slate-500">
+                              <span className="font-semibold text-slate-700">टारगेट लिंक:</span>
+                              <a
+                                href={ad.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-orange-600 hover:underline truncate max-w-[200px] inline-flex items-center gap-1 font-mono text-[11px]"
+                              >
+                                {ad.link}
+                                <FaExternalLinkAlt size={10} />
+                              </a>
+                            </div>
+                          </div>
+
+                          {/* Stats & Actions */}
+                          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 text-xs text-slate-500 font-semibold">
+                              <span className="flex items-center gap-1 text-slate-700">
+                                <FaMousePointer className="text-orange-500 text-[11px]" />
+                                {ad.clicks || 0} क्लिक्स
+                              </span>
+                              <span>&bull;</span>
+                              <span>{ad.createdAt || "हाल ही में"}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {/* Toggle Status */}
+                              <button
+                                onClick={() => handleToggleAd(ad.id)}
+                                title={ad.status === "Active" ? "विज्ञापन रोकें" : "विज्ञापन सक्रिय करें"}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                  ad.status === "Active"
+                                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                }`}
+                              >
+                                {ad.status === "Active" ? "रोकें" : "सक्रिय करें"}
+                              </button>
+
+                              {/* Preview Button */}
+                              <button
+                                onClick={() => setPreviewAdModal(ad)}
+                                title="लाइव प्रीव्यू देखें"
+                                className="p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition cursor-pointer"
+                              >
+                                <FaEye size={13} />
+                              </button>
+
+                              {/* Edit Button */}
+                              <button
+                                onClick={() => handleEditAd(ad)}
+                                title="संपादित करें"
+                                className="p-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                              >
+                                <FaEdit size={13} />
+                              </button>
+
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => handleDeleteAd(ad.id)}
+                                title="हटाएं"
+                                className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition cursor-pointer"
+                              >
+                                <FaTrash size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {adsList.length === 0 && (
+                <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center text-slate-400 space-y-3">
+                  <FaBullhorn className="text-4xl text-slate-300 mx-auto" />
+                  <p className="text-sm font-semibold">कोई विज्ञापन नहीं मिला।</p>
+                  <button
+                    onClick={() => {
+                      setEditingAdId(null);
+                      setAdForm(initialAdForm);
+                      setShowAdFormModal(true);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-orange-600 text-white font-bold text-xs"
+                  >
+                    पहला विज्ञापन जोड़ें
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
+
+      {/* Ad Live Simulation Preview Modal */}
+      {previewAdModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fadeIn space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-orange-100 text-orange-600 rounded-xl">
+                  <FaBullhorn />
+                </span>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base">
+                    लाइव विज्ञापन प्रीव्यू (Live Ad Simulation)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    वेबसाइट के {previewAdModal.position} स्थान पर ऐसा दिखेगा
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewAdModal(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            {/* Banner Rendering */}
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-md">
+              <img
+                src={previewAdModal.image}
+                alt=""
+                className="w-full h-56 object-cover opacity-90"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent p-6 flex flex-col justify-between text-white">
+                <div className="flex items-center gap-2">
+                  <span className="bg-orange-600 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                    Sponsored / विज्ञापन
+                  </span>
+                  <span className="text-xs text-orange-200 font-bold">
+                    {previewAdModal.sponsor || "प्रायोजक"}
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xl font-extrabold leading-tight">
+                    {previewAdModal.title}
+                  </h4>
+                  {previewAdModal.tagline && (
+                    <p className="text-xs sm:text-sm text-slate-200 mt-1">
+                      {previewAdModal.tagline}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <a
+                    href={previewAdModal.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow transition"
+                  >
+                    <span>विस्तार से जानें (Visit Link)</span>
+                    <FaExternalLinkAlt size={10} />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setPreviewAdModal(null)}
+                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+              >
+                बंद करें (Close)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

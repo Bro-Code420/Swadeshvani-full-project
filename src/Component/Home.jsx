@@ -10,11 +10,164 @@ import {
   Mail,
   CheckCircle2,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
-import { getAllArticles, saveSubscriber } from "../data/newsData";
+import {
+  getAllArticles,
+  saveSubscriber,
+  getAdvertisements,
+  recordAdClick,
+} from "../data/newsData";
+
+// Reusable Ad Banner Component
+function AdBanner({ ad, position = "top_banner", className = "" }) {
+  if (!ad || ad.status !== "Active") {
+    return (
+      <div className={`rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-800 ${className}`}>
+        <div className="flex items-center gap-3 text-center sm:text-left">
+          <div className="h-10 w-10 rounded-xl bg-orange-600 text-white font-bold flex items-center justify-center shrink-0 shadow-sm">
+            स्व
+          </div>
+          <div>
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
+              विज्ञापन स्थान (Ad Space)
+            </span>
+            <h4 className="text-sm font-bold text-blue-950 mt-0.5">
+              स्वदेश वाणी पर अपना विज्ञापन प्रदर्शित करें
+            </h4>
+            <p className="text-xs text-slate-500">
+              लाखों पाठकों तक अपने व्यापार और ब्रांड का प्रचार करें
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/advertisement"
+          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow transition shrink-0"
+        >
+          विज्ञापन दें (Advertise) &rarr;
+        </Link>
+      </div>
+    );
+  }
+
+  const handleClick = () => {
+    recordAdClick(ad.id);
+  };
+
+  const isExternal =
+    ad.link &&
+    (ad.link.startsWith("http") ||
+      ad.link.startsWith("tel:") ||
+      ad.link.startsWith("mailto:"));
+
+  if (position === "sidebar") {
+    return (
+      <div className={`mt-6 rounded-2xl border border-orange-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition ${className}`}>
+        <div className="relative h-44 bg-slate-900 group overflow-hidden">
+          <img
+            src={ad.image}
+            alt={ad.title}
+            className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition duration-500"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-4 flex flex-col justify-between text-white">
+            <span className="self-start text-[10px] font-bold px-2 py-0.5 bg-orange-600 text-white rounded-md uppercase tracking-wider">
+              Sponsored / विज्ञापन
+            </span>
+            <div>
+              <p className="text-[11px] text-orange-300 font-bold">{ad.sponsor || "प्रायोजक"}</p>
+              <h4 className="text-sm font-bold line-clamp-2 leading-snug drop-shadow">{ad.title}</h4>
+            </div>
+          </div>
+        </div>
+        <div className="p-3.5 flex items-center justify-between bg-orange-50/50">
+          <span className="text-xs text-slate-600 font-medium truncate max-w-[160px]">
+            {ad.tagline || "विशेष प्रायोजित संदेश"}
+          </span>
+          {isExternal ? (
+            <a
+              href={ad.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleClick}
+              className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 shrink-0"
+            >
+              <span>देखें</span> &rarr;
+            </a>
+          ) : (
+            <Link
+              to={ad.link || "/advertisement"}
+              onClick={handleClick}
+              className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 shrink-0"
+            >
+              <span>देखें</span> &rarr;
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`rounded-3xl border border-orange-200 overflow-hidden shadow-md group relative ${className}`}>
+      <div className="relative h-36 sm:h-44 bg-slate-900 overflow-hidden">
+        <img
+          src={ad.image}
+          alt={ad.title}
+          className="w-full h-full object-cover opacity-85 group-hover:scale-105 transition duration-700"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent p-5 sm:p-7 flex flex-col justify-between text-white">
+          <div className="flex items-center gap-2">
+            <span className="bg-orange-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Sponsored / प्रायोजित विज्ञापन
+            </span>
+            <span className="text-xs text-orange-200 font-bold">
+              {ad.sponsor || "प्रायोजक"}
+            </span>
+          </div>
+
+          <div className="max-w-2xl">
+            <h3 className="text-lg sm:text-2xl font-extrabold leading-tight drop-shadow">
+              {ad.title}
+            </h3>
+            {ad.tagline && (
+              <p className="text-xs sm:text-sm text-slate-200 mt-1 line-clamp-1">
+                {ad.tagline}
+              </p>
+            )}
+          </div>
+
+          <div>
+            {isExternal ? (
+              <a
+                href={ad.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleClick}
+                className="inline-flex items-center gap-2 px-4 py-1.5 sm:py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold rounded-xl shadow-lg transition"
+              >
+                <span>विस्तार से जानें (Learn More)</span>
+                <ArrowRight size={13} />
+              </a>
+            ) : (
+              <Link
+                to={ad.link || "/advertisement"}
+                onClick={handleClick}
+                className="inline-flex items-center gap-2 px-4 py-1.5 sm:py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold rounded-xl shadow-lg transition"
+              >
+                <span>विस्तार से जानें (Learn More)</span>
+                <ArrowRight size={13} />
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const Home = () => {
   const [newsData, setNewsData] = useState([]);
+  const [ads, setAds] = useState(() => getAdvertisements());
 
   // Subscribe form state
   const [subPhone, setSubPhone] = useState("");
@@ -24,7 +177,21 @@ const Home = () => {
 
   useEffect(() => {
     setNewsData(getAllArticles());
+    setAds(getAdvertisements());
+
+    const handleAdsChange = () => {
+      setAds(getAdvertisements());
+    };
+
+    window.addEventListener("sv_ads_change", handleAdsChange);
+    return () => {
+      window.removeEventListener("sv_ads_change", handleAdsChange);
+    };
   }, []);
+
+  const getAdByPosition = (position) => {
+    return ads.find((a) => a.position === position && a.status === "Active") || null;
+  };
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -65,6 +232,16 @@ const Home = () => {
           type: "success",
           message: "🎉 बधाई! आपका मोबाइल नंबर और ईमेल सफलतापूर्वक सब्सक्राइब हो गया है।",
         });
+        // Notify admin via email (fire-and-forget)
+        fetch("/api/notify-subscriber", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: cleanEmail,
+            phone: cleanPhone,
+            subscribedAt: res.subscriber?.subscribedAt || new Date().toLocaleString("en-IN"),
+          }),
+        }).catch(() => {}); // silent fail — do not block the UI
         setSubPhone("");
         setSubEmail("");
       } else {
@@ -90,6 +267,14 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Top Header Leaderboard Ad */}
+      <section className="mx-auto max-w-7xl px-5 pt-6 sm:px-8">
+        <AdBanner
+          ad={getAdByPosition("top_banner")}
+          position="top_banner"
+        />
+      </section>
+
       {/* Hero section */}
       <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
         <div className="grid gap-6 lg:grid-cols-3">
@@ -158,57 +343,65 @@ const Home = () => {
           </article>
 
           {/* Latest updates */}
-          <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
-                <TrendingUp size={20} />
+          <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                  <TrendingUp size={20} />
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-bold text-blue-950">
+                    ताजा खबरें
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Latest updates
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <h2 className="text-xl font-bold text-blue-950">
-                  ताजा खबरें
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Latest updates
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              {latestNews.map((item) => (
-                <Link
-                  key={item.id}
-                  to={`/news/${item.id}`}
-                  className="group block border-b border-slate-100 pb-5 last:border-0 last:pb-0"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-orange-600">
-                      {item.category}
-                    </span>
-                    {item.district && (
-                      <span className="text-[11px] text-slate-400">
-                        • 📍 {item.district}
+              <div className="space-y-5">
+                {latestNews.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={`/news/${item.id}`}
+                    className="group block border-b border-slate-100 pb-5 last:border-0 last:pb-0"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold text-orange-600">
+                        {item.category}
                       </span>
-                    )}
-                  </div>
+                      {item.district && (
+                        <span className="text-[11px] text-slate-400">
+                          • 📍 {item.district}
+                        </span>
+                      )}
+                    </div>
 
-                  <h3 className="line-clamp-3 text-sm font-semibold leading-6 text-slate-800 transition group-hover:text-orange-600">
-                    {item.title}
-                  </h3>
+                    <h3 className="line-clamp-3 text-sm font-semibold leading-6 text-slate-800 transition group-hover:text-orange-600">
+                      {item.title}
+                    </h3>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <User size={12} className="text-slate-400" />
-                      {item.reporter || item.author || "ब्यूरो"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock size={12} />
-                      {item.date || "आज"}
-                    </span>
-                  </div>
-                </Link>
-              ))}
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <User size={12} className="text-slate-400" />
+                        {item.reporter || item.author || "ब्यूरो"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={12} />
+                        {item.date || "आज"}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
+
+            {/* Sidebar Ad Placement */}
+            <AdBanner
+              ad={getAdByPosition("sidebar")}
+              position="sidebar"
+            />
           </aside>
         </div>
       </section>
@@ -307,6 +500,14 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Middle Feed Leaderboard Ad */}
+      <section className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
+        <AdBanner
+          ad={getAdByPosition("middle_banner")}
+          position="middle_banner"
+        />
+      </section>
+
       {/* Complete news list */}
       <section className="mx-auto max-w-7xl px-5 pb-12 sm:px-8">
         <div className="mb-7">
@@ -376,6 +577,14 @@ const Home = () => {
             </article>
           ))}
         </div>
+      </section>
+
+      {/* Bottom Section Banner Ad */}
+      <section className="mx-auto max-w-7xl px-5 pb-8 sm:px-8">
+        <AdBanner
+          ad={getAdByPosition("bottom_banner")}
+          position="bottom_banner"
+        />
       </section>
 
       {/* Newsletter & WhatsApp Subscription Form */}

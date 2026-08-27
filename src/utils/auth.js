@@ -8,9 +8,9 @@ const USER_STORAGE_KEY = "savdeshvani_user_auth";
 
 // Default admin credentials
 const DEFAULT_CREDENTIALS = {
-  email: "admin@swadeshvaani.in",
+  email: "swadeshvaaniofficial@gmail.com",
   username: "admin",
-  password: "Swadesh@2026!",
+  password: "Swadesh@vani10",
   role: "Chief Editor & Super Admin",
   name: "Swadesh Vani Admin",
 };

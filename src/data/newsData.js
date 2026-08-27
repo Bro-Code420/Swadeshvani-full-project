@@ -287,6 +287,175 @@ export const initialArticles = [
 const STORAGE_KEY = "savdeshvani_articles_store";
 const SUBSCRIBERS_KEY = "savdeshvani_subscribers";
 const NOTIFICATIONS_KEY = "savdeshvani_notifications";
+const ADVERTISEMENTS_KEY = "savdeshvani_advertisements";
+
+// Default initial sample advertisements
+export const initialAdvertisements = [
+  {
+    id: "ad-top-hero",
+    title: "झारखंड पर्यटन महोत्सव 2026 — प्राकृतिक सौंदर्य और ऐतिहासिक धरोहर",
+    sponsor: "झारखंड पर्यटन विभाग (Tourism Dept)",
+    position: "top_banner", // 'top_banner' | 'sidebar' | 'middle_banner' | 'bottom_banner'
+    image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
+    link: "https://tourism.jharkhand.gov.in",
+    tagline: "प्राकृतिक सौंदर्य एवं जनजातीय संस्कृति का संगम",
+    status: "Active",
+    clicks: 142,
+    impressions: 1250,
+    createdAt: "10 Aug 2026",
+  },
+  {
+    id: "ad-sidebar-edu",
+    title: "JPSC & JSSC प्रारंभिक एवं मुख्य परीक्षा विशेष फाउंडेशन बैच",
+    sponsor: "संकल्प IAS Academy, Ranchi",
+    position: "sidebar",
+    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=600&q=80",
+    link: "tel:+917979093015",
+    tagline: "नया बैच प्रारंभ • विशेषज्ञ फैकल्टी व टेस्ट सीरीज",
+    status: "Active",
+    clicks: 89,
+    impressions: 980,
+    createdAt: "12 Aug 2026",
+  },
+  {
+    id: "ad-middle-business",
+    title: "डिजिटल भारत, वोकल फॉर लोकल — अपने व्यापार को दें नई डिजिटल पहचान",
+    sponsor: "स्वदेश वाणी डिजिटल मीडिया नेटवर्क",
+    position: "middle_banner",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+    link: "/advertisement",
+    tagline: "लाखों पाठकों तक अपने उत्पाद और सेवाएं पहुंचाएं",
+    status: "Active",
+    clicks: 215,
+    impressions: 2400,
+    createdAt: "14 Aug 2026",
+  },
+  {
+    id: "ad-bottom-bank",
+    title: "किसान समृद्धि एवं ग्रामीण विकास ऋण योजना — त्वरित स्वीकृति",
+    sponsor: "झारखंड राज्य ग्रामीण बैंक व सहकारिता समिति",
+    position: "bottom_banner",
+    image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80",
+    link: "/advertisement",
+    tagline: "आसान किश्तों व न्यूनतम ब्याज दर पर ऋण सुविधा",
+    status: "Active",
+    clicks: 64,
+    impressions: 870,
+    createdAt: "15 Aug 2026",
+  },
+];
+
+export const getAdvertisements = () => {
+  try {
+    const saved = localStorage.getItem(ADVERTISEMENTS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading advertisements:", e);
+  }
+  return initialAdvertisements;
+};
+
+export const saveAdvertisement = (adData) => {
+  try {
+    const ads = getAdvertisements();
+    const adId = String(adData.id || `ad-${Date.now()}`);
+
+    const adToSave = {
+      ...adData,
+      id: adId,
+      title: adData.title || "नया विज्ञापन",
+      sponsor: adData.sponsor || "प्रायोजक",
+      position: adData.position || "middle_banner",
+      image: adData.image || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+      link: adData.link || "/advertisement",
+      tagline: adData.tagline || "",
+      status: adData.status || "Active",
+      clicks: Number(adData.clicks || 0),
+      impressions: Number(adData.impressions || 0),
+      createdAt:
+        adData.createdAt ||
+        new Date().toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+    };
+
+    const index = ads.findIndex((a) => String(a.id) === String(adToSave.id));
+    let updated;
+    if (index >= 0) {
+      updated = [...ads];
+      updated[index] = adToSave;
+    } else {
+      updated = [adToSave, ...ads];
+    }
+
+    localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("sv_ads_change"));
+    return { success: true, advertisement: adToSave, ads: updated };
+  } catch (e) {
+    console.error("Error saving advertisement:", e);
+    return { success: false, error: e.message };
+  }
+};
+
+export const deleteAdvertisement = (id) => {
+  try {
+    const ads = getAdvertisements();
+    const filtered = ads.filter((a) => String(a.id) !== String(id));
+    localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(filtered));
+    window.dispatchEvent(new Event("sv_ads_change"));
+    return filtered;
+  } catch (e) {
+    console.error("Error deleting advertisement:", e);
+    return [];
+  }
+};
+
+export const toggleAdStatus = (id) => {
+  try {
+    const ads = getAdvertisements();
+    const updated = ads.map((ad) => {
+      if (String(ad.id) === String(id)) {
+        return {
+          ...ad,
+          status: ad.status === "Active" ? "Paused" : "Active",
+        };
+      }
+      return ad;
+    });
+    localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("sv_ads_change"));
+    return updated;
+  } catch (e) {
+    console.error("Error toggling ad status:", e);
+    return [];
+  }
+};
+
+export const recordAdClick = (id) => {
+  try {
+    const ads = getAdvertisements();
+    const updated = ads.map((ad) => {
+      if (String(ad.id) === String(id)) {
+        return {
+          ...ad,
+          clicks: (Number(ad.clicks) || 0) + 1,
+        };
+      }
+      return ad;
+    });
+    localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("sv_ads_change"));
+  } catch (e) {
+    console.error("Error recording ad click:", e);
+  }
+};
 
 // Helper to generate URL-safe slug
 export const generateSlug = (text) => {
