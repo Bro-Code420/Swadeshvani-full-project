@@ -7,6 +7,7 @@ import {
   Search,
   Bell,
   ChevronRight,
+  ChevronDown,
   Home,
   Newspaper,
   GraduationCap,
@@ -57,6 +58,21 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState(() => getNotifications());
   const [isAdmin, setIsAdmin] = useState(() => isAdminAuthenticated());
   const [adminUser, setAdminUser] = useState(() => getAdminUser());
+
+  // Accordion state for sidebar dropdown sections
+  const [openSections, setOpenSections] = useState({
+    mainMenu: true,
+    categories: true,
+    jharkhandFeatures: true,
+    adminAccount: true,
+  });
+
+  const toggleSection = (sectionId) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   const searchInputRef = useRef(null);
   const notifDropdownRef = useRef(null);
@@ -193,6 +209,7 @@ const Navbar = () => {
 
   const sidebarLinks = [
     {
+      id: "mainMenu",
       section: t("mainMenu"),
       items: [
         { icon: <Home size={18} />, title: t("home"), to: "/" },
@@ -201,6 +218,7 @@ const Navbar = () => {
       ],
     },
     {
+      id: "categories",
       section: t("categories"),
       items: [
         { icon: <GraduationCap size={18} />, title: t("education"), to: "/Education" },
@@ -213,6 +231,7 @@ const Navbar = () => {
       ],
     },
     {
+      id: "jharkhandFeatures",
       section: t("jharkhandFeatures"),
       items: [
         { icon: <History size={18} />, title: t("historicJharkhand"), to: "/HistoricJharkhand" },
@@ -222,6 +241,7 @@ const Navbar = () => {
       ],
     },
     {
+      id: "adminAccount",
       section: t("adminAccount"),
       items: isAdmin
         ? [
@@ -278,30 +298,62 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Sidebar Nav Links */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {sidebarLinks.map((section) => (
-            <div key={section.section} className="space-y-2">
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3">
-                {section.section}
-              </h3>
-              <div className="space-y-1">
-                {section.items.map((item) => (
-                  <Link
-                    key={item.title}
-                    to={item.to}
-                    onClick={closeMenus}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition group"
-                  >
-                    <span className="text-gray-400 group-hover:text-orange-600 transition">
-                      {item.icon}
+        {/* Sidebar Nav Links with Collapsible Accordion Dropdowns */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {sidebarLinks.map((section) => {
+            const isOpen = !!openSections[section.id];
+            return (
+              <div
+                key={section.id}
+                className="rounded-2xl border border-slate-100 bg-slate-50/50 overflow-hidden transition-all duration-200 shadow-2xs"
+              >
+                {/* Dropdown Header Button */}
+                <button
+                  type="button"
+                  onClick={() => toggleSection(section.id)}
+                  className="w-full flex items-center justify-between px-3.5 py-3 text-left hover:bg-slate-100/80 transition cursor-pointer group select-none"
+                  aria-expanded={isOpen}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 group-hover:text-orange-600 transition">
+                      {section.section}
                     </span>
-                    <span>{item.title}</span>
-                  </Link>
-                ))}
+                    <span className="text-[10px] font-bold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.2 rounded-full">
+                      {section.items.length}
+                    </span>
+                  </div>
+
+                  <div className="h-6 w-6 rounded-full flex items-center justify-center bg-white border border-slate-200 group-hover:border-orange-300 group-hover:text-orange-600 transition">
+                    <ChevronDown
+                      size={14}
+                      className={`text-slate-500 group-hover:text-orange-600 transition-transform duration-300 ${
+                        isOpen ? "rotate-180" : "rotate-0"
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Dropdown Options List */}
+                {isOpen && (
+                  <div className="px-2 pb-2.5 pt-1 space-y-1 bg-white border-t border-slate-100 animate-fadeIn">
+                    {section.items.map((item) => (
+                      <Link
+                        key={item.title}
+                        to={item.to}
+                        onClick={closeMenus}
+                        className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition group"
+                      >
+                        <span className="text-gray-400 group-hover:text-orange-600 transition">
+                          {item.icon}
+                        </span>
+                        <span>{item.title}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Admin Footer info */}
