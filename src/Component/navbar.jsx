@@ -253,15 +253,6 @@ const Navbar = () => {
     },
   ];
 
-  const headerCategories = [
-    { label: t("education"), to: "/Education" },
-    { label: t("worldNews"), to: "/Worldnews" },
-    { label: t("technology"), to: "/Technologynews" },
-    { label: t("sports"), to: "/Sportsnews" },
-    { label: t("districtNews"), to: "/District" },
-    { label: t("historicJharkhand"), to: "/HistoricJharkhand" },
-  ];
-
   return (
     <>
       {/* Tricolor accent bar */}
@@ -400,28 +391,6 @@ const Navbar = () => {
 
             {/* Right Desktop Controls */}
             <div className="hidden items-center gap-3 xl:gap-5 lg:flex shrink-0">
-              {/* Category shortcuts - Modern Capsule Tabs */}
-              <nav className="flex items-center gap-1 xl:gap-1.5 bg-slate-50/90 p-1 rounded-2xl border border-slate-200/70">
-                {headerCategories.map((category) => {
-                  const isActive = location.pathname.toLowerCase() === category.to.toLowerCase();
-                  return (
-                    <Link
-                      key={category.label}
-                      to={category.to}
-                      className={`px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all duration-200 whitespace-nowrap ${
-                        isActive
-                          ? "bg-white text-orange-600 shadow-xs border border-orange-200/70"
-                          : "text-slate-600 hover:text-orange-600 hover:bg-white/80"
-                      }`}
-                    >
-                      {category.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-
-              <div className="h-4 w-px bg-gray-200" />
-
               {/* Enhanced Search Input with Live Dropdown */}
               <div className="relative">
                 {!searchOpen ? (
