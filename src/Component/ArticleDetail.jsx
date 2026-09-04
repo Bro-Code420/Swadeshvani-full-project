@@ -22,6 +22,8 @@ import {
   FaCopy,
 } from "react-icons/fa";
 import { getArticleById, getAllArticles, syncArticlesFromServer } from "../data/newsData";
+import { convex } from "../utils/convexClient";
+import { api } from "../../convex/_generated/api";
 import SubscribeSection from "./SubscribeSection";
 
 export default function ArticleDetail() {
@@ -42,31 +44,28 @@ export default function ArticleDetail() {
     } else {
       setLoading(true);
 
-      // 1. Try single article endpoint directly
-      fetch(`/api/articles/${encodeURIComponent(id)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (data && data.article) {
-            setArticle(data.article);
+      // 1. Direct Convex Real-Time DB Query for Incognito / Cold Hits
+      convex
+        .query(api.articles.getById, { id: String(id) })
+        .then((convexArt) => {
+          if (convexArt) {
+            setArticle(convexArt);
             setLoading(false);
-            // Cache locally
             try {
               const saved = JSON.parse(localStorage.getItem("savdeshvani_articles_store") || "[]");
-              if (!saved.some((a) => String(a.id) === String(data.article.id))) {
-                localStorage.setItem("savdeshvani_articles_store", JSON.stringify([data.article, ...saved]));
+              if (!saved.some((a) => String(a.id) === String(convexArt.id))) {
+                localStorage.setItem("savdeshvani_articles_store", JSON.stringify([convexArt, ...saved]));
                 window.dispatchEvent(new Event("sv_articles_change"));
               }
             } catch {}
             return;
           }
-          // 2. Fallback to full sync
-          syncArticlesFromServer()
-            .then(() => {
-              const found = getArticleById(id);
-              setArticle(found);
-              setLoading(false);
-            })
-            .catch(() => setLoading(false));
+          // Fallback to syncArticlesFromServer
+          syncArticlesFromServer().then(() => {
+            const found = getArticleById(id);
+            setArticle(found);
+            setLoading(false);
+          });
         })
         .catch(() => {
           syncArticlesFromServer()
