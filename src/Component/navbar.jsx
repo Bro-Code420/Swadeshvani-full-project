@@ -59,12 +59,12 @@ const Navbar = () => {
   const [isAdmin, setIsAdmin] = useState(() => isAdminAuthenticated());
   const [adminUser, setAdminUser] = useState(() => getAdminUser());
 
-  // Accordion state for sidebar dropdown sections
+  // Accordion state for sidebar dropdown sections (closed by default)
   const [openSections, setOpenSections] = useState({
-    mainMenu: true,
-    categories: true,
-    jharkhandFeatures: true,
-    adminAccount: true,
+    mainMenu: false,
+    categories: false,
+    jharkhandFeatures: false,
+    adminAccount: false,
   });
 
   const toggleSection = (sectionId) => {
