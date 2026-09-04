@@ -27,6 +27,9 @@ import {
   ExternalLink,
   Volume2,
   Languages,
+  Sparkles,
+  AlertTriangle,
+  Flame,
 } from "lucide-react";
 
 import {
@@ -204,6 +207,9 @@ const Navbar = () => {
         { icon: <Globe size={18} />, title: t("worldNews"), to: "/Worldnews" },
         { icon: <Cpu size={18} />, title: t("technology"), to: "/Technologynews" },
         { icon: <Trophy size={18} />, title: t("sports"), to: "/Sportsnews" },
+        { icon: <Sparkles size={18} />, title: t("religion"), to: "/News?category=धर्म" },
+        { icon: <AlertTriangle size={18} />, title: t("disaster"), to: "/News?category=आपदा" },
+        { icon: <Flame size={18} />, title: t("accident"), to: "/News?category=दुर्घटना" },
       ],
     },
     {

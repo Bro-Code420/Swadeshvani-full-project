@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Clock, ArrowRight, MapPin, User, Filter, Search, X } from "lucide-react";
-import { getAllArticles, syncArticlesFromServer, JHARKHAND_DISTRICTS } from "../data/newsData";
+import { getAllArticles, syncArticlesFromServer, JHARKHAND_DISTRICTS, NEWS_CATEGORIES } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function CategoriesSection() {
@@ -71,9 +71,9 @@ export default function CategoriesSection() {
 
   const categoryNames = Object.keys(categoriesMap);
 
-  // Available unique categories in the dataset
+  // Available unique categories in the dataset + standard system categories
   const allCategories = Array.from(
-    new Set(articles.map((a) => a.category).filter(Boolean))
+    new Set([...NEWS_CATEGORIES, ...articles.map((a) => a.category).filter(Boolean)])
   );
 
   return (

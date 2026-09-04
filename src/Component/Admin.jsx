@@ -1209,6 +1209,12 @@ export default function Admin() {
                               ? (language === "hi" ? "व्यापार (Business)" : "Business")
                               : cat === "मनोरंजन"
                               ? (language === "hi" ? "मनोरंजन (Entertainment)" : "Entertainment")
+                              : cat === "धर्म"
+                              ? (language === "hi" ? "धर्म व संस्कृति (Religion)" : "Religion & Spirituality")
+                              : cat === "आपदा"
+                              ? (language === "hi" ? "आपदा प्रबंधन (Disaster)" : "Disaster & Calamity")
+                              : cat === "दुर्घटना"
+                              ? (language === "hi" ? "सड़क / अन्य दुर्घटना (Accident)" : "Accidents & Mishap")
                               : cat === "ऐतिहासिक झारखंड"
                               ? (language === "hi" ? "ऐतिहासिक झारखंड (Historic)" : "Historic Jharkhand")
                               : cat === "मौसम व कृषि"

@@ -478,6 +478,9 @@ export const NEWS_CATEGORIES = [
   "तकनीक",
   "व्यापार",
   "मनोरंजन",
+  "धर्म",
+  "आपदा",
+  "दुर्घटना",
   "ऐतिहासिक झारखंड",
   "मौसम व कृषि",
 ];
@@ -489,10 +492,11 @@ export const getCategoryFallbackImage = (categoryName) => {
   if (cat.includes("tech") || cat.includes("तकनीक")) return news10;
   if (cat.includes("edu") || cat.includes("शिक्षा")) return news3;
   if (cat.includes("politic") || cat.includes("राजनीति")) return news2;
-  if (cat.includes("crime") || cat.includes("अपराध")) return news8;
+  if (cat.includes("crime") || cat.includes("अपराध") || cat.includes("दुर्घटना") || cat.includes("accident") || cat.includes("हादसा")) return news8;
   if (cat.includes("admin") || cat.includes("प्रशासन")) return news6;
-  if (cat.includes("health") || cat.includes("स्वास्थ्य") || cat.includes("धर्म")) return news7;
+  if (cat.includes("health") || cat.includes("स्वास्थ्य") || cat.includes("धर्म") || cat.includes("religion") || cat.includes("spiritual")) return news7;
   if (cat.includes("bussiness") || cat.includes("व्यापार")) return news5;
+  if (cat.includes("आपदा") || cat.includes("disaster")) return news1;
   return news1;
 };
 
@@ -1002,6 +1006,9 @@ export const getArticlesByCategory = (categoryQuery) => {
     if (q === "world" && (cat.includes("world") || cat.includes("international") || cat.includes("विदेश") || cat.includes("अंतरराष्ट्रीय"))) return true;
     if (q === "historic jharkhand" && (cat.includes("historic") || cat.includes("heritage") || cat.includes("jharkhand") || cat.includes("झारखंड"))) return true;
     if (q === "jharkhand" && (cat.includes("jharkhand") || cat.includes("झारखंड") || cat.includes("दुमका") || cat.includes("देवघर") || cat.includes("रांची") || cat.includes("रामगढ़") || cat.includes("जरमुंडी"))) return true;
+    if ((q === "धर्म" || q === "dharm" || q === "dharma" || q === "religion") && (cat.includes("धर्म") || cat.includes("dharm") || cat.includes("religion") || cat.includes("spiritual") || cat.includes("पूजा") || cat.includes("मंदिर"))) return true;
+    if ((q === "आपदा" || q === "aapda" || q === "disaster") && (cat.includes("आपदा") || cat.includes("disaster") || cat.includes("calamity") || cat.includes("बाढ़") || cat.includes("तूफान"))) return true;
+    if ((q === "दुर्घटना" || q === "durghatna" || q === "accident") && (cat.includes("दुर्घटना") || cat.includes("accident") || cat.includes("हादसा") || cat.includes("crash") || cat.includes("mishap"))) return true;
     return cat.includes(q);
   });
 };

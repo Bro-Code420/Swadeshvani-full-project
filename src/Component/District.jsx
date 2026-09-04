@@ -51,6 +51,9 @@ const categoryLinks = [
   "खेल",
   "अपराध",
   "प्रशासन",
+  "धर्म",
+  "आपदा",
+  "दुर्घटना",
 ];
 
 function NewsMeta({ item }) {
@@ -274,7 +277,10 @@ export default function DistrictNews() {
         (selectedCategory === "स्वास्थ्य" && (item.category === "Health" || item.category === "स्वास्थ्य" || item.category === "Health & Wellness")) ||
         (selectedCategory === "खेल" && (item.category === "Sports" || item.category === "खेल")) ||
         (selectedCategory === "अपराध" && (item.category === "Crime" || item.category === "अपराध" || item.category === "Crime & Law")) ||
-        (selectedCategory === "प्रशासन" && (item.category === "Administration" || item.category === "प्रशासन"));
+        (selectedCategory === "प्रशासन" && (item.category === "Administration" || item.category === "प्रशासन")) ||
+        (selectedCategory === "धर्म" && (item.category === "Religion" || item.category === "धर्म" || item.category === "धार्मिक")) ||
+        (selectedCategory === "आपदा" && (item.category === "Disaster" || item.category === "आपदा" || item.category === "आपदा प्रबंधन")) ||
+        (selectedCategory === "दुर्घटना" && (item.category === "Accident" || item.category === "दुर्घटना" || item.category === "हादसा"));
 
       const searchMatch =
         normalizedSearch === "" ||
