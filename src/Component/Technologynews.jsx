@@ -1,14 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock, MapPin, User, ArrowRight, Cpu } from "lucide-react";
-import { getArticlesByCategory } from "../data/newsData";
+import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function TechnologyPage() {
+  const { language, t } = useLanguage();
   const [articles, setArticles] = useState([]);
 
   useEffect(() => {
-    const data = getArticlesByCategory("Technology");
-    setArticles(data);
+    setArticles(getArticlesByCategory("Technology"));
+    syncArticlesFromServer().then((fresh) => {
+      if (Array.isArray(fresh)) setArticles(getArticlesByCategory("Technology"));
+    });
+
+    const handleUpdate = () => {
+      setArticles(getArticlesByCategory("Technology"));
+    };
+
+    window.addEventListener("sv_articles_change", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    return () => {
+      window.removeEventListener("sv_articles_change", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   const featured = articles.slice(0, 2);
@@ -22,17 +38,17 @@ export default function TechnologyPage() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <div>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-bold uppercase tracking-wider mb-3">
-                <Cpu size={14} /> तकनीक एवं नवाचार (Technology)
+                <Cpu size={14} /> {t("techTitle")}
               </span>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-                <span className="text-orange-500">Technology</span> &amp; Innovation
+                <span className="text-orange-500">तकनीक</span> एवं डिजिटल नवाचार
               </h1>
               <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl">
-                आर्टिफिशियल इंटेलिजेंस (AI), स्मार्टफोन, साइबर सुरक्षा, गैजेट्स और तकनीकी विकास की ताजा खबरें।
+                {t("techSubtitle")}
               </p>
             </div>
             <div className="text-xs text-slate-500 font-medium">
-              कुल {articles.length} टेक समाचार उपलब्ध
+              कुल {toHindiNumber(articles.length)} टेक समाचार उपलब्ध
             </div>
           </div>
         </div>
@@ -42,7 +58,7 @@ export default function TechnologyPage() {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
           <span className="h-4 w-1.5 bg-orange-500 rounded-full"></span>
-          प्रमुख टेक सुर्खियां (Top Tech Stories)
+          प्रमुख टेक सुर्खियां
         </h2>
 
         {featured.length > 0 ? (
@@ -55,13 +71,13 @@ export default function TechnologyPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80"}
+                      src={item.image || getCategoryFallbackImage(item.category || "तकनीक")}
                       alt={item.title}
                       className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
                     />
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                       <span className="px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-sm">
-                        {item.category || "TECHNOLOGY"}
+                        {item.category || "तकनीक"}
                       </span>
                       {item.district && (
                         <span className="px-2.5 py-1 bg-blue-950/80 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white shadow-sm flex items-center gap-1">
@@ -118,13 +134,13 @@ export default function TechnologyPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80"}
+                      src={item.image || getCategoryFallbackImage(item.category || "तकनीक")}
                       alt={item.title}
                       className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />
                     <div className="absolute left-3 top-3 flex flex-wrap gap-1">
                       <span className="px-2 py-0.5 bg-white/95 rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
-                        {item.category || "TECH"}
+                        {item.category || "तकनीक"}
                       </span>
                       {item.district && (
                         <span className="px-2 py-0.5 bg-blue-950/80 rounded-full text-[10px] font-medium text-white shadow-sm">
@@ -147,13 +163,13 @@ export default function TechnologyPage() {
 
                 <div className="p-4 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                   <span className="truncate max-w-[120px]">
-                    👤 {item.reporter || item.author || "टेक संवाददाता"}
+                    👤 {item.reporter || item.author || t("reporterFallback")}
                   </span>
                   <Link
                     to={`/news/${item.id}`}
                     className="font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
                   >
-                    पढ़ें <ArrowRight size={12} />
+                    {t("readStory")} <ArrowRight size={12} />
                   </Link>
                 </div>
               </article>

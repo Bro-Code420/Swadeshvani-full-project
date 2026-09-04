@@ -21,20 +21,111 @@ import {
   FaTwitter,
   FaCopy,
 } from "react-icons/fa";
-import { getArticleById, getAllArticles } from "../data/newsData";
+import { getArticleById, getAllArticles, syncArticlesFromServer } from "../data/newsData";
+import SubscribeSection from "./SubscribeSection";
 
 export default function ArticleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [article, setArticle] = useState(() => getArticleById(id));
+  const [loading, setLoading] = useState(!article);
 
-  // Fetch the specific article
-  const article = getArticleById(id);
-
-  // Scroll to top on route change
+  // Sync and fetch article
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const localFound = getArticleById(id);
+    if (localFound) {
+      setArticle(localFound);
+      setLoading(false);
+    } else {
+      setLoading(true);
+
+      // 1. Try single article endpoint directly
+      fetch(`/api/articles/${encodeURIComponent(id)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.article) {
+            setArticle(data.article);
+            setLoading(false);
+            // Cache locally
+            try {
+              const saved = JSON.parse(localStorage.getItem("savdeshvani_articles_store") || "[]");
+              if (!saved.some((a) => String(a.id) === String(data.article.id))) {
+                localStorage.setItem("savdeshvani_articles_store", JSON.stringify([data.article, ...saved]));
+                window.dispatchEvent(new Event("sv_articles_change"));
+              }
+            } catch {}
+            return;
+          }
+          // 2. Fallback to full sync
+          syncArticlesFromServer()
+            .then(() => {
+              const found = getArticleById(id);
+              setArticle(found);
+              setLoading(false);
+            })
+            .catch(() => setLoading(false));
+        })
+        .catch(() => {
+          syncArticlesFromServer()
+            .then(() => {
+              const found = getArticleById(id);
+              setArticle(found);
+              setLoading(false);
+            })
+            .catch(() => setLoading(false));
+        });
+    }
+
+    const handleUpdate = () => {
+      const found = getArticleById(id);
+      if (found) setArticle(found);
+    };
+
+    window.addEventListener("sv_articles_change", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    return () => {
+      window.removeEventListener("sv_articles_change", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, [id]);
+
+  // Dynamic OpenGraph / Social Meta Tags for Client Navigation
+  useEffect(() => {
+    if (!article) return;
+    document.title = `${article.title} | स्वदेश वाणी`;
+
+    const setMetaTag = (attr, key, content) => {
+      if (!content) return;
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://swadeshvaani.com";
+    const fullImageUrl = article.image
+      ? (article.image.startsWith("http") ? article.image : `${origin}${article.image.startsWith("/") ? "" : "/"}${article.image}`)
+      : `${origin}/src/Component/photos/logo.jpeg`;
+    const fullUrl = `${origin}/news/${article.id}`;
+
+    setMetaTag("property", "og:title", article.title);
+    setMetaTag("property", "og:description", article.excerpt || article.title);
+    setMetaTag("property", "og:image", fullImageUrl);
+    setMetaTag("property", "og:image:secure_url", fullImageUrl);
+    setMetaTag("property", "og:url", fullUrl);
+    setMetaTag("property", "og:type", "article");
+    setMetaTag("name", "twitter:title", article.title);
+    setMetaTag("name", "twitter:description", article.excerpt || article.title);
+    setMetaTag("name", "twitter:image", fullImageUrl);
+    setMetaTag("name", "description", article.excerpt || article.title);
+  }, [article]);
 
   // Related articles (excluding current one)
   const allArticles = getAllArticles();
@@ -43,7 +134,9 @@ export default function ArticleDetail() {
     .concat(allArticles.filter((a) => String(a.id) !== String(article?.id) && a.category !== article?.category))
     .slice(0, 4);
 
-  const shareUrl = window.location.href;
+  // Dynamic permanent URL for both local dev and production deployed domains
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const shareUrl = article?.id ? `${origin}/news/${article.id}` : (typeof window !== "undefined" ? window.location.href : "");
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -52,8 +145,11 @@ export default function ArticleDetail() {
   };
 
   const handleShareWa = () => {
-    const text = `🔴 *${article?.title}*\n\n${article?.excerpt || ""}\n\n👉 पूरी खबर यहां पढ़ें:\n${shareUrl}\n\n#SwadeshVaani #BreakingNews`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
+    const headline = article?.title || "ताज़ा समाचार | स्वदेश वाणी";
+    const excerpt = article?.excerpt ? `\n\n${article.excerpt}` : "";
+    const text = `${shareUrl}\n\n📰 *${headline}*${excerpt}\n\n━━━━━━━━━━━━━━━\n🌐 *स्वदेश वाणी* (Swadesh Vaani)\n#SwadeshVaani #JharkhandNews`;
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleShareFb = () => {
@@ -70,6 +166,18 @@ export default function ArticleDetail() {
     const twUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔴 ${article?.title}`)}&url=${encodeURIComponent(shareUrl)}&hashtags=SwadeshVaani,JharkhandNews`;
     window.open(twUrl, "twShare", "width=600,height=500,menubar=no,toolbar=no");
   };
+
+  // Loading spinner while syncing from server
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="text-center space-y-3">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="text-xs text-slate-500 font-semibold">खबर लोड हो रही है...</p>
+        </div>
+      </div>
+    );
+  }
 
   // 404 / Article Not Found View
   if (!article) {
@@ -196,7 +304,7 @@ export default function ArticleDetail() {
                 <Share2 className="h-4 w-4 text-orange-500" /> इस खबर को शेयर करें:
               </span>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* WhatsApp */}
                 <button
                   onClick={handleShareWa}
@@ -272,8 +380,13 @@ export default function ArticleDetail() {
               dangerouslySetInnerHTML={{ __html: article.content || `<p>${article.excerpt}</p>` }}
             />
 
+            {/* Subscribe Box Below Each Individual Article */}
+            <div className="mt-10 pt-8 border-t border-slate-100">
+              <SubscribeSection className="shadow-none border-orange-200/80 bg-gradient-to-br from-orange-50/60 via-amber-50/30 to-blue-50/30" />
+            </div>
+
             {/* End of Story Signature */}
-            <div className="mt-12 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
               <p>📰 स्वदेश वाणी न्यूज़ नेटवर्क — सत्य, निष्पक्ष और सटीक पत्रकारिता।</p>
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

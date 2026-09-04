@@ -16,23 +16,26 @@ import {
 } from "react-icons/fa";
 
 import hindilogo from "./photos/logo.jpeg";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const Footer = () => {
+  const { t } = useLanguage();
+
   const quickLinks = [
-    { label: "Home", to: "/" },
-    { label: "District News", to: "/district" },
-    { label: "Latest News", to: "/news" },
-    { label: "Videos", to: "/youtubevideos" },
-    { label: "Advertisement", to: "/advertisement" },
-    { label: "About Us", to: "/about" },
+    { label: t("home"), to: "/" },
+    { label: t("districtNews"), to: "/district" },
+    { label: t("allNews"), to: "/news" },
+    { label: t("videos"), to: "/youtubevideos" },
+    { label: t("advertisement"), to: "/advertisement" },
+    { label: t("aboutUs"), to: "/about" },
   ];
 
   const newsLinks = [
-    { label: "Education", to: "/education" },
-    { label: "World News", to: "/worldnews" },
-    { label: "Technology", to: "/technologynews" },
-    { label: "Sports", to: "/sportsnews" },
-    { label: "Historic Jharkhand", to: "/historicjharkhand" },
+    { label: t("education"), to: "/education" },
+    { label: t("worldNews"), to: "/worldnews" },
+    { label: t("technology"), to: "/technologynews" },
+    { label: t("sports"), to: "/sportsnews" },
+    { label: t("historicJharkhand"), to: "/historicjharkhand" },
   ];
 
   const socialLinks = [
@@ -82,7 +85,7 @@ const Footer = () => {
             </Link>
 
             <p className="mt-5 max-w-xs text-sm leading-7 text-blue-100">
-              आपके क्षेत्र, राज्य और देश की महत्वपूर्ण खबरें सही और सरल भाषा में आप तक पहुंचाने का हमारा प्रयास।
+              {t("footerTagline")}
             </p>
 
             <div className="mt-6 flex items-center gap-3">
@@ -102,15 +105,15 @@ const Footer = () => {
           </div>
 
           {/* Quick links */}
-          <FooterColumn title="Quick Links" links={quickLinks} />
+          <FooterColumn title={t("quickLinks")} links={quickLinks} />
 
           {/* News categories */}
-          <FooterColumn title="News Categories" links={newsLinks} />
+          <FooterColumn title={t("categories")} links={newsLinks} />
 
           {/* Contact */}
           <div>
             <h3 className="mb-5 text-sm font-bold uppercase tracking-widest text-white">
-              Contact Us
+              {t("contactUs")}
             </h3>
 
             <div className="space-y-4 text-sm text-blue-100">
@@ -121,9 +124,7 @@ const Footer = () => {
                 />
 
                 <span>
-                  Dumka, Jharkhand
-                  <br />
-                  India
+                  {t("footerAddress")}
                 </span>
               </div>
 
@@ -148,7 +149,7 @@ const Footer = () => {
               to="/advertisement"
               className="mt-6 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
             >
-              Advertise With Us
+              {t("advertisement")}
               <ArrowRight size={16} />
             </Link>
           </div>
@@ -159,7 +160,7 @@ const Footer = () => {
       <div className="border-t border-blue-800">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-center sm:px-8 md:flex-row md:text-left">
           <p className="text-xs text-blue-200">
-            © {new Date().getFullYear()} Swadesh Vani (स्वदेश वाणी). All Rights Reserved.
+            © {new Date().getFullYear()} Swadesh Vani (स्वदेश वाणी). {t("copyright")}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-blue-200">
@@ -167,23 +168,23 @@ const Footer = () => {
               to="/privacypolicy"
               className="transition hover:text-orange-400"
             >
-              Privacy Policy
+              {t("privacyPolicy")}
             </Link>
 
             <Link
               to="/t&c"
               className="transition hover:text-orange-400"
             >
-              Terms &amp; Conditions
+              {t("termsConditions")}
             </Link>
 
             <button
               type="button"
               onClick={scrollToTop}
-              className="flex items-center gap-2 rounded-full border border-blue-800 px-3 py-2 transition hover:border-orange-500 hover:bg-orange-500 hover:text-white"
+              className="flex items-center gap-2 rounded-full border border-blue-800 px-3 py-2 transition hover:border-orange-500 hover:bg-orange-500 hover:text-white cursor-pointer"
             >
               <ArrowUp size={14} />
-              Top
+              <span>{t("backToTop")}</span>
             </button>
           </div>
         </div>

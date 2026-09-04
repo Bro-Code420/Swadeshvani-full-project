@@ -1,8 +1,11 @@
-import React from "react";
-import { MapPin, History, Compass } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { MapPin, History, Compass, ArrowRight, Clock, User, Bookmark } from "lucide-react";
+import { getAllArticles, syncArticlesFromServer, toHindiNumber } from "../data/newsData";
+import { useLanguage } from "../context/LanguageContext";
 
-import palamuFortImage from "./photos/palamu.jpeg"
-import malutiTemplesImage from "./photos/maluti.jpeg";
+import palamuFortImage from "./photos/Palamu.jpeg";
+import malutiTemplesImage from "./photos/Maluti.jpeg";
 import ratuPalaceImage from "./photos/ratu.jpeg";
 import hundruFallsImage from "./photos/Hundrufalls.jpeg";
 import betlaParkImage from "./photos/Betla.jpeg";
@@ -105,6 +108,36 @@ const historicPlaces = [
 ];
 
 export default function HistoricJharkhandPage() {
+  const { language, t } = useLanguage();
+  const [dynamicArticles, setDynamicArticles] = useState([]);
+
+  useEffect(() => {
+    const fetchHeritageNews = () => {
+      const all = getAllArticles();
+      const heritage = all.filter(
+        (a) =>
+          a.category === "ऐतिहासिक झारखंड" ||
+          a.category === "Historic" ||
+          a.category === "Historic Jharkhand" ||
+          a.category === "धरोहर" ||
+          a.category === "संस्कृति" ||
+          (a.title && (a.title.includes("इतिहास") || a.title.includes("धरोहर") || a.title.includes("संस्कृति") || a.title.includes("किला")))
+      );
+      setDynamicArticles(heritage);
+    };
+
+    fetchHeritageNews();
+    syncArticlesFromServer().then(() => fetchHeritageNews());
+
+    window.addEventListener("sv_articles_change", fetchHeritageNews);
+    window.addEventListener("storage", fetchHeritageNews);
+
+    return () => {
+      window.removeEventListener("sv_articles_change", fetchHeritageNews);
+      window.removeEventListener("storage", fetchHeritageNews);
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-white">
       {/* मुख्य परिचय */}
@@ -114,33 +147,108 @@ export default function HistoricJharkhandPage() {
             <div>
               <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-800">
                 <History size={14} />
-                झारखंड की धरोहर एवं पर्यटन
+                {t("historicTitle")}
               </span>
 
               <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-                <span className="text-orange-500">ऐतिहासिक</span> झारखंड एवं
-                संस्कृति
+                <span className="text-orange-500">{language === "hi" ? "ऐतिहासिक" : "Historic"}</span> {language === "hi" ? "झारखंड एवं संस्कृति" : "Jharkhand & Culture"}
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-                किले, टेराकोटा मंदिर, राजमहल, जलप्रपात, धार्मिक स्थल और
-                सांस्कृतिक मेले—झारखंड के गौरवशाली इतिहास, संस्कृति और
-                पर्यटन स्थलों का परिचय।
+                {t("historicSubtitle")}
               </p>
             </div>
 
             <div className="text-sm text-slate-500">
               <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                झारखंड धरोहर विशेषांक
+                {dynamicArticles.length > 0
+                  ? `कुल ${toHindiNumber(dynamicArticles.length)} प्रकाशित ऐतिहासिक लेख`
+                  : (language === "hi" ? "झारखंड धरोहर विशेषांक" : "Jharkhand Heritage Special")}
               </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* सभी धरोहर स्थल */}
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+      {/* Dynamic Articles Published from Admin Panel */}
+      {dynamicArticles.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+          <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-100">
+            <div>
+              <span className="text-xs font-bold text-orange-600 uppercase tracking-widest">ताज़ा प्रकाशन</span>
+              <h2 className="text-xl sm:text-2xl font-bold text-blue-950 mt-1 flex items-center gap-2">
+                <Bookmark className="text-orange-500" size={22} />
+                ऐतिहासिक शोध, धरोहर एवं संस्कृति विशेषांक
+              </h2>
+            </div>
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+              {toHindiNumber(dynamicArticles.length)} लेख
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {dynamicArticles.map((article) => (
+              <article
+                key={article.id}
+                className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 transition duration-300"
+              >
+                <div>
+                  <Link to={`/news/${article.id}`} className="block relative h-48 overflow-hidden bg-slate-100">
+                    <img
+                      src={article.image || palamuFortImage}
+                      alt={article.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <div className="absolute left-3 top-3">
+                      <span className="rounded-full bg-emerald-600/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">
+                        {article.category || "ऐतिहासिक झारखंड"}
+                      </span>
+                    </div>
+                  </Link>
+
+                  <div className="p-5">
+                    {article.district && (
+                      <span className="inline-flex items-center gap-1 text-xs text-slate-500 mb-2">
+                        <MapPin size={12} className="text-orange-500" />
+                        {article.district}
+                      </span>
+                    )}
+
+                    <h3 className="font-bold text-base text-blue-950 group-hover:text-orange-600 line-clamp-2 leading-snug">
+                      <Link to={`/news/${article.id}`}>
+                        {article.title}
+                      </Link>
+                    </h3>
+
+                    {article.excerpt && (
+                      <p className="mt-2 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                        {article.excerpt}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-5 pt-0 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Clock size={12} />
+                    {article.date || "हालिया"}
+                  </span>
+                  <Link
+                    to={`/news/${article.id}`}
+                    className="inline-flex items-center gap-1 font-bold text-orange-600 hover:text-orange-700"
+                  >
+                    पूरा पढ़ें <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* सभी स्थायी धरोहर स्थल */}
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 border-t border-slate-100">
         <h2 className="mb-6 flex items-center gap-2 text-xl font-bold text-slate-900">
           <Compass className="text-orange-500" size={20} />
           झारखंड के प्रमुख ऐतिहासिक एवं पर्यटन स्थल

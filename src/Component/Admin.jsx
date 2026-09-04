@@ -29,18 +29,24 @@ import {
   FaBullhorn,
   FaImage,
   FaMousePointer,
+  FaWhatsapp,
+  FaUserCheck,
 } from "react-icons/fa";
 
 import {
   getAllArticles,
+  syncArticlesFromServer,
   saveArticleToStore,
   deleteArticleFromStore,
   JHARKHAND_DISTRICTS,
+  JHARKHAND_DISTRICTS_DATA,
+  getSubDistrictsForDistrict,
   NEWS_CATEGORIES,
   getSubscribers,
   deleteSubscriber,
   getNotifications,
   clearNotifications,
+  saveNotification,
   generateSlug,
   getAdvertisements,
   saveAdvertisement,
@@ -53,9 +59,15 @@ import {
   getAdminUser,
   logoutAdmin,
 } from "../utils/auth";
+import { convex } from "../utils/convexClient";
+import { api } from "../../convex/_generated/api";
+import { useLanguage } from "../context/LanguageContext";
+import { compressImageFile, uploadImageToServer } from "../utils/imageOptimizer";
+import { toHindiNumber } from "../utils/hindiNumbers";
 
 export default function Admin() {
   const navigate = useNavigate();
+  const { language, toggleLanguage, t } = useLanguage();
   const [adminUser, setAdminUser] = useState(null);
 
   // Authentication Guard
@@ -67,13 +79,63 @@ export default function Admin() {
     setAdminUser(getAdminUser());
   }, [navigate]);
 
-  const [activePage, setActivePage] = useState("dashboard"); // 'dashboard' | 'news' | 'add-news' | 'ads' | 'subscribers' | 'notifications'
+  // Sync with server backend on mount and subscribe to live changes
+  useEffect(() => {
+    syncArticlesFromServer().then((fresh) => {
+      if (fresh) setNewsList(fresh);
+    });
+
+    const handleArticlesChange = () => {
+      setNewsList(getAllArticles());
+      setNotificationsList(getNotifications());
+    };
+
+    const handleAdsChange = () => {
+      setAdsList(getAdvertisements());
+    };
+
+    const handleSubscribersChange = () => {
+      setSubscribersList(getSubscribers());
+    };
+
+    const handleNotificationsChange = () => {
+      setNotificationsList(getNotifications());
+    };
+
+    window.addEventListener("sv_articles_change", handleArticlesChange);
+    window.addEventListener("sv_ads_change", handleAdsChange);
+    window.addEventListener("sv_subscribers_change", handleSubscribersChange);
+    window.addEventListener("sv_notifications_change", handleNotificationsChange);
+
+    return () => {
+      window.removeEventListener("sv_articles_change", handleArticlesChange);
+      window.removeEventListener("sv_ads_change", handleAdsChange);
+      window.removeEventListener("sv_subscribers_change", handleSubscribersChange);
+      window.removeEventListener("sv_notifications_change", handleNotificationsChange);
+    };
+  }, []);
+
+  const [activePage, setActivePage] = useState("dashboard"); // 'dashboard' | 'news' | 'add-news' | 'ads' | 'subscribers' | 'notifications' | 'users'
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [newsList, setNewsList] = useState(() => getAllArticles());
   const [subscribersList, setSubscribersList] = useState(() => getSubscribers());
   const [notificationsList, setNotificationsList] = useState(() => getNotifications());
+  const [usersList, setUsersList] = useState([]);
   const [editingArticleId, setEditingArticleId] = useState(null);
+
+  useEffect(() => {
+    try {
+      convex.query(api.users.get).then((list) => {
+        if (Array.isArray(list)) setUsersList(list);
+      }).catch(() => {});
+
+      const unsubscribe = convex.onUpdate(api.users.get, {}, (list) => {
+        if (Array.isArray(list)) setUsersList(list);
+      });
+      return () => unsubscribe?.();
+    } catch (e) {}
+  }, []);
 
   // Advertisements state
   const [adsList, setAdsList] = useState(() => getAdvertisements());
@@ -99,8 +161,9 @@ export default function Admin() {
 
   const initialFormState = {
     title: "",
-    category: "Jharkhand",
+    category: "राजनीति",
     district: "Ranchi",
+    subDistrict: "",
     reporter: "स्वदेश वाणी ब्यूरो",
     excerpt: "",
     content: "",
@@ -109,6 +172,8 @@ export default function Admin() {
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isUploadingAdImage, setIsUploadingAdImage] = useState(false);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -164,28 +229,77 @@ export default function Admin() {
     }));
   };
 
-  // Image Upload Handler
-  const handleImageUpload = (e) => {
+  // Image Upload Handler (Auto-compress and resize)
+  const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      showToast("कृपया 10MB से छोटी तस्वीर अपलोड करें।", "error");
+    if (file.size > 20 * 1024 * 1024) {
+      showToast(language === "hi" ? "कृपया 20MB से छोटी तस्वीर चुनें।" : "Please choose an image under 20MB.", "error");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
+    setIsUploadingImage(true);
+    try {
+      // 1. Client-side smart canvas compression (ensures < 150KB size without quality loss)
+      const compressedDataUrl = await compressImageFile(file, {
+        maxWidth: 1280,
+        maxHeight: 720,
+        quality: 0.82,
+      });
+
+      // 2. Try server upload if API server is reachable, or fallback to compressed data URL
+      let finalImageUrl = compressedDataUrl;
+      try {
+        const serverUrl = await uploadImageToServer(compressedDataUrl, file.name);
+        if (serverUrl) finalImageUrl = serverUrl;
+      } catch {}
+
       setFormData((prev) => ({
         ...prev,
-        image: reader.result,
+        image: finalImageUrl,
       }));
-      showToast("तस्वीर सफलतापूर्वक अपलोड हो गई!", "success");
-    };
-    reader.onerror = () => {
-      showToast("तस्वीर अपलोड करने में विफल।", "error");
-    };
-    reader.readAsDataURL(file);
+      showToast(language === "hi" ? "तस्वीर सफलतापूर्वक अपलोड एवं तैयार हो गई!" : "Image uploaded and optimized successfully!", "success");
+    } catch (err) {
+      console.error("Image upload failed:", err);
+      showToast(language === "hi" ? "तस्वीर अपलोड करने में विफल।" : "Failed to process image.", "error");
+    } finally {
+      setIsUploadingImage(false);
+      e.target.value = "";
+    }
+  };
+
+  // Image Upload Handler for Advertisements
+  const handleAdImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAdImage(true);
+    try {
+      const compressedDataUrl = await compressImageFile(file, {
+        maxWidth: 1200,
+        maxHeight: 600,
+        quality: 0.82,
+      });
+
+      let finalImageUrl = compressedDataUrl;
+      try {
+        const serverUrl = await uploadImageToServer(compressedDataUrl, file.name);
+        if (serverUrl) finalImageUrl = serverUrl;
+      } catch {}
+
+      setAdForm((prev) => ({
+        ...prev,
+        image: finalImageUrl,
+      }));
+      showToast(language === "hi" ? "विज्ञापन बैनर सफलतापूर्वक अपलोड हुआ!" : "Ad banner uploaded successfully!", "success");
+    } catch (err) {
+      console.error("Ad image upload failed:", err);
+      showToast(language === "hi" ? "बैनर अपलोड विफल रहा।" : "Failed to upload banner.", "error");
+    } finally {
+      setIsUploadingAdImage(false);
+      e.target.value = "";
+    }
   };
 
   // Submit Article (Save or Edit)
@@ -249,12 +363,12 @@ export default function Admin() {
     setActivePage("add-news");
   };
 
-  // Delete article
-  const handleDeleteArticle = (id) => {
-    if (window.confirm("क्या आप वाकई इस समाचार को हटाना चाहते हैं?")) {
-      deleteArticleFromStore(id);
+  // Delete article permanently across all devices
+  const handleDeleteArticle = async (id) => {
+    if (window.confirm(language === "hi" ? "क्या आप वाकई इस समाचार को हटाना चाहते हैं? यह सभी डिवाइस और यूज़र्स के लिए हट जाएगा।" : "Are you sure you want to delete this article permanently across all devices?")) {
+      await deleteArticleFromStore(id);
       refreshArticles();
-      showToast("समाचार सफलतापूर्वक हटा दिया गया।", "info");
+      showToast(language === "hi" ? "समाचार सभी डिवाइस से सफलतापूर्वक हटा दिया गया।" : "Article permanently deleted across all devices.", "info");
     }
   };
 
@@ -265,6 +379,80 @@ export default function Admin() {
       setSubscribersList(updated);
       showToast("सब्सक्राइबर हटा दिया गया।", "info");
     }
+  };
+
+  // --- ADVERTISEMENT HANDLERS ---
+  const handleAdInputChange = (e) => {
+    const { name, value } = e.target;
+    setAdForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmitAd = (e) => {
+    e.preventDefault();
+
+    if (!adForm.title.trim()) {
+      showToast("कृपया विज्ञापन का शीर्षक दर्ज करें।", "error");
+      return;
+    }
+
+    if (!adForm.image.trim()) {
+      showToast("कृपया विज्ञापन की बैनर तस्वीर अपलोड करें या URL दर्ज करें।", "error");
+      return;
+    }
+
+    const payload = {
+      ...adForm,
+      id: editingAdId || `ad-${Date.now()}`,
+    };
+
+    const res = saveAdvertisement(payload);
+    if (res.success) {
+      setAdsList(getAdvertisements());
+      setShowAdFormModal(false);
+      setAdForm(initialAdForm);
+      setEditingAdId(null);
+      showToast(
+        editingAdId
+          ? "विज्ञापन सफलतापूर्वक अपडेट किया गया!"
+          : "नया विज्ञापन लाइव प्रकाशित हो गया!",
+        "success"
+      );
+    } else {
+      showToast("विज्ञापन सहेजने में त्रुटि आई।", "error");
+    }
+  };
+  const handleAdSubmit = handleSubmitAd;
+
+  const handleEditAd = (ad) => {
+    setEditingAdId(ad.id);
+    setAdForm({
+      title: ad.title || "",
+      sponsor: ad.sponsor || "",
+      tagline: ad.tagline || "",
+      position: ad.position || "top_banner",
+      image: ad.image || "",
+      link: ad.link || "/advertisement",
+      status: ad.status || "Active",
+    });
+    setShowAdFormModal(true);
+    window.scrollTo({ top: 100, behavior: "smooth" });
+  };
+
+  const handleDeleteAd = (id) => {
+    if (window.confirm("क्या आप वाकई इस विज्ञापन को हटाना चाहते हैं?")) {
+      const updated = deleteAdvertisement(id);
+      setAdsList(updated);
+      showToast("विज्ञापन सफलतापूर्वक हटा दिया गया।", "info");
+    }
+  };
+
+  const handleToggleAd = (id) => {
+    const updated = toggleAdStatus(id);
+    setAdsList(updated);
+    showToast("विज्ञापन स्थिति अपडेट कर दी गई।", "success");
   };
 
   return (
@@ -287,68 +475,6 @@ export default function Admin() {
           >
             <FaTimes />
           </button>
-        </div>
-      )}
-
-      {/* Published Confirmation Modal with Distinct Link */}
-      {publishedModalArticle && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fadeIn">
-            <div className="text-center">
-              <div className="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaCheckCircle className="text-3xl" />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                Published &bull; सूचना प्रसारित
-              </span>
-              <h3 className="text-xl font-bold text-slate-900 mt-3">
-                समाचार सफलतापूर्वक प्रकाशित हुआ!
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 mt-2 line-clamp-2">
-                &ldquo;{publishedModalArticle.title}&rdquo;
-              </p>
-            </div>
-
-            {/* Distinct Permanent Link Box */}
-            <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <FaLink className="text-orange-500" />
-                <span>इस लेख का स्थायी लिंक (Distinct Live URL)</span>
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={getArticleUrl(publishedModalArticle)}
-                  className="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono text-slate-700 select-all outline-none"
-                />
-                <button
-                  onClick={() => handleCopyArticleLink(publishedModalArticle)}
-                  className="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-                >
-                  <FaCopy /> कॉपी करें
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Link
-                to={`/news/${publishedModalArticle.id}`}
-                target="_blank"
-                className="flex-1 py-3 px-4 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs text-center flex items-center justify-center gap-2 transition"
-              >
-                <span>लाइव पेज देखें (View Live Article)</span>
-                <FaExternalLinkAlt size={11} />
-              </Link>
-
-              <button
-                onClick={() => setPublishedModalArticle(null)}
-                className="py-3 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
-              >
-                बंद करें (Close)
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -393,7 +519,7 @@ export default function Admin() {
           {/* Navigation Links */}
           <nav className="p-4 space-y-1.5">
             <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-              Main Menu
+              {t("mainMenu")}
             </p>
 
             <button
@@ -407,7 +533,7 @@ export default function Admin() {
                 }`}
             >
               <FaHome className="text-base" />
-              <span>डैशबोर्ड (Dashboard)</span>
+              <span>{t("dashboard")}</span>
             </button>
 
             <button
@@ -422,7 +548,7 @@ export default function Admin() {
             >
               <div className="flex items-center gap-3.5">
                 <FaNewspaper className="text-base" />
-                <span>सभी समाचार (News List)</span>
+                <span>{t("newsList")}</span>
               </div>
               <span className="text-xs bg-slate-800 px-2.5 py-0.5 rounded-full font-bold">
                 {newsList.length}
@@ -442,7 +568,7 @@ export default function Admin() {
                 }`}
             >
               <FaPlus className="text-base" />
-              <span>नया लेख लिखें (Add News)</span>
+              <span>{t("addNews")}</span>
             </button>
 
             <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2">
@@ -461,7 +587,7 @@ export default function Admin() {
             >
               <div className="flex items-center gap-3.5">
                 <FaBell className="text-base" />
-                <span>सूचनाएं (Notifications)</span>
+                <span>{t("notificationsTab")}</span>
               </div>
               <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full font-bold">
                 {notificationsList.length}
@@ -480,10 +606,29 @@ export default function Admin() {
             >
               <div className="flex items-center gap-3.5">
                 <FaUsers className="text-base" />
-                <span>सब्सक्राइबर्स (Subscribers)</span>
+                <span>{t("subscribersTab")}</span>
               </div>
               <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full font-bold">
                 {subscribersList.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActivePage("users");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${activePage === "users"
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <FaUserCheck className="text-base" />
+                <span>{language === "hi" ? "उपयोगकर्ता (Users)" : "Users & Readers"}</span>
+              </div>
+              <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full font-bold">
+                {usersList.length}
               </span>
             </button>
 
@@ -499,7 +644,7 @@ export default function Admin() {
             >
               <div className="flex items-center gap-3.5">
                 <FaBullhorn className="text-base" />
-                <span>विज्ञापन (Advertisements)</span>
+                <span>{t("advertisementsTab")}</span>
               </div>
               <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full font-bold">
                 {adsList.length}
@@ -516,43 +661,42 @@ export default function Admin() {
             className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition"
           >
             <FaExternalLinkAlt size={12} />
-            <span>वेबसाइट देखें (Visit Website)</span>
+            <span>{t("visitWebsite")}</span>
           </Link>
 
           <button
             onClick={handleLogout}
-            className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-bold transition cursor-pointer"
+            className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-950/40 hover:text-red-300 transition"
           >
-            <FaSignOutAlt size={13} />
-            <span>लॉगआउट (Logout)</span>
+            <FaSignOutAlt size={12} />
+            <span>{t("logout")}</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
         {/* Top Navbar */}
-        <header className="h-20 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
+        <header className="h-20 bg-white border-b border-slate-200 px-5 sm:px-8 flex items-center justify-between shrink-0 shadow-xs z-10">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-              aria-label="Open sidebar"
+              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
             >
-              <FaBars className="text-lg" />
+              <FaBars className="text-xl" />
             </button>
 
             <div>
-              <h2 className="text-lg font-extrabold text-blue-950 capitalize">
-                {activePage === "dashboard" && "संपादकीय डैशबोर्ड (Dashboard)"}
-                {activePage === "news" && "समाचार प्रबंधन (All News Articles)"}
-                {activePage === "add-news" && (editingArticleId ? "समाचार संपादित करें (Edit News)" : "नया समाचार प्रकाशित करें (Publish News)")}
-                {activePage === "ads" && "विज्ञापन प्रबंधन एवं अपलोड (Advertisement Manager)"}
-                {activePage === "notifications" && "प्रकाशन सूचनाएं (Notification History)"}
-                {activePage === "subscribers" && "सब्सक्राइबर सूची (Reader Subscriptions)"}
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 capitalize">
+                {activePage === "dashboard" && t("dashboard")}
+                {activePage === "news" && t("newsList")}
+                {activePage === "add-news" && (editingArticleId ? t("editNews") : t("addNews"))}
+                {activePage === "ads" && t("advertisementsTab")}
+                {activePage === "notifications" && t("notificationsTab")}
+                {activePage === "subscribers" && t("subscribersTab")}
               </h2>
               <p className="text-xs text-slate-500">
-                सत्य, निष्पक्ष और सटीक पत्रकारिता &bull; स्वदेश वाणी
+                {t("adminTagline")}
               </p>
             </div>
           </div>
@@ -567,7 +711,7 @@ export default function Admin() {
                 }}
                 className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
               >
-                <FaPlus /> नया विज्ञापन अपलोड करें
+                <FaPlus /> {language === "hi" ? "नया विज्ञापन जोड़ें" : "Upload New Ad"}
               </button>
             ) : (
               <button
@@ -578,7 +722,7 @@ export default function Admin() {
                 }}
                 className="hidden sm:flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
               >
-                <FaPlus /> नया समाचार जोड़ें
+                <FaPlus /> {language === "hi" ? "नया समाचार जोड़ें" : "Add New Article"}
               </button>
             )}
 
@@ -620,13 +764,13 @@ export default function Admin() {
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      कुल प्रकाशित समाचार
+                      {language === "hi" ? "कुल प्रकाशित समाचार" : "Total Published Articles"}
                     </p>
                     <h3 className="text-3xl font-extrabold text-blue-950 mt-1">
-                      {newsList.length}
+                      {toHindiNumber(newsList.length)}
                     </h3>
                     <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                      सक्रिय एवं लाइव
+                      {language === "hi" ? "सक्रिय एवं लाइव" : "Active & Live"}
                     </p>
                   </div>
                   <div className="h-12 w-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
@@ -637,13 +781,13 @@ export default function Admin() {
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      झारखंड के जिले
+                      {language === "hi" ? "झारखंड के जिले" : "Jharkhand Districts"}
                     </p>
                     <h3 className="text-3xl font-extrabold text-blue-950 mt-1">
-                      24
+                      {toHindiNumber(24)}
                     </h3>
                     <p className="text-[11px] text-slate-500 font-semibold mt-1">
-                      कवरेज क्षेत्र
+                      {language === "hi" ? "कवरेज क्षेत्र" : "Coverage Areas"}
                     </p>
                   </div>
                   <div className="h-12 w-12 rounded-2xl bg-blue-100 text-blue-900 flex items-center justify-center text-xl">
@@ -654,13 +798,13 @@ export default function Admin() {
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      कुल सब्सक्राइबर्स
+                      {language === "hi" ? "कुल सब्सक्राइबर्स" : "Total Subscribers"}
                     </p>
                     <h3 className="text-3xl font-extrabold text-blue-950 mt-1">
-                      {subscribersList.length}
+                      {toHindiNumber(subscribersList.length)}
                     </h3>
                     <p className="text-[11px] text-blue-600 font-semibold mt-1">
-                      ईमेल एवं मोबाइल
+                      {language === "hi" ? "ईमेल एवं मोबाइल" : "Email & Mobile"}
                     </p>
                   </div>
                   <div className="h-12 w-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl">
@@ -671,13 +815,13 @@ export default function Admin() {
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      भेजी गई सूचनाएं
+                      {language === "hi" ? "भेजी गई सूचनाएं" : "Alerts Sent"}
                     </p>
                     <h3 className="text-3xl font-extrabold text-blue-950 mt-1">
-                      {notificationsList.length}
+                      {toHindiNumber(notificationsList.length)}
                     </h3>
                     <p className="text-[11px] text-orange-600 font-semibold mt-1">
-                      ऑटो-नोटिफिकेशन सक्रिय
+                      {language === "hi" ? "ऑटो-नोटिफिकेशन सक्रिय" : "Auto-Notifications Active"}
                     </p>
                   </div>
                   <div className="h-12 w-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
@@ -690,13 +834,15 @@ export default function Admin() {
               <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-blue-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="space-y-2 text-center md:text-left">
                   <span className="inline-block px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs font-bold border border-orange-500/30 uppercase tracking-wider">
-                    Instant Publishing &bull; स्थायी लिंक
+                    {language === "hi" ? "Instant Publishing • स्थायी लिंक" : "Instant Publishing • Permanent Live URL"}
                   </span>
                   <h3 className="text-2xl font-extrabold tracking-tight">
-                    ताज़ा खबर तुरंत प्रकाशित करें
+                    {language === "hi" ? "ताज़ा खबर तुरंत प्रकाशित करें" : "Publish Breaking News Instantly"}
                   </h3>
                   <p className="text-slate-300 text-xs sm:text-sm max-w-xl">
-                    प्रत्येक प्रकाशित समाचार को एक स्थायी लिंक प्राप्त होता है और सभी पाठकों को तुरंत नोटिफिकेशन भेजा जाता है।
+                    {language === "hi"
+                      ? "प्रत्येक प्रकाशित समाचार को एक स्थायी लिंक प्राप्त होता है और सभी पाठकों को तुरंत नोटिफिकेशन भेजा जाता है।"
+                      : "Every published news article receives a permanent distinct URL and triggers instant push alerts to readers."}
                   </p>
                 </div>
 
@@ -709,7 +855,7 @@ export default function Admin() {
                   className="px-6 py-3.5 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-600/30 transition flex items-center gap-2.5 shrink-0 cursor-pointer"
                 >
                   <FaPlus />
-                  <span>नया समाचार लिखें</span>
+                  <span>{language === "hi" ? "नया समाचार लिखें" : "Write Article"}</span>
                 </button>
               </div>
 
@@ -718,18 +864,18 @@ export default function Admin() {
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                   <div>
                     <h3 className="text-lg font-bold text-blue-950">
-                      हाल ही में प्रकाशित समाचार (Recent Articles &amp; Links)
+                      {language === "hi" ? "हाल ही में प्रकाशित समाचार" : "Recent Articles & Links"}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Click to copy or open distinct permanent article URLs
+                      {language === "hi" ? "स्थायी लिंक कॉपी करने या लाइव खबर देखने के लिए क्लिक करें" : "Click to copy or open distinct permanent article URLs"}
                     </p>
                   </div>
 
                   <button
                     onClick={() => setActivePage("news")}
-                    className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                    className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 cursor-pointer"
                   >
-                    <span>सभी देखें ({newsList.length})</span> &rarr;
+                    <span>{language === "hi" ? `सभी देखें (${toHindiNumber(newsList.length)})` : `View All (${newsList.length})`}</span> &rarr;
                   </button>
                 </div>
 
@@ -773,18 +919,18 @@ export default function Admin() {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={(e) => handleCopyArticleLink(article, e)}
-                          title="Copy Permanent Link"
+                          title={language === "hi" ? "स्थायी लिंक कॉपी करें" : "Copy Permanent Link"}
                           className="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-orange-300 bg-white text-slate-700 hover:text-orange-600 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                         >
                           {copiedLinkArticleId === article.id ? (
                             <>
                               <FaCheck className="text-emerald-600" />
-                              <span className="text-emerald-600">कॉपी हो गया</span>
+                              <span className="text-emerald-600">{language === "hi" ? "कॉपी हो गया" : "Copied!"}</span>
                             </>
                           ) : (
                             <>
                               <FaCopy />
-                              <span>लिंक कॉपी करें</span>
+                              <span>{language === "hi" ? "लिंक कॉपी करें" : "Copy Link"}</span>
                             </>
                           )}
                         </button>
@@ -792,11 +938,11 @@ export default function Admin() {
                         <Link
                           to={`/news/${article.id}`}
                           target="_blank"
-                          title="View Live Article Page"
+                          title={language === "hi" ? "लाइव लेख देखें" : "View Live Article Page"}
                           className="px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-950 text-white text-xs font-semibold flex items-center gap-1.5 transition"
                         >
                           <FaExternalLinkAlt size={10} />
-                          <span>देखें</span>
+                          <span>{language === "hi" ? "देखें" : "View"}</span>
                         </Link>
                       </div>
                     </div>
@@ -819,14 +965,14 @@ export default function Admin() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="शीर्षक, श्रेणी, जिला या ID से खोजें..."
+                    placeholder={language === "hi" ? "शीर्षक, श्रेणी, जिला या ID से खोजें..." : "Search by title, category, district, or ID..."}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white transition"
                   />
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                   <span className="text-xs text-slate-500 font-semibold">
-                    कुल समाचार: <strong>{filteredNews.length}</strong>
+                    {language === "hi" ? "कुल समाचार: " : "Total Articles: "}<strong>{toHindiNumber(filteredNews.length)}</strong>
                   </span>
 
                   <button
@@ -837,7 +983,7 @@ export default function Admin() {
                     }}
                     className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer"
                   >
-                    <FaPlus /> नया लेख लिखें
+                    <FaPlus /> {language === "hi" ? "नया लेख लिखें" : "Write Article"}
                   </button>
                 </div>
               </div>
@@ -848,19 +994,19 @@ export default function Admin() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px] tracking-wider">
                       <tr>
-                        <th className="py-4 px-5">समाचार (Article &amp; ID)</th>
-                        <th className="py-4 px-4">श्रेणी (Category)</th>
-                        <th className="py-4 px-4">जिला (District)</th>
-                        <th className="py-4 px-4">तारीख (Date)</th>
-                        <th className="py-4 px-4">स्थायी लिंक (Live Link)</th>
-                        <th className="py-4 px-5 text-right">कार्रवाई (Actions)</th>
+                        <th className="py-4 px-5">{language === "hi" ? "समाचार (Article)" : "Article & ID"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "श्रेणी (Category)" : "Category"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "जिला (District)" : "District"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "तारीख (Date)" : "Date"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "स्थायी लिंक (Live Link)" : "Live Link"}</th>
+                        <th className="py-4 px-5 text-right">{language === "hi" ? "कार्रवाई (Actions)" : "Actions"}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filteredNews.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-12 text-center text-slate-400">
-                            कोई समाचार नहीं मिला।
+                            {language === "hi" ? "कोई समाचार नहीं मिला।" : "No articles found."}
                           </td>
                         </tr>
                       ) : (
@@ -975,11 +1121,11 @@ export default function Admin() {
                   <div>
                     <h3 className="text-xl font-extrabold text-blue-950">
                       {editingArticleId
-                        ? "समाचार संपादित करें (Edit News Article)"
-                        : "नया समाचार प्रकाशित करें (Publish News Article)"}
+                        ? (language === "hi" ? "समाचार संपादित करें" : "Edit News Article")
+                        : (language === "hi" ? "नया समाचार प्रकाशित करें" : "Publish News Article")}
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      शीर्षक, विवरण, जिला और तस्वीर भरें &bull; प्रकाशित होते ही स्थायी लिंक बनेगा
+                      {language === "hi" ? "शीर्षक, विवरण, जिला और तस्वीर भरें • प्रकाशित होते ही स्थायी लिंक बनेगा" : "Fill title, description, district, and image • Permanent live URL generated upon publishing"}
                     </p>
                   </div>
 
@@ -989,9 +1135,9 @@ export default function Admin() {
                         setEditingArticleId(null);
                         setFormData(initialFormState);
                       }}
-                      className="text-xs text-slate-500 hover:text-slate-800 underline"
+                      className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
                     >
-                      रद्द करें (Cancel Edit)
+                      {language === "hi" ? "रद्द करें (Cancel Edit)" : "Cancel Edit"}
                     </button>
                   )}
                 </div>
@@ -1000,14 +1146,14 @@ export default function Admin() {
                   {/* Title */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                      समाचार का मुख्य शीर्षक (Title / Headline) *
+                      {language === "hi" ? "समाचार का मुख्य शीर्षक *" : "News Headline / Title *"}
                     </label>
                     <input
                       type="text"
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      placeholder="उदा. रांची में आयोजित हुआ राज्यस्तरीय युवा संवाद कार्यक्रम..."
+                      placeholder={language === "hi" ? "उदा. रांची में आयोजित हुआ राज्यस्तरीय युवा संवाद कार्यक्रम..." : "e.g. Major youth summit organized in Ranchi..."}
                       required
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 outline-none focus:border-orange-500 focus:bg-white transition"
                     />
@@ -1017,7 +1163,7 @@ export default function Admin() {
                   <div className="p-4 bg-orange-50/60 border border-orange-200 rounded-2xl text-xs space-y-1">
                     <p className="font-bold text-orange-900 flex items-center gap-1.5">
                       <FaLink />
-                      <span>स्थायी लिंक पूर्वावलोकन (Distinct URL Preview):</span>
+                      <span>{language === "hi" ? "स्थायी लिंक पूर्वावलोकन:" : "Distinct Live URL Preview:"}</span>
                     </p>
                     <p className="text-orange-800 font-mono">
                       {window.location.origin}/news/
@@ -1027,11 +1173,11 @@ export default function Admin() {
                     </p>
                   </div>
 
-                  {/* Category & District Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Category, District & Sub-district Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        श्रेणी (Category)
+                        {language === "hi" ? "श्रेणी (Category)" : "Category"}
                       </label>
                       <select
                         name="category"
@@ -1039,27 +1185,92 @@ export default function Admin() {
                         onChange={handleInputChange}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
                       >
-                        {NEWS_CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
+                        {NEWS_CATEGORIES.map((cat) => {
+                          const displayLabel =
+                            cat === "राजनीति"
+                              ? (language === "hi" ? "राजनीति (Politics)" : "Politics")
+                              : cat === "शिक्षा"
+                              ? (language === "hi" ? "शिक्षा (Education)" : "Education")
+                              : cat === "स्वास्थ्य"
+                              ? (language === "hi" ? "स्वास्थ्य (Health)" : "Health")
+                              : cat === "खेल"
+                              ? (language === "hi" ? "खेल (Sports)" : "Sports")
+                              : cat === "अपराध"
+                              ? (language === "hi" ? "अपराध (Crime)" : "Crime")
+                              : cat === "प्रशासन"
+                              ? (language === "hi" ? "प्रशासन (Administration)" : "Administration")
+                              : cat === "झारखंड"
+                              ? (language === "hi" ? "झारखंड (Jharkhand)" : "Jharkhand")
+                              : cat === "देश-विदेश"
+                              ? (language === "hi" ? "देश-विदेश (National & World)" : "National & World")
+                              : cat === "तकनीक"
+                              ? (language === "hi" ? "तकनीक (Technology)" : "Technology")
+                              : cat === "व्यापार"
+                              ? (language === "hi" ? "व्यापार (Business)" : "Business")
+                              : cat === "मनोरंजन"
+                              ? (language === "hi" ? "मनोरंजन (Entertainment)" : "Entertainment")
+                              : cat === "ऐतिहासिक झारखंड"
+                              ? (language === "hi" ? "ऐतिहासिक झारखंड (Historic)" : "Historic Jharkhand")
+                              : cat === "मौसम व कृषि"
+                              ? (language === "hi" ? "मौसम व कृषि (Agriculture)" : "Weather & Agriculture")
+                              : cat;
+
+                          return (
+                            <option key={cat} value={cat}>
+                              {displayLabel}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        झारखंड जिला (District)
+                        {language === "hi" ? "झारखंड जिला (District)" : "Jharkhand District"}
                       </label>
                       <select
                         name="district"
                         value={formData.district}
+                        onChange={(e) => {
+                          const dist = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            district: dist,
+                            subDistrict: "",
+                          }));
+                        }}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
+                      >
+                        {JHARKHAND_DISTRICTS.map((dist) => {
+                          const distData = JHARKHAND_DISTRICTS_DATA[dist];
+                          const label = distData
+                            ? (language === "hi" ? `${distData.hi} (${distData.en})` : distData.en)
+                            : dist;
+                          return (
+                            <option key={dist} value={dist}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        {language === "hi" ? "उप-जिला / प्रखण्ड (Sub-district / Block)" : "Sub-district / Block"}
+                      </label>
+                      <select
+                        name="subDistrict"
+                        value={formData.subDistrict || ""}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
                       >
-                        {JHARKHAND_DISTRICTS.map((dist) => (
-                          <option key={dist} value={dist}>
-                            {dist}
+                        <option value="">
+                          {language === "hi" ? "समस्त जिला / सदर (All / Sadar)" : "All / Sadar Block"}
+                        </option>
+                        {getSubDistrictsForDistrict(formData.district).map((sub) => (
+                          <option key={sub.en} value={sub.hi}>
+                            {language === "hi" ? `${sub.hi} (${sub.en})` : sub.en}
                           </option>
                         ))}
                       </select>
@@ -1070,21 +1281,21 @@ export default function Admin() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        रिपोर्टर / ब्यूरो (Reporter / Author)
+                        {language === "hi" ? "रिपोर्टर / ब्यूरो" : "Reporter / Author"}
                       </label>
                       <input
                         type="text"
                         name="reporter"
                         value={formData.reporter}
                         onChange={handleInputChange}
-                        placeholder="स्वदेश वाणी ब्यूरो"
+                        placeholder={language === "hi" ? "स्वदेश वाणी ब्यूरो" : "Swadesh Vani Bureau"}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        स्थिति (Status)
+                        {language === "hi" ? "स्थिति" : "Status"}
                       </label>
                       <select
                         name="status"
@@ -1092,8 +1303,8 @@ export default function Admin() {
                         onChange={handleInputChange}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
                       >
-                        <option value="Published">Published (लाइव प्रकाशित)</option>
-                        <option value="Draft">Draft (ड्राफ्ट रखें)</option>
+                        <option value="Published">{language === "hi" ? "Published (लाइव प्रकाशित)" : "Published (Live)"}</option>
+                        <option value="Draft">{language === "hi" ? "Draft (ड्राफ्ट रखें)" : "Draft"}</option>
                       </select>
                     </div>
                   </div>
@@ -1101,14 +1312,14 @@ export default function Admin() {
                   {/* Excerpt / Summary */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                      संक्षिप्त सारांश (Excerpt / Short Summary)
+                      {language === "hi" ? "संक्षिप्त सारांश (Excerpt)" : "Short Summary / Excerpt"}
                     </label>
                     <textarea
                       name="excerpt"
                       rows={2}
                       value={formData.excerpt}
                       onChange={handleInputChange}
-                      placeholder="समाचार का 1-2 पंक्तियों में मुख्य सार..."
+                      placeholder={language === "hi" ? "समाचार का 1-2 पंक्तियों में मुख्य सार..." : "1-2 lines summarizing the news article..."}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
                     />
                   </div>
@@ -1116,14 +1327,14 @@ export default function Admin() {
                   {/* Full Story Content */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                      विस्तृत समाचार (Full Story Content) *
+                      {language === "hi" ? "विस्तृत समाचार (Full Story Content) *" : "Full Story Content *"}
                     </label>
                     <textarea
                       name="content"
                       rows={8}
                       value={formData.content}
                       onChange={handleInputChange}
-                      placeholder="पूरी खबर विस्तार से यहां लिखें..."
+                      placeholder={language === "hi" ? "पूरी खबर विस्तार से यहां लिखें..." : "Write full article text in detail here..."}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white leading-relaxed"
                     />
                   </div>
@@ -1131,22 +1342,38 @@ export default function Admin() {
                   {/* Image Upload */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                      मुख्य तस्वीर (Featured Image)
+                      {language === "hi" ? "मुख्य तस्वीर (Featured Image)" : "Featured Image"}
                     </label>
 
                     <div className="flex flex-col sm:flex-row gap-4 items-start">
-                      <label className="flex-1 w-full border-2 border-dashed border-slate-300 hover:border-orange-500 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-50/50 hover:bg-orange-50/20">
-                        <FaCloudUploadAlt className="text-3xl text-orange-500 mx-auto mb-2" />
-                        <span className="text-xs font-bold text-slate-700 block">
-                          कंप्यूटर / मोबाइल से तस्वीर चुनें (Click to Upload)
-                        </span>
-                        <span className="text-[11px] text-slate-400 block mt-1">
-                          PNG, JPG, JPEG (Max 10MB)
-                        </span>
+                      <label className={`flex-1 w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition ${
+                        isUploadingImage
+                          ? "border-orange-400 bg-orange-50/50 cursor-wait"
+                          : "border-slate-300 hover:border-orange-500 bg-slate-50/50 hover:bg-orange-50/20"
+                      }`}>
+                        {isUploadingImage ? (
+                          <div className="py-2">
+                            <div className="h-8 w-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                            <span className="text-xs font-bold text-orange-600 block">
+                              {language === "hi" ? "तस्वीर प्रोसेस और ऑप्टिमाइज़ हो रही है..." : "Processing & optimizing image..."}
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <FaCloudUploadAlt className="text-3xl text-orange-500 mx-auto mb-2" />
+                            <span className="text-xs font-bold text-slate-700 block">
+                              {language === "hi" ? "कंप्यूटर / मोबाइल से तस्वीर चुनें" : "Click to Upload Banner Image"}
+                            </span>
+                            <span className="text-[11px] text-slate-400 block mt-1">
+                              PNG, JPG, JPEG, WEBP (Max 20MB • Auto Optimized)
+                            </span>
+                          </>
+                        )}
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleImageUpload}
+                          disabled={isUploadingImage}
                           className="hidden"
                         />
                       </label>
@@ -1162,7 +1389,8 @@ export default function Admin() {
                           <button
                             type="button"
                             onClick={() => setFormData((prev) => ({ ...prev, image: "" }))}
-                            className="absolute -top-2 -right-2 p-1.5 bg-red-600 text-white rounded-full text-xs shadow hover:bg-red-700"
+                            className="absolute -top-2 -right-2 p-1.5 bg-red-600 text-white rounded-full text-xs shadow hover:bg-red-700 cursor-pointer"
+                            title="Remove image"
                           >
                             <FaTimes />
                           </button>
@@ -1177,7 +1405,7 @@ export default function Admin() {
                         name="image"
                         value={formData.image}
                         onChange={handleInputChange}
-                        placeholder="या फिर इमेज URL पेस्ट करें (e.g. https://...)"
+                        placeholder={language === "hi" ? "या फिर इमेज URL पेस्ट करें (e.g. https://...)" : "Or paste image URL (e.g. https://...)"}
                         className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-orange-500"
                       />
                     </div>
@@ -1192,9 +1420,9 @@ export default function Admin() {
                         setEditingArticleId(null);
                         setActivePage("news");
                       }}
-                      className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition"
+                      className="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition cursor-pointer"
                     >
-                      रद्द करें (Cancel)
+                      {language === "hi" ? "रद्द करें" : "Cancel"}
                     </button>
 
                     <button
@@ -1204,8 +1432,8 @@ export default function Admin() {
                       <FaCheckCircle />
                       <span>
                         {editingArticleId
-                          ? "अपडेट करें (Update Article)"
-                          : "प्रकाशित करें एवं सूचना भेजें (Publish & Notify)"}
+                          ? (language === "hi" ? "समाचार अपडेट करें" : "Save Changes")
+                          : (language === "hi" ? "प्रकाशित करें एवं सूचना भेजें" : "Publish & Notify")}
                       </span>
                     </button>
                   </div>
@@ -1222,31 +1450,32 @@ export default function Admin() {
               <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-blue-950">
-                    प्रकाशन सूचनाएं (Notification History)
+                    {language === "hi" ? "प्रकाशन सूचनाएं (Notification History)" : "Notification History"}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    प्रत्येक प्रकाशित लेख पर पाठकों को भेजी गई सूचनाएं
+                    {language === "hi" ? "प्रत्येक प्रकाशित लेख पर पाठकों को भेजी गई सूचनाएं" : "Alerts and notifications sent to readers on every published story"}
                   </p>
                 </div>
 
                 <button
                   onClick={() => {
-                    if (window.confirm("क्या आप सभी सूचनाएं मिटाना चाहते हैं?")) {
+                    const confirmMsg = language === "hi" ? "क्या आप सभी सूचनाएं मिटाना चाहते हैं?" : "Are you sure you want to clear all notifications?";
+                    if (window.confirm(confirmMsg)) {
                       clearNotifications();
                       setNotificationsList([]);
-                      showToast("सभी सूचनाएं साफ कर दी गईं।", "info");
+                      showToast(language === "hi" ? "सभी सूचनाएं साफ कर दी गईं।" : "All notifications cleared.", "info");
                     }
                   }}
                   className="px-4 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 text-xs font-bold rounded-xl transition cursor-pointer"
                 >
-                  सभी मिटाएं (Clear All)
+                  {language === "hi" ? "सभी मिटाएं (Clear All)" : "Clear All"}
                 </button>
               </div>
 
               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                 {notificationsList.length === 0 ? (
                   <div className="p-12 text-center text-slate-400 text-sm">
-                    कोई सूचना उपलब्ध नहीं है।
+                    {language === "hi" ? "कोई सूचना उपलब्ध नहीं है।" : "No notifications available."}
                   </div>
                 ) : (
                   notificationsList.map((n) => (
@@ -1278,7 +1507,7 @@ export default function Admin() {
                         className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold shrink-0 flex items-center gap-1.5 transition"
                       >
                         <FaExternalLinkAlt size={10} />
-                        <span>लेख देखें</span>
+                        <span>{language === "hi" ? "लेख देखें" : "View Article"}</span>
                       </Link>
                     </div>
                   ))
@@ -1295,15 +1524,15 @@ export default function Admin() {
               <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-blue-950">
-                    सब्सक्राइबर्स सूची (Audience &amp; Readers)
+                    {language === "hi" ? "सब्सक्राइबर्स सूची (Audience & Readers)" : "Subscribers List"}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    वेबसाइट से दैनिक समाचार अलर्ट के लिए सब्सक्राइब किए गए पाठक
+                    {language === "hi" ? "वेबसाइट से दैनिक समाचार अलर्ट के लिए सब्सक्राइब किए गए पाठक" : "Readers subscribed for daily breaking news alerts"}
                   </p>
                 </div>
 
                 <span className="px-3.5 py-1.5 bg-purple-50 text-purple-700 font-bold text-xs rounded-full border border-purple-200">
-                  कुल: {subscribersList.length}
+                  {language === "hi" ? `कुल: ${subscribersList.length}` : `Total: ${subscribersList.length}`}
                 </span>
               </div>
 
@@ -1312,18 +1541,18 @@ export default function Admin() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px] tracking-wider">
                       <tr>
-                        <th className="py-4 px-5">मोबाइल नंबर</th>
-                        <th className="py-4 px-4">ईमेल आईडी</th>
-                        <th className="py-4 px-4">सब्सक्रिप्शन दिनांक</th>
-                        <th className="py-4 px-4">स्थिति</th>
-                        <th className="py-4 px-5 text-right">कार्रवाई</th>
+                        <th className="py-4 px-5">{language === "hi" ? "मोबाइल नंबर" : "Mobile Number"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "ईमेल आईडी" : "Email Address"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "सब्सक्रिप्शन दिनांक" : "Subscription Date"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "स्थिति" : "Status"}</th>
+                        <th className="py-4 px-5 text-right">{language === "hi" ? "कार्रवाई" : "Action"}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {subscribersList.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="py-12 text-center text-slate-400">
-                            कोई सब्सक्राइबर नहीं मिला।
+                            {language === "hi" ? "कोई सब्सक्राइबर नहीं मिला।" : "No subscribers found."}
                           </td>
                         </tr>
                       ) : (
@@ -1346,14 +1575,111 @@ export default function Admin() {
                             </td>
                             <td className="py-3.5 px-4">
                               <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200 text-[11px]">
-                                {sub.status || "Active"}
+                                {sub.status === "Active" || !sub.status ? (language === "hi" ? "सक्रिय" : "Active") : (language === "hi" ? "निष्क्रिय" : sub.status)}
                               </span>
                             </td>
                             <td className="py-3.5 px-5 text-right">
                               <button
                                 onClick={() => handleDeleteSubscriber(sub.id)}
                                 className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition cursor-pointer"
-                                title="Remove"
+                                title={language === "hi" ? "हटाएं" : "Remove"}
+                              >
+                                <FaTrash />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ==================================================== */}
+          {/* TAB 5: USERS & READERS LIST                          */}
+          {/* ==================================================== */}
+          {activePage === "users" && (
+            <div className="space-y-5 animate-fadeIn">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-blue-950">
+                    {language === "hi" ? "पंजीकृत उपयोगकर्ता (Registered Readers & Users)" : "Registered Users & Readers"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {language === "hi" ? "वेबसाइट पर लॉगिन / साइनअप करने वाले सामान्य पाठकों का विवरण (Convex Database)" : "Registered reader accounts stored in real-time Convex database"}
+                  </p>
+                </div>
+
+                <span className="px-3.5 py-1.5 bg-blue-50 text-blue-700 font-bold text-xs rounded-full border border-blue-200">
+                  {language === "hi" ? `कुल: ${usersList.length}` : `Total: ${usersList.length}`}
+                </span>
+              </div>
+
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px] tracking-wider">
+                      <tr>
+                        <th className="py-4 px-5">{language === "hi" ? "नाम / यूज़र" : "Name / User"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "ईमेल आईडी" : "Email Address"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "भूमिका (Role)" : "Role"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "पंजीकरण दिनांक" : "Registered At"}</th>
+                        <th className="py-4 px-4">{language === "hi" ? "अंतिम लॉगिन" : "Last Login"}</th>
+                        <th className="py-4 px-5 text-right">{language === "hi" ? "कार्रवाई" : "Action"}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {usersList.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            {language === "hi" ? "कोई उपयोगकर्ता पंजीकृत नहीं है।" : "No registered users found."}
+                          </td>
+                        </tr>
+                      ) : (
+                        usersList.map((usr) => (
+                          <tr key={usr.id} className="hover:bg-slate-50 transition">
+                            <td className="py-3.5 px-5 font-bold text-slate-800">
+                              <span className="flex items-center gap-2">
+                                <span className="h-7 w-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">
+                                  {usr.name ? usr.name.charAt(0).toUpperCase() : "U"}
+                                </span>
+                                {usr.name || "User"}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600">
+                              <span className="flex items-center gap-2">
+                                <FaEnvelope className="text-blue-500 text-xs" />
+                                {usr.email}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 font-bold rounded-full border border-blue-200 text-[11px]">
+                                {usr.role === "admin" ? "Admin" : "Reader / User"}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-500">
+                              {usr.createdAt ? new Date(usr.createdAt).toLocaleDateString("en-IN") : "—"}
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-500">
+                              {usr.lastLogin ? new Date(usr.lastLogin).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—"}
+                            </td>
+                            <td className="py-3.5 px-5 text-right">
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm("क्या आप वाकई इस उपयोगकर्ता को हटाना चाहते हैं?")) {
+                                    try {
+                                      await convex.mutation(api.users.remove, { id: String(usr.id) });
+                                      setUsersList((prev) => prev.filter((u) => u.id !== usr.id));
+                                      showToast("उपयोगकर्ता हटा दिया गया।", "info");
+                                    } catch (err) {
+                                      showToast("उपयोगकर्ता हटाने में विफल।", "error");
+                                    }
+                                  }
+                                }}
+                                className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition cursor-pointer"
+                                title={language === "hi" ? "हटाएं" : "Remove"}
                               >
                                 <FaTrash />
                               </button>
@@ -1532,18 +1858,34 @@ export default function Admin() {
                       </label>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                        <label className="border-2 border-dashed border-slate-300 hover:border-orange-500 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-50/50 hover:bg-orange-50/20 block">
-                          <FaCloudUploadAlt className="text-3xl text-orange-500 mx-auto mb-2" />
-                          <span className="text-xs font-bold text-slate-700 block">
-                            कंप्यूटर / मोबाइल से बैनर तस्वीर चुनें
-                          </span>
-                          <span className="text-[11px] text-slate-400 block mt-1">
-                            PNG, JPG, WebP (Max 10MB)
-                          </span>
+                        <label className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition block ${
+                          isUploadingAdImage
+                            ? "border-orange-400 bg-orange-50/50 cursor-wait"
+                            : "border-slate-300 hover:border-orange-500 bg-slate-50/50 hover:bg-orange-50/20"
+                        }`}>
+                          {isUploadingAdImage ? (
+                            <div className="py-2">
+                              <div className="h-8 w-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                              <span className="text-xs font-bold text-orange-600 block">
+                                बैनर प्रोसेस हो रहा है...
+                              </span>
+                            </div>
+                          ) : (
+                            <>
+                              <FaCloudUploadAlt className="text-3xl text-orange-500 mx-auto mb-2" />
+                              <span className="text-xs font-bold text-slate-700 block">
+                                कंप्यूटर / मोबाइल से बैनर तस्वीर चुनें
+                              </span>
+                              <span className="text-[11px] text-slate-400 block mt-1">
+                                PNG, JPG, WebP (Max 20MB • Auto Optimized)
+                              </span>
+                            </>
+                          )}
                           <input
                             type="file"
                             accept="image/*"
                             onChange={handleAdImageUpload}
+                            disabled={isUploadingAdImage}
                             className="hidden"
                           />
                         </label>
@@ -1553,11 +1895,11 @@ export default function Admin() {
                             या सीधे इमेज URL दर्ज करें (Or Image Web URL):
                           </label>
                           <input
-                            type="url"
+                            type="text"
                             name="image"
                             value={adForm.image}
                             onChange={handleAdInputChange}
-                            placeholder="https://images.unsplash.com/..."
+                            placeholder="https://images.unsplash.com/... या /uploads/..."
                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
                           />
                         </div>
@@ -1567,10 +1909,20 @@ export default function Admin() {
                     {/* Real-time Preview */}
                     {adForm.image && (
                       <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                          <FaEye className="text-orange-500" />
-                          <span>लाइव प्रीव्यू (Real-time Preview on Website)</span>
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <FaEye className="text-orange-500" />
+                            <span>लाइव प्रीव्यू (Real-time Preview on Website)</span>
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setAdForm((prev) => ({ ...prev, image: "" }))}
+                            className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <FaTimes />
+                            <span>तस्वीर हटाएं (Remove)</span>
+                          </button>
+                        </div>
                         <div className="relative overflow-hidden rounded-2xl border border-slate-300 bg-slate-900 max-h-56 group">
                           <img
                             src={adForm.image}
@@ -1637,58 +1989,59 @@ export default function Admin() {
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     onClick={() => setAdFilterPosition("all")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       adFilterPosition === "all"
                         ? "bg-blue-950 text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    सभी ({adsList.length})
+                    {language === "hi" ? `सभी (${adsList.length})` : `All (${adsList.length})`}
                   </button>
                   <button
                     onClick={() => setAdFilterPosition("top_banner")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       adFilterPosition === "top_banner"
                         ? "bg-orange-600 text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    शीर्ष बैनर ({adsList.filter((a) => a.position === "top_banner").length})
+                    {language === "hi" ? `शीर्ष बैनर (${adsList.filter((a) => a.position === "top_banner").length})` : `Top Banner (${adsList.filter((a) => a.position === "top_banner").length})`}
                   </button>
                   <button
                     onClick={() => setAdFilterPosition("sidebar")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       adFilterPosition === "sidebar"
                         ? "bg-orange-600 text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    साइडबार ({adsList.filter((a) => a.position === "sidebar").length})
+                    {language === "hi" ? `साइडबार (${adsList.filter((a) => a.position === "sidebar").length})` : `Sidebar (${adsList.filter((a) => a.position === "sidebar").length})`}
                   </button>
                   <button
                     onClick={() => setAdFilterPosition("middle_banner")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       adFilterPosition === "middle_banner"
                         ? "bg-orange-600 text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    मध्य बैनर ({adsList.filter((a) => a.position === "middle_banner").length})
+                    {language === "hi" ? `मध्य बैनर (${adsList.filter((a) => a.position === "middle_banner").length})` : `Middle Banner (${adsList.filter((a) => a.position === "middle_banner").length})`}
                   </button>
                   <button
                     onClick={() => setAdFilterPosition("bottom_banner")}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       adFilterPosition === "bottom_banner"
                         ? "bg-orange-600 text-white shadow-sm"
                         : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    बॉटम बैनर ({adsList.filter((a) => a.position === "bottom_banner").length})
+                    {language === "hi" ? `बॉटम बैनर (${adsList.filter((a) => a.position === "bottom_banner").length})` : `Bottom Banner (${adsList.filter((a) => a.position === "bottom_banner").length})`}
                   </button>
                 </div>
 
                 <span className="text-xs font-semibold text-slate-500">
-                  कुल सक्रिय विज्ञापन: {adsList.filter((a) => a.status === "Active").length}
+                  {language === "hi" ? "कुल सक्रिय विज्ञापन: " : "Total Active Ads: "}
+                  <strong>{adsList.filter((a) => a.status === "Active").length}</strong>
                 </span>
               </div>
 
@@ -1698,13 +2051,21 @@ export default function Admin() {
                   .filter((a) => adFilterPosition === "all" || a.position === adFilterPosition)
                   .map((ad) => {
                     const positionLabel =
-                      ad.position === "top_banner"
-                        ? "शीर्ष हेडर (Top Header)"
-                        : ad.position === "sidebar"
-                        ? "साइडबार (Sidebar)"
-                        : ad.position === "middle_banner"
-                        ? "मध्य फ़ीड (Middle Feed)"
-                        : "बॉटम अनुभाग (Bottom)";
+                      language === "hi"
+                        ? (ad.position === "top_banner"
+                            ? "शीर्ष हेडर (Top Header)"
+                            : ad.position === "sidebar"
+                            ? "साइडबार (Sidebar)"
+                            : ad.position === "middle_banner"
+                            ? "मध्य फ़ीड (Middle Feed)"
+                            : "बॉटम अनुभाग (Bottom)")
+                        : (ad.position === "top_banner"
+                            ? "Top Header"
+                            : ad.position === "sidebar"
+                            ? "Sidebar"
+                            : ad.position === "middle_banner"
+                            ? "Middle Feed"
+                            : "Bottom Section");
 
                     return (
                       <div
@@ -1734,14 +2095,14 @@ export default function Admin() {
                                   : "bg-amber-500 text-white shadow-sm"
                               }`}
                             >
-                              {ad.status === "Active" ? "🟢 Live Active" : "🟡 Paused"}
+                              {ad.status === "Active" ? "🟢 LIVE ACTIVE" : "🟡 PAUSED"}
                             </span>
                           </div>
 
                           {/* Overlay text */}
                           <div className="absolute bottom-3 left-3 right-3 text-white">
                             <p className="text-xs text-orange-300 font-bold truncate">
-                              {ad.sponsor || "प्रायोजक"}
+                              {ad.sponsor || (language === "hi" ? "प्रायोजक" : "Sponsor")}
                             </p>
                             <h4 className="text-sm font-extrabold line-clamp-1 drop-shadow">
                               {ad.title}
@@ -1759,7 +2120,9 @@ export default function Admin() {
                             )}
 
                             <div className="mt-2.5 flex items-center gap-2 text-xs text-slate-500">
-                              <span className="font-semibold text-slate-700">टारगेट लिंक:</span>
+                              <span className="font-semibold text-slate-700">
+                                {language === "hi" ? "टारगेट लिंक:" : "Target Link:"}
+                              </span>
                               <a
                                 href={ad.link}
                                 target="_blank"
@@ -1777,30 +2140,30 @@ export default function Admin() {
                             <div className="flex items-center gap-3 text-xs text-slate-500 font-semibold">
                               <span className="flex items-center gap-1 text-slate-700">
                                 <FaMousePointer className="text-orange-500 text-[11px]" />
-                                {ad.clicks || 0} क्लिक्स
+                                {language === "hi" ? `${ad.clicks || 0} क्लिक्स` : `${ad.clicks || 0} clicks`}
                               </span>
                               <span>&bull;</span>
-                              <span>{ad.createdAt || "हाल ही में"}</span>
+                              <span>{ad.createdAt || (language === "hi" ? "हाल ही में" : "Recent")}</span>
                             </div>
 
                             <div className="flex items-center gap-1.5">
                               {/* Toggle Status */}
                               <button
                                 onClick={() => handleToggleAd(ad.id)}
-                                title={ad.status === "Active" ? "विज्ञापन रोकें" : "विज्ञापन सक्रिय करें"}
+                                title={ad.status === "Active" ? (language === "hi" ? "विज्ञापन रोकें" : "Pause Ad") : (language === "hi" ? "विज्ञापन सक्रिय करें" : "Activate Ad")}
                                 className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                                   ad.status === "Active"
                                     ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
                                     : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                                 }`}
                               >
-                                {ad.status === "Active" ? "रोकें" : "सक्रिय करें"}
+                                {ad.status === "Active" ? (language === "hi" ? "रोकें" : "Pause") : (language === "hi" ? "सक्रिय करें" : "Activate")}
                               </button>
 
                               {/* Preview Button */}
                               <button
                                 onClick={() => setPreviewAdModal(ad)}
-                                title="लाइव प्रीव्यू देखें"
+                                title={language === "hi" ? "लाइव प्रीव्यू देखें" : "View Live Preview"}
                                 className="p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition cursor-pointer"
                               >
                                 <FaEye size={13} />
@@ -1927,6 +2290,103 @@ export default function Admin() {
               >
                 बंद करें (Close)
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Article Published Success Modal */}
+      {publishedModalArticle && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-fadeIn space-y-5">
+            <div className="text-center space-y-2">
+              <div className="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner text-2xl">
+                <FaCheckCircle />
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-900">
+                समाचार सफलतापूर्वक प्रकाशित हुआ!
+              </h3>
+              <p className="text-xs text-slate-500">
+                यह समाचार अब मुख्य पृष्ठ एवं सभी संबंधित श्रेणियों में लाइव दिखाई दे रहा है।
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex gap-3 items-center">
+              {publishedModalArticle.image && (
+                <img
+                  src={publishedModalArticle.image}
+                  alt=""
+                  className="h-16 w-20 object-cover rounded-xl shrink-0"
+                />
+              )}
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold uppercase text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
+                  {publishedModalArticle.category || "झारखंड"}
+                </span>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2 mt-1">
+                  {publishedModalArticle.title}
+                </h4>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <a
+                href={`/news/${publishedModalArticle.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 transition"
+              >
+                <span>लाइव खबर खोलें (Open Live Article)</span>
+                <FaExternalLinkAlt size={12} />
+              </a>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const articleUrl = `${window.location.origin}/news/${publishedModalArticle.id}`;
+                    navigator.clipboard.writeText(articleUrl);
+                    showToast("लिंक कॉपी कर लिया गया!", "success");
+                  }}
+                  className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+                >
+                  <FaCopy size={12} />
+                  <span>लिंक कॉपी करें</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const articleUrl = `${window.location.origin}/news/${publishedModalArticle.id}`;
+                    const headline = publishedModalArticle.title || "ताज़ा समाचार";
+                    const excerpt = publishedModalArticle.excerpt ? `\n\n${publishedModalArticle.excerpt}` : "";
+                    const text = `📰 *${headline}*${excerpt}\n\n👉 *पूरी खबर यहां पढ़ें:*\n${articleUrl}\n\n━━━━━━━━━━━━━━━\n🌐 *स्वदेश वाणी* (Swadesh Vaani)\n#SwadeshVaani #JharkhandNews #BreakingNews`;
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+                  }}
+                  className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+                >
+                  <FaWhatsapp size={13} />
+                  <span>WhatsApp शेयर</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 pt-2">
+                <Link
+                  to="/"
+                  target="_blank"
+                  className="py-2.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition text-center"
+                >
+                  <span>मुख्य पृष्ठ देखें</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setPublishedModalArticle(null)}
+                  className="py-2.5 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition"
+                >
+                  बंद करें (Close)
+                </button>
+              </div>
             </div>
           </div>
         </div>

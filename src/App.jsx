@@ -25,6 +25,7 @@ import TermsConditions from "./Component/TermsConditions.jsx";
 import PrivacyPolicy from "./Component/LegalPrivacy.jsx";
 import ArticleDetail from "./Component/ArticleDetail.jsx";
 import District from "./Component/District.jsx";
+import { LanguageProvider } from "./context/LanguageContext.jsx";
 
 function AppLayout() {
   const location = useLocation();
@@ -166,9 +167,11 @@ function AppLayout() {
 
 function App() {
   return (
-    <Router>
-      <AppLayout />
-    </Router>
+    <LanguageProvider>
+      <Router>
+        <AppLayout />
+      </Router>
+    </LanguageProvider>
   );
 }
 

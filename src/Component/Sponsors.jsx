@@ -8,11 +8,12 @@ import {
   MapPin,
   Clock,
   Upload,
-  FileText,
   Info,
 } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const Advertisement = () => {
+  const { language, t } = useLanguage();
   const [submitted, setSubmitted] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -30,7 +31,6 @@ const Advertisement = () => {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-
     setFormData((previous) => ({
       ...previous,
       [name]: value,
@@ -39,27 +39,18 @@ const Advertisement = () => {
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-
     if (!file) return;
-
     setSelectedFile(file);
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-
     setSubmitted(true);
-
-    console.log({
-      ...formData,
-      advertisementFile: selectedFile,
-    });
   };
 
   const resetForm = () => {
     setSubmitted(false);
     setSelectedFile(null);
-
     setFormData({
       name: "",
       businessName: "",
@@ -85,18 +76,16 @@ const Advertisement = () => {
               </div>
 
               <span className="text-sm font-semibold uppercase tracking-widest">
-                Advertise With Us
+                {t("advertiseWithUs")}
               </span>
             </div>
 
             <h1 className="text-3xl font-bold leading-tight text-blue-950 sm:text-4xl">
-              अपने व्यवसाय का प्रचार हमारे समाचार प्लेटफॉर्म पर करें
+              {t("adsMainHeading")}
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-              अपने व्यवसाय, संस्था, कार्यक्रम या सेवा का प्रचार करने के लिए
-              नीचे दिया गया फॉर्म भरें। हमारी टीम आपकी जानकारी की समीक्षा करके
-              आपसे संपर्क करेगी।
+              {t("adsMainDesc")}
             </p>
           </div>
         </div>
@@ -107,18 +96,17 @@ const Advertisement = () => {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Information panel */}
           <div className="space-y-5 lg:col-span-1">
-            <div className="rounded-2xl bg-blue-950 p-6 text-white">
+            <div className="rounded-2xl bg-blue-950 p-6 text-white shadow-sm">
               <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500">
                 <Megaphone size={22} />
               </div>
 
               <h2 className="text-xl font-bold">
-                अपने ब्रांड को लोगों तक पहुंचाएं
+                {t("brandReachTitle")}
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-blue-100">
-                हमारे स्थानीय पाठकों और दर्शकों तक अपने व्यवसाय की जानकारी
-                पहुंचाएं।
+                {t("brandReachDesc")}
               </p>
 
               <div className="mt-6 space-y-4 text-sm">
@@ -127,7 +115,7 @@ const Advertisement = () => {
                     size={18}
                     className="mt-0.5 shrink-0 text-orange-400"
                   />
-                  <span>स्थानीय दर्शकों और पाठकों तक पहुंच</span>
+                  <span>{t("adFeature1")}</span>
                 </div>
 
                 <div className="flex items-start gap-3">
@@ -135,7 +123,7 @@ const Advertisement = () => {
                     size={18}
                     className="mt-0.5 shrink-0 text-orange-400"
                   />
-                  <span>व्यवसाय और कार्यक्रम का प्रचार</span>
+                  <span>{t("adFeature2")}</span>
                 </div>
 
                 <div className="flex items-start gap-3">
@@ -143,7 +131,7 @@ const Advertisement = () => {
                     size={18}
                     className="mt-0.5 shrink-0 text-orange-400"
                   />
-                  <span>किफायती विज्ञापन पैकेज</span>
+                  <span>{t("adFeature3")}</span>
                 </div>
 
                 <div className="flex items-start gap-3">
@@ -151,33 +139,33 @@ const Advertisement = () => {
                     size={18}
                     className="mt-0.5 shrink-0 text-orange-400"
                   />
-                  <span>हमारी टीम से सीधा संपर्क</span>
+                  <span>{t("adFeature4")}</span>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="font-bold text-blue-950">
-                विज्ञापन प्रक्रिया
+                {t("adProcessTitle")}
               </h3>
 
               <div className="mt-5 space-y-5">
                 <ProcessStep
                   number="01"
-                  title="फॉर्म भरें"
-                  description="अपनी और अपने व्यवसाय की जानकारी दर्ज करें।"
+                  title={t("adStep1Title")}
+                  description={t("adStep1Desc")}
                 />
 
                 <ProcessStep
                   number="02"
-                  title="समीक्षा"
-                  description="हमारी टीम आपके विज्ञापन अनुरोध की समीक्षा करेगी।"
+                  title={t("adStep2Title")}
+                  description={t("adStep2Desc")}
                 />
 
                 <ProcessStep
                   number="03"
-                  title="संपर्क"
-                  description="हमारी टीम कीमत और प्रचार की जानकारी के लिए आपसे संपर्क करेगी।"
+                  title={t("adStep3Title")}
+                  description={t("adStep3Desc")}
                 />
               </div>
             </div>
@@ -188,12 +176,11 @@ const Advertisement = () => {
 
                 <div>
                   <h3 className="font-semibold text-orange-900">
-                    महत्वपूर्ण जानकारी
+                    {t("adImportantTitle")}
                   </h3>
 
                   <p className="mt-2 text-sm leading-6 text-orange-800">
-                    फॉर्म जमा करने के बाद हमारी टीम उपलब्धता, कीमत और विज्ञापन
-                    सामग्री के संबंध में आपसे संपर्क करेगी।
+                    {t("adImportantDesc")}
                   </p>
                 </div>
               </div>
@@ -203,7 +190,7 @@ const Advertisement = () => {
           {/* Advertisement form */}
           <div className="lg:col-span-2">
             {submitted ? (
-              <SuccessMessage onReset={resetForm} />
+              <SuccessMessage onReset={resetForm} t={t} />
             ) : (
               <form
                 onSubmit={handleSubmit}
@@ -211,40 +198,40 @@ const Advertisement = () => {
               >
                 <div className="mb-8 border-b border-slate-200 pb-5">
                   <h2 className="text-2xl font-bold text-blue-950">
-                    विज्ञापन अनुरोध फॉर्म
+                    {t("adFormTitle")}
                   </h2>
 
                   <p className="mt-2 text-sm text-slate-500">
-                    कृपया सभी आवश्यक जानकारी सही-सही भरें।
+                    {t("adFormSubtitle")}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <FormField label="आपका नाम" required>
+                  <FormField label={t("yourName")} required>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="अपना नाम दर्ज करें"
+                      placeholder={t("enterYourName")}
                       required
                       className="input-style"
                     />
                   </FormField>
 
-                  <FormField label="व्यवसाय / संस्था का नाम" required>
+                  <FormField label={t("businessName")} required>
                     <input
                       type="text"
                       name="businessName"
                       value={formData.businessName}
                       onChange={handleChange}
-                      placeholder="व्यवसाय का नाम"
+                      placeholder={t("enterBusinessName")}
                       required
                       className="input-style"
                     />
                   </FormField>
 
-                  <FormField label="मोबाइल नंबर" required>
+                  <FormField label={t("mobileNumber")} required>
                     <div className="relative">
                       <Phone
                         size={17}
@@ -256,14 +243,14 @@ const Advertisement = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        placeholder="मोबाइल नंबर"
+                        placeholder={t("enterMobileNumber")}
                         required
                         className="input-style pl-11"
                       />
                     </div>
                   </FormField>
 
-                  <FormField label="ईमेल पता">
+                  <FormField label={t("emailAddress")}>
                     <div className="relative">
                       <Mail
                         size={17}
@@ -275,13 +262,13 @@ const Advertisement = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder="ईमेल पता"
+                        placeholder={t("enterEmailAddress")}
                         className="input-style pl-11"
                       />
                     </div>
                   </FormField>
 
-                  <FormField label="शहर / स्थान" required>
+                  <FormField label={t("cityLocation")} required>
                     <div className="relative">
                       <MapPin
                         size={17}
@@ -293,31 +280,45 @@ const Advertisement = () => {
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
-                        placeholder="शहर या स्थान"
+                        placeholder={t("enterCityLocation")}
                         required
                         className="input-style pl-11"
                       />
                     </div>
                   </FormField>
 
-                  <FormField label="विज्ञापन का प्रकार" required>
+                  <FormField label={t("adTypeLabel")} required>
                     <select
                       name="advertisementType"
                       value={formData.advertisementType}
                       onChange={handleChange}
                       className="input-style bg-white"
                     >
-                      <option>Banner Advertisement</option>
-                      <option>Video Advertisement</option>
-                      <option>Sponsored News</option>
-                      <option>Business Promotion</option>
-                      <option>Event Promotion</option>
-                      <option>Job Advertisement</option>
-                      <option>Other</option>
+                      <option value="Banner Advertisement">
+                        {language === "hi" ? "बैनर विज्ञापन (Banner Advertisement)" : "Banner Advertisement"}
+                      </option>
+                      <option value="Video Advertisement">
+                        {language === "hi" ? "वीडियो विज्ञापन (Video Advertisement)" : "Video Advertisement"}
+                      </option>
+                      <option value="Sponsored News">
+                        {language === "hi" ? "प्रायोजित समाचार (Sponsored News)" : "Sponsored News"}
+                      </option>
+                      <option value="Business Promotion">
+                        {language === "hi" ? "व्यापार प्रचार (Business Promotion)" : "Business Promotion"}
+                      </option>
+                      <option value="Event Promotion">
+                        {language === "hi" ? "इवेंट प्रचार (Event Promotion)" : "Event Promotion"}
+                      </option>
+                      <option value="Job Advertisement">
+                        {language === "hi" ? "रोजगार विज्ञापन (Job Advertisement)" : "Job Advertisement"}
+                      </option>
+                      <option value="Other">
+                        {language === "hi" ? "अन्य (Other)" : "Other"}
+                      </option>
                     </select>
                   </FormField>
 
-                  <FormField label="विज्ञापन की अवधि" required>
+                  <FormField label={t("adDurationLabel")} required>
                     <div className="relative">
                       <Clock
                         size={17}
@@ -330,37 +331,37 @@ const Advertisement = () => {
                         onChange={handleChange}
                         className="input-style bg-white pl-11"
                       >
-                        <option>7 Days</option>
-                        <option>15 Days</option>
-                        <option>30 Days</option>
-                        <option>3 Months</option>
-                        <option>6 Months</option>
-                        <option>1 Year</option>
+                        <option value="7 Days">{language === "hi" ? "7 दिन (7 Days)" : "7 Days"}</option>
+                        <option value="15 Days">{language === "hi" ? "15 दिन (15 Days)" : "15 Days"}</option>
+                        <option value="30 Days">{language === "hi" ? "30 दिन (30 Days)" : "30 Days"}</option>
+                        <option value="3 Months">{language === "hi" ? "3 महीने (3 Months)" : "3 Months"}</option>
+                        <option value="6 Months">{language === "hi" ? "6 महीने (6 Months)" : "6 Months"}</option>
+                        <option value="1 Year">{language === "hi" ? "1 वर्ष (1 Year)" : "1 Year"}</option>
                       </select>
                     </div>
                   </FormField>
 
-                  <FormField label="अनुमानित बजट">
+                  <FormField label={t("estimatedBudget")}>
                     <input
                       type="text"
                       name="budget"
                       value={formData.budget}
                       onChange={handleChange}
-                      placeholder="उदाहरण: ₹5,000"
+                      placeholder={t("budgetPlaceholder")}
                       className="input-style"
                     />
                   </FormField>
 
-                  <FormField label="विज्ञापन सामग्री अपलोड करें" full>
+                  <FormField label={t("uploadCreative")} full>
                     <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/30 px-5 py-8 text-center transition hover:border-orange-400 hover:bg-orange-50">
                       <Upload className="mb-3 text-orange-500" size={28} />
 
                       <span className="text-sm font-semibold text-blue-950">
-                        विज्ञापन फाइल अपलोड करें
+                        {t("uploadCreativeBtn")}
                       </span>
 
                       <span className="mt-1 text-xs text-slate-400">
-                        JPG, PNG, PDF या MP4 फाइल
+                        {t("uploadCreativeHint")}
                       </span>
 
                       {selectedFile && (
@@ -378,20 +379,20 @@ const Advertisement = () => {
                     </label>
                   </FormField>
 
-                  <FormField label="अतिरिक्त जानकारी" full>
+                  <FormField label={t("additionalInfo")} full>
                     <textarea
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
                       rows="5"
-                      placeholder="अपने विज्ञापन या आवश्यकता के बारे में बताएं..."
+                      placeholder={t("additionalInfoPlaceholder")}
                       className="input-style resize-y"
                     />
                   </FormField>
                 </div>
 
                 <div className="mt-8 border-t border-slate-200 pt-6">
-                  <label className="flex items-start gap-3 text-sm text-slate-600">
+                  <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
                     <input
                       type="checkbox"
                       required
@@ -399,17 +400,16 @@ const Advertisement = () => {
                     />
 
                     <span>
-                      मैं पुष्टि करता/करती हूं कि मेरे द्वारा दी गई जानकारी सही
-                      है और मैं विज्ञापन संबंधी बातचीत के लिए सहमत हूं।
+                      {t("adConsentCheckbox")}
                     </span>
                   </label>
 
                   <button
                     type="submit"
-                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-orange-600 sm:w-auto"
+                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-orange-600 sm:w-auto shadow-lg shadow-orange-500/20"
                   >
                     <Send size={17} />
-                    विज्ञापन अनुरोध भेजें
+                    {t("sendAdRequestBtn")}
                   </button>
                 </div>
               </form>
@@ -423,11 +423,11 @@ const Advertisement = () => {
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 px-5 py-8 sm:px-8 md:flex-row md:items-center">
           <div>
             <h2 className="font-bold text-blue-950">
-              विज्ञापन से जुड़ी जानकारी चाहिए?
+              {t("adNeedHelpTitle")}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              हमारी टीम से सीधे संपर्क करें।
+              {t("adNeedHelpDesc")}
             </p>
           </div>
 
@@ -441,11 +441,11 @@ const Advertisement = () => {
             </a>
 
             <a
-              href="mailto:advertisement@example.com"
+              href="mailto:swadeshvaaniofficial@gmail.com"
               className="flex items-center gap-2 transition hover:text-orange-600"
             >
               <Mail size={17} className="text-orange-500" />
-              advertisement@example.com
+              swadeshvaaniofficial@gmail.com
             </a>
           </div>
         </div>
@@ -482,7 +482,7 @@ function ProcessStep({ number, title, description }) {
   );
 }
 
-function SuccessMessage({ onReset }) {
+function SuccessMessage({ onReset, t }) {
   return (
     <div className="flex min-h-[500px] items-center justify-center rounded-2xl border border-green-200 bg-white p-8 text-center shadow-sm">
       <div className="max-w-md">
@@ -491,18 +491,18 @@ function SuccessMessage({ onReset }) {
         </div>
 
         <h2 className="mt-6 text-2xl font-bold text-blue-950">
-          आपका अनुरोध सफलतापूर्वक भेज दिया गया है
+          {t("adSuccessTitle")}
         </h2>
 
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          धन्यवाद। हमारी विज्ञापन टीम जल्द ही आपसे संपर्क करेगी।
+          {t("adSuccessDesc")}
         </p>
 
         <button
           onClick={onReset}
-          className="mt-7 rounded-lg bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+          className="mt-7 rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 shadow-lg shadow-orange-500/20"
         >
-          दूसरा अनुरोध भेजें
+          {t("sendAnotherRequest")}
         </button>
       </div>
     </div>

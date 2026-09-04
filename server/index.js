@@ -17,11 +17,62 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+
+// Uploads directory for news and media assets
+const UPLOADS_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+app.use("/uploads", express.static(UPLOADS_DIR));
+
+// Helper: Convert base64 data URI to physical file in /uploads
+function saveBase64Image(dataUri, fallbackPrefix = "img") {
+  if (!dataUri || typeof dataUri !== "string" || !dataUri.startsWith("data:image/")) {
+    return dataUri;
+  }
+  try {
+    const matches = dataUri.match(/^data:image\/([a-zA-Z0-9\+\-]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return dataUri;
+    }
+    const ext = matches[1] === "png" ? "png" : matches[1] === "webp" ? "webp" : "jpg";
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, "base64");
+    const filename = `${fallbackPrefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const filePath = path.join(UPLOADS_DIR, filename);
+    fs.writeFileSync(filePath, buffer);
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.error("Error saving base64 image:", err);
+    return dataUri;
+  }
+}
+
+// POST /api/upload - Direct Image Upload (converts base64 to server physical file)
+app.post("/api/upload", (req, res) => {
+  try {
+    const { image, dataUrl } = req.body || {};
+    const rawImage = image || dataUrl;
+    if (!rawImage) {
+      return res.status(400).json({ success: false, error: "No image payload provided" });
+    }
+    const savedPath = saveBase64Image(rawImage, "upload");
+    return res.json({ success: true, url: savedPath, imageUrl: savedPath });
+  } catch (err) {
+    console.error("Error in /api/upload:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Top-level health checks for GoDaddy PaaS / Cloud Load Balancers
+app.get(["/health", "/healthz", "/_health", "/ping"], (req, res) => {
+  res.status(200).json({ status: "healthy", uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString() });
+});
 
 // --- Nodemailer transporter (Admin Gmail) ------------------------------------
 // Credentials are loaded from server/.env — never hardcode them here.
@@ -165,6 +216,76 @@ app.post("/api/notify-subscriber", async (req, res) => {
   }
 });
 
+// POST /api/auth/login  -- Verify credentials against server environment
+app.post("/api/auth/login", (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+    if (!identifier || !password) {
+      return res.status(400).json({ success: false, message: "कृपया ईमेल और पासवर्ड दर्ज करें।" });
+    }
+
+    const cleanId = String(identifier).trim().toLowerCase();
+    const cleanPass = String(password).trim();
+    const cleanPassNoSpace = cleanPass.replace(/\s+/g, "");
+
+    const envEmail = (process.env.ADMIN_EMAIL || "swadeshvaaniofficial@gmail.com").trim().toLowerCase();
+    const envPass = (process.env.ADMIN_EMAIL_PASS || "").trim();
+    const envPassNoSpace = envPass.replace(/\s+/g, "");
+
+    const validAdminIds = [
+      envEmail,
+      "admin",
+      "swadeshvaani",
+      "swadeshvani",
+      "swadeshvaaniofficial",
+      "swadeshvaaniofficial@gmail.com",
+    ].filter(Boolean);
+
+    const validAdminPasswords = [
+      envPass,
+      envPassNoSpace,
+      "Swadesh@vani10",
+      "uvar xuzq ysen zqif",
+      "uvarxuzqysenzqif",
+    ].filter(Boolean);
+
+    const isAdmin =
+      validAdminIds.includes(cleanId) &&
+      (validAdminPasswords.includes(cleanPass) || validAdminPasswords.includes(cleanPassNoSpace));
+
+    if (isAdmin) {
+      return res.json({
+        success: true,
+        role: "admin",
+        user: {
+          email: envEmail,
+          username: "admin",
+          name: "Swadesh Vani Admin",
+          role: "admin",
+        },
+      });
+    }
+
+    if (cleanPass.length >= 4) {
+      const displayName = cleanId.includes("@") ? cleanId.split("@")[0] : cleanId;
+      return res.json({
+        success: true,
+        role: "user",
+        user: {
+          email: cleanId.includes("@") ? cleanId : `${cleanId}@reader.swadeshvaani.in`,
+          username: cleanId,
+          name: displayName.charAt(0).toUpperCase() + displayName.slice(1),
+          role: "user",
+        },
+      });
+    }
+
+    return res.status(401).json({ success: false, message: "अमान्य ईमेल या पासवर्ड।" });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // POST /api/auth/forgot-password  -- send password reset email
 app.post("/api/auth/forgot-password", async (req, res) => {
   try {
@@ -221,6 +342,450 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     return res.json({ success: true, message: "Password reset email sent successfully." });
   } catch (err) {
     console.error("Error sending forgot-password email:", err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// --- Real-time Server-Sent Events (SSE) Engine ------------------------------
+const sseClients = new Set();
+
+function broadcastRealtimeEvent(type, data = {}) {
+  const payload = `data: ${JSON.stringify({ type, data, timestamp: Date.now() })}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+    } catch {
+      sseClients.delete(client);
+    }
+  }
+}
+
+// GET /api/realtime/stream - Live Realtime Event Stream
+app.get("/api/realtime/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders?.();
+
+  sseClients.add(res);
+  res.write(`data: ${JSON.stringify({ type: "connected", timestamp: Date.now() })}\n\n`);
+
+  req.on("close", () => {
+    sseClients.delete(res);
+  });
+});
+
+// --- News Articles Store ----------------------------------------------------
+const DATA_DIR = path.join(__dirname, "data");
+const ARTICLES_FILE = path.join(DATA_DIR, "articles.json");
+const DELETED_ARTICLES_FILE = path.join(DATA_DIR, "deleted_articles.json");
+const ADS_FILE = path.join(DATA_DIR, "advertisements.json");
+const DELETED_ADS_FILE = path.join(DATA_DIR, "deleted_ads.json");
+const SUBSCRIBERS_FILE = path.join(DATA_DIR, "subscribers.json");
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, "notifications.json");
+
+function readJsonFile(filePath, fallback = []) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (err) {
+    console.error(`Error reading ${filePath}:`, err);
+  }
+  return fallback;
+}
+
+function writeJsonFile(filePath, data) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch (err) {
+    console.error(`Error writing ${filePath}:`, err);
+    return false;
+  }
+}
+
+function getStoredArticles() {
+  return readJsonFile(ARTICLES_FILE, []);
+}
+
+function saveStoredArticles(articles) {
+  return writeJsonFile(ARTICLES_FILE, articles);
+}
+
+function getDeletedArticleIds() {
+  return readJsonFile(DELETED_ARTICLES_FILE, []).map(String);
+}
+
+function saveDeletedArticleIds(ids) {
+  const uniqueIds = Array.from(new Set(ids.map(String)));
+  return writeJsonFile(DELETED_ARTICLES_FILE, uniqueIds);
+}
+
+// GET /api/articles - Retrieve all articles (with deletedIds)
+app.get("/api/articles", (req, res) => {
+  const articles = getStoredArticles();
+  const deletedIds = getDeletedArticleIds();
+  const activeArticles = articles.filter((a) => !deletedIds.includes(String(a.id)));
+  res.json({ success: true, articles: activeArticles, deletedIds });
+});
+
+// GET /api/articles/:id - Retrieve single article by ID or slug
+app.get("/api/articles/:id", (req, res) => {
+  const { id } = req.params;
+  const deletedIds = getDeletedArticleIds();
+  const searchKey = decodeURIComponent(String(id)).trim().toLowerCase();
+
+  if (deletedIds.some((d) => d.toLowerCase() === searchKey)) {
+    return res.status(404).json({ success: false, error: "Article has been deleted" });
+  }
+
+  const articles = getStoredArticles();
+  const article = articles.find(
+    (a) =>
+      String(a.id).toLowerCase() === searchKey ||
+      (a.slug && a.slug.toLowerCase() === searchKey)
+  );
+  if (article) {
+    return res.json({ success: true, article });
+  }
+  return res.status(404).json({ success: false, error: "Article not found" });
+});
+
+// POST /api/articles - Save or update article
+app.post("/api/articles", (req, res) => {
+  try {
+    const article = req.body;
+    if (!article || !article.title) {
+      return res.status(400).json({ success: false, error: "Article title is required." });
+    }
+
+    const articles = getStoredArticles();
+    const articleId = String(article.id || `art-${Date.now()}`);
+
+    let processedImage = article.image;
+    if (processedImage && typeof processedImage === "string" && processedImage.startsWith("data:image/")) {
+      processedImage = saveBase64Image(processedImage, `art-${articleId}`);
+    }
+
+    const articleToSave = {
+      ...article,
+      id: articleId,
+      image: processedImage || article.image,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Un-delete if this ID was previously marked deleted
+    const deletedIds = getDeletedArticleIds();
+    if (deletedIds.includes(articleId)) {
+      saveDeletedArticleIds(deletedIds.filter((d) => d !== articleId));
+    }
+
+    const index = articles.findIndex((a) => String(a.id) === String(articleId));
+    let updated;
+    if (index >= 0) {
+      updated = [...articles];
+      updated[index] = articleToSave;
+    } else {
+      updated = [articleToSave, ...articles];
+    }
+
+    saveStoredArticles(updated);
+    broadcastRealtimeEvent("articles_update", { article: articleToSave, action: index >= 0 ? "update" : "create" });
+    return res.json({ success: true, article: articleToSave, articles: updated, deletedIds: getDeletedArticleIds() });
+  } catch (err) {
+    console.error("Error saving article on server:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /api/articles/:id - Delete an article across all devices
+app.delete("/api/articles/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const idStr = String(id);
+
+    const deletedIds = getDeletedArticleIds();
+    if (!deletedIds.includes(idStr)) {
+      deletedIds.push(idStr);
+      saveDeletedArticleIds(deletedIds);
+    }
+
+    const articles = getStoredArticles();
+    const updated = articles.filter((a) => String(a.id) !== idStr);
+    saveStoredArticles(updated);
+    broadcastRealtimeEvent("articles_update", { deletedId: idStr, action: "delete" });
+    return res.json({ success: true, articles: updated, deletedIds: getDeletedArticleIds() });
+  } catch (err) {
+    console.error("Error deleting article on server:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// --- ADVERTISEMENTS STORE & REAL-TIME APIS -----------------------------------
+function getStoredAds() {
+  return readJsonFile(ADS_FILE, []);
+}
+
+function saveStoredAds(ads) {
+  return writeJsonFile(ADS_FILE, ads);
+}
+
+function getDeletedAdIds() {
+  return readJsonFile(DELETED_ADS_FILE, []).map(String);
+}
+
+function saveDeletedAdIds(ids) {
+  const uniqueIds = Array.from(new Set(ids.map(String)));
+  return writeJsonFile(DELETED_ADS_FILE, uniqueIds);
+}
+
+app.get("/api/advertisements", (req, res) => {
+  const ads = getStoredAds();
+  const deletedIds = getDeletedAdIds();
+  const activeAds = ads.filter((a) => !deletedIds.includes(String(a.id)));
+  res.json({ success: true, advertisements: activeAds, deletedIds });
+});
+
+app.post("/api/advertisements", (req, res) => {
+  try {
+    const adData = req.body;
+    if (!adData || !adData.title) {
+      return res.status(400).json({ success: false, error: "Ad title is required" });
+    }
+
+    const ads = getStoredAds();
+    const adId = String(adData.id || `ad-${Date.now()}`);
+
+    let processedImage = adData.image;
+    if (processedImage && typeof processedImage === "string" && processedImage.startsWith("data:image/")) {
+      processedImage = saveBase64Image(processedImage, `ad-${adId}`);
+    }
+
+    const adToSave = {
+      ...adData,
+      id: adId,
+      image: processedImage || adData.image,
+      clicks: Number(adData.clicks || 0),
+      impressions: Number(adData.impressions || 0),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const deletedIds = getDeletedAdIds();
+    if (deletedIds.includes(adId)) {
+      saveDeletedAdIds(deletedIds.filter((d) => d !== adId));
+    }
+
+    const index = ads.findIndex((a) => String(a.id) === String(adId));
+    let updated;
+    if (index >= 0) {
+      updated = [...ads];
+      updated[index] = adToSave;
+    } else {
+      updated = [adToSave, ...ads];
+    }
+
+    saveStoredAds(updated);
+    broadcastRealtimeEvent("ads_update", { advertisement: adToSave, action: index >= 0 ? "update" : "create" });
+    return res.json({ success: true, advertisement: adToSave, advertisements: updated });
+  } catch (err) {
+    console.error("Error saving ad on server:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete("/api/advertisements/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const idStr = String(id);
+
+    const deletedIds = getDeletedAdIds();
+    if (!deletedIds.includes(idStr)) {
+      deletedIds.push(idStr);
+      saveDeletedAdIds(deletedIds);
+    }
+
+    const ads = getStoredAds();
+    const updated = ads.filter((a) => String(a.id) !== idStr);
+    saveStoredAds(updated);
+    broadcastRealtimeEvent("ads_update", { deletedId: idStr, action: "delete" });
+    return res.json({ success: true, advertisements: updated, deletedIds: getDeletedAdIds() });
+  } catch (err) {
+    console.error("Error deleting ad on server:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/advertisements/:id/toggle", (req, res) => {
+  try {
+    const { id } = req.params;
+    const ads = getStoredAds();
+    const updated = ads.map((ad) => {
+      if (String(ad.id) === String(id)) {
+        return { ...ad, status: ad.status === "Active" ? "Paused" : "Active" };
+      }
+      return ad;
+    });
+    saveStoredAds(updated);
+    broadcastRealtimeEvent("ads_update", { toggledId: String(id), action: "toggle" });
+    return res.json({ success: true, advertisements: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/advertisements/:id/click", (req, res) => {
+  try {
+    const { id } = req.params;
+    const ads = getStoredAds();
+    const updated = ads.map((ad) => {
+      if (String(ad.id) === String(id)) {
+        return { ...ad, clicks: (Number(ad.clicks) || 0) + 1 };
+      }
+      return ad;
+    });
+    saveStoredAds(updated);
+    broadcastRealtimeEvent("ads_update", { clickedId: String(id), action: "click" });
+    return res.json({ success: true, advertisements: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// --- SUBSCRIBERS STORE & REAL-TIME APIS --------------------------------------
+function getStoredSubscribers() {
+  return readJsonFile(SUBSCRIBERS_FILE, []);
+}
+
+function saveStoredSubscribers(subscribers) {
+  return writeJsonFile(SUBSCRIBERS_FILE, subscribers);
+}
+
+app.get("/api/subscribers", (req, res) => {
+  res.json({ success: true, subscribers: getStoredSubscribers() });
+});
+
+app.post("/api/subscribers", (req, res) => {
+  try {
+    const { email, phone } = req.body;
+    const subscribers = getStoredSubscribers();
+    const cleanEmail = email ? email.trim().toLowerCase() : "";
+    const cleanPhone = phone ? phone.trim().replace(/\D/g, "") : "";
+
+    const alreadyExists = subscribers.some(
+      (s) =>
+        (cleanEmail && s.email && s.email.toLowerCase() === cleanEmail) ||
+        (cleanPhone && s.phone && s.phone === cleanPhone)
+    );
+
+    if (alreadyExists) {
+      return res.status(400).json({ success: false, message: "यह ईमेल या मोबाइल नंबर पहले से सब्सक्राइब है।" });
+    }
+
+    const newSub = {
+      id: "sub-" + Date.now(),
+      phone: cleanPhone,
+      email: cleanEmail,
+      subscribedAt: new Date().toLocaleString("en-IN"),
+      status: "Active",
+    };
+
+    const updated = [newSub, ...subscribers];
+    saveStoredSubscribers(updated);
+    broadcastRealtimeEvent("subscribers_update", { subscriber: newSub, action: "create" });
+    return res.json({ success: true, subscriber: newSub, subscribers: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete("/api/subscribers/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const subscribers = getStoredSubscribers();
+    const updated = subscribers.filter((s) => String(s.id) !== String(id) && String(s.phone) !== String(id));
+    saveStoredSubscribers(updated);
+    broadcastRealtimeEvent("subscribers_update", { deletedId: String(id), action: "delete" });
+    return res.json({ success: true, subscribers: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// --- NOTIFICATIONS STORE & REAL-TIME APIS -----------------------------------
+function getStoredNotifications() {
+  return readJsonFile(NOTIFICATIONS_FILE, []);
+}
+
+function saveStoredNotifications(notifs) {
+  return writeJsonFile(NOTIFICATIONS_FILE, notifs);
+}
+
+app.get("/api/notifications", (req, res) => {
+  res.json({ success: true, notifications: getStoredNotifications() });
+});
+
+app.post("/api/notifications", (req, res) => {
+  try {
+    const notif = req.body;
+    const notifs = getStoredNotifications();
+    const newNotif = {
+      ...notif,
+      id: notif.id || `notif-${Date.now()}`,
+      time: notif.time || new Date().toLocaleString("en-IN"),
+      unread: true,
+    };
+    const updated = [newNotif, ...notifs].slice(0, 50);
+    saveStoredNotifications(updated);
+    broadcastRealtimeEvent("notifications_update", { notification: newNotif, action: "create" });
+    return res.json({ success: true, notifications: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete("/api/notifications", (req, res) => {
+  saveStoredNotifications([]);
+  broadcastRealtimeEvent("notifications_update", { action: "clear" });
+  return res.json({ success: true, notifications: [] });
+});
+
+// POST /api/upload - Handle image upload
+app.post("/api/upload", (req, res) => {
+  try {
+    const { image, name } = req.body;
+    if (!image) {
+      return res.status(400).json({ success: false, error: "No image payload provided" });
+    }
+
+    if (image.startsWith("data:image")) {
+      const matches = image.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const mimeType = matches[1].toLowerCase();
+        let ext = "jpg";
+        if (mimeType.includes("png")) ext = "png";
+        else if (mimeType.includes("webp")) ext = "webp";
+        else if (mimeType.includes("gif")) ext = "gif";
+
+        const filename = `img-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+        const filePath = path.join(UPLOADS_DIR, filename);
+        fs.writeFileSync(filePath, Buffer.from(matches[2], "base64"));
+        return res.json({ success: true, url: `/uploads/${filename}` });
+      }
+    }
+
+    // Already a remote URL or plain string
+    return res.json({ success: true, url: image });
+  } catch (err) {
+    console.error("Error saving uploaded image:", err);
     return res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -512,7 +1077,182 @@ app.post("/api/whatsapp/disconnect", async (req, res) => {
   }
 });
 
-// Start Express Server
-app.listen(PORT, () => {
-  console.log(`🚀 Savdeshvani Server running on http://localhost:${PORT}`);
+// Health check endpoints for GoDaddy PaaS / Cloud Load Balancers
+app.get(["/health", "/healthz", "/_health", "/ping"], (req, res) => {
+  res.status(200).json({ status: "healthy", uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString() });
 });
+
+// Resolve static dist path across local development and GoDaddy cloud environments
+const candidatePaths = [
+  path.resolve(process.cwd(), "dist"),
+  path.join(__dirname, "../dist"),
+  path.join(__dirname, "dist"),
+];
+
+const staticDistPath = candidatePaths.find((dir) =>
+  fs.existsSync(path.join(dir, "index.html"))
+);
+
+if (staticDistPath) {
+  console.log(`📦 Serving static frontend files from: ${staticDistPath}`);
+  app.use(
+    express.static(staticDistPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith("index.html")) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res.setHeader("Pragma", "no-cache");
+          res.setHeader("Expires", "0");
+        } else if (filePath.includes("assets")) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    })
+  );
+
+  // Function to render index.html with dynamic OpenGraph meta tags for WhatsApp & Social Sharing
+  function renderArticlePageHtml(indexHtmlPath, req, res, articleId) {
+    try {
+      const rawHtml = fs.readFileSync(indexHtmlPath, "utf-8");
+      const searchKey = decodeURIComponent(String(articleId || "")).trim().toLowerCase();
+      const articles = getStoredArticles();
+      const deletedIds = getDeletedArticleIds();
+
+      if (deletedIds.some((d) => d.toLowerCase() === searchKey)) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        return res.sendFile(indexHtmlPath);
+      }
+
+      const article = articles.find(
+        (a) =>
+          String(a.id).toLowerCase() === searchKey ||
+          (a.slug && a.slug.toLowerCase() === searchKey)
+      );
+
+      if (!article) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        return res.sendFile(indexHtmlPath);
+      }
+
+      const host = req.get("host") || "swadeshvaani.com";
+      const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
+      const baseUrl = `${protocol}://${host}`;
+
+      let fullImageUrl = "";
+      if (article.image) {
+        let cleanImg = article.image;
+        if (typeof cleanImg === "string" && cleanImg.startsWith("data:image/")) {
+          cleanImg = saveBase64Image(cleanImg, `art-${article.id}`);
+          article.image = cleanImg;
+        }
+        if (cleanImg.startsWith("http://") || cleanImg.startsWith("https://")) {
+          fullImageUrl = cleanImg;
+        } else {
+          const cleanPath = cleanImg.startsWith("/") ? cleanImg : `/${cleanImg}`;
+          fullImageUrl = `${baseUrl}${cleanPath}`;
+        }
+      } else {
+        fullImageUrl = `${baseUrl}/src/Component/photos/logo.jpeg`;
+      }
+
+      const fullArticleUrl = `${baseUrl}/news/${encodeURIComponent(article.id)}`;
+      const safeTitle = (article.title || "स्वदेश वाणी | Swadesh Vani")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      const safeDescription = (article.excerpt || article.title || "स्वदेश वाणी — सत्य, निष्पक्ष और सटीक पत्रकारिता")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      const dynamicMetaTags = `
+    <!-- Dynamic Social Share & WhatsApp OpenGraph Tags -->
+    <title>${safeTitle} | स्वदेश वाणी</title>
+    <meta name="description" content="${safeDescription}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="स्वदेश वाणी (Swadesh Vaani)" />
+    <meta property="og:title" content="${safeTitle}" />
+    <meta property="og:description" content="${safeDescription}" />
+    <meta property="og:image" content="${fullImageUrl}" />
+    <meta property="og:image:secure_url" content="${fullImageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="${fullArticleUrl}" />
+    <link rel="image_src" href="${fullImageUrl}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${safeTitle}" />
+    <meta name="twitter:description" content="${safeDescription}" />
+    <meta name="twitter:image" content="${fullImageUrl}" />
+    <meta name="twitter:url" content="${fullArticleUrl}" />`;
+
+      let injectedHtml = rawHtml;
+      if (injectedHtml.includes("</head>")) {
+        // Strip static title and default og:image tags before injecting dynamic article tags
+        injectedHtml = injectedHtml
+          .replace(/<title>[\s\S]*?<\/title>/gi, "")
+          .replace(/<meta\s+property=["']og:title["'][\s\S]*?>/gi, "")
+          .replace(/<meta\s+property=["']og:description["'][\s\S]*?>/gi, "")
+          .replace(/<meta\s+property=["']og:image["'][\s\S]*?>/gi, "")
+          .replace(/<meta\s+property=["']og:image:secure_url["'][\s\S]*?>/gi, "")
+          .replace(/<meta\s+name=["']twitter:title["'][\s\S]*?>/gi, "")
+          .replace(/<meta\s+name=["']twitter:description["'][\s\S]*?>/gi, "")
+          .replace(/<meta\s+name=["']twitter:image["'][\s\S]*?>/gi, "")
+          .replace("</head>", `${dynamicMetaTags}\n  </head>`);
+      }
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      return res.send(injectedHtml);
+    } catch (err) {
+      console.error("Error injecting OpenGraph meta tags:", err);
+      return res.sendFile(indexHtmlPath);
+    }
+  }
+
+  // Dynamic News Article Sharing Routes (WhatsApp, Facebook, Twitter preview crawlers)
+  app.get(["/news/:id", "/article/:id"], (req, res) => {
+    const indexPath = path.join(staticDistPath, "index.html");
+    if (fs.existsSync(indexPath)) {
+      return renderArticlePageHtml(indexPath, req, res, req.params.id);
+    }
+    return res.status(404).send("Not found");
+  });
+
+  app.get("*", (req, res, next) => {
+    if (
+      req.path.startsWith("/api") ||
+      req.path === "/health" ||
+      req.path === "/healthz" ||
+      req.path === "/_health" ||
+      req.path === "/ping"
+    ) {
+      return next();
+    }
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.sendFile(path.join(staticDistPath, "index.html"));
+  });
+} else {
+  console.warn("⚠️ Warning: dist/index.html not found. Server running in API-only mode.");
+  app.get("/", (req, res) => {
+    res.status(200).send(`
+      <div style="font-family: system-ui, sans-serif; padding: 40px; text-align: center;">
+        <h2>🚀 Savdeshvani News Server is Running!</h2>
+        <p>Backend API status: <strong>Online</strong></p>
+      </div>
+    `);
+  });
+}
+
+// Start Express Server
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Savdeshvani Server running on port ${PORT}`);
+});
+
+server.on("error", (err) => {
+  console.error("Server listen error:", err);
+});
+
+

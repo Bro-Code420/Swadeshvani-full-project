@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -9,15 +9,8 @@ import {
   X,
   Zap,
 } from "lucide-react";
-
-import news1 from "./photos/news1.jpeg";
-import news2 from "./photos/news2.jpeg";
-import news3 from "./photos/news3.jpeg";
-import news4 from "./photos/news4.jpeg";
-import news5 from "./photos/news5.jpeg";
-import news6 from "./photos/news6.jpeg";
-import news7 from "./photos/news7.jpeg";
-import news8 from "./photos/news8.jpeg";
+import { getAllArticles, syncArticlesFromServer, JHARKHAND_DISTRICTS_DATA, getSubDistrictsForDistrict, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
+import { useLanguage } from "../context/LanguageContext";
 
 const districts = [
   "सभी जिले",
@@ -38,103 +31,17 @@ const districts = [
   "लोहरदगा",
   "खूंटी",
   "रामगढ़",
-  "जामताड़ा",
-  "गोड्डा",
   "पाकुड़",
+  "गोड्डा",
   "साहिबगंज",
-  "सरायकेला-खरसावां",
+  "जामताड़ा",
+  "कोडरमा",
+  "सरायकेला खरसावां",
   "पश्चिमी सिंहभूम",
   "पूर्वी सिंहभूम",
 ];
 
-const districtNews = [
-  {
-    id: 1,
-    title:
-      "जरमुंडी प्रखंड के आमगाछी गांव में आकाशीय बिजली का शिकार हुआ विद्युत ट्रांसफार्मर",
-    category: "बिजली",
-    district: "दुमका",
-    location: "जरमुंडी",
-    time: "10 मिनट पहले",
-    image: news1,
-    link: "/news/aamagachi-transformer",
-    featured: true,
-  },
-  {
-    id: 2,
-    title:
-      "JPSC मुद्दे पर जारी आंदोलन को सोनम वांगचुक का समर्थन, बोले- छात्रों की मांगें जल्द पूरी करे हेमंत सरकार",
-    category: "राजनीति",
-    district: "रांची",
-    location: "रांची",
-    time: "25 मिनट पहले",
-    image: news2,
-    link: "/news/jpsc-student-movement",
-    featured: true,
-  },
-  {
-    id: 3,
-    title: "देश की शिक्षा व्यवस्था में सुधार की जरूरत: मोहन भागवत",
-    category: "शिक्षा",
-    district: "रांची",
-    location: "रांची",
-    time: "40 मिनट पहले",
-    image: news3,
-    link: "/news/mohan-bhagwat-students",
-    featured: true,
-  },
-  {
-    id: 4,
-    title:
-      "जर्जर शौचालय और बंद बिजली से परेशान तीनघरा विद्यालय के 132 छात्र-छात्राएं",
-    category: "शिक्षा",
-    district: "दुमका",
-    location: "तीनघरा",
-    time: "1 घंटा पहले",
-    image: news4,
-    link: "/news/tinghara-school-problem",
-  },
-  {
-    id: 5,
-    title: "स्वतंत्रता दिवस पर दो दिवसीय फुटबॉल प्रतियोगिता की तैयारी",
-    category: "खेल",
-    district: "रामगढ़",
-    location: "रामगढ़",
-    time: "1 घंटा पहले",
-    image: news5,
-    link: "/news/ramgarh-football-tournament",
-  },
-  {
-    id: 6,
-    title: "निझोर गांव में मलेरिया मास सर्वे, 34 लोगों की जांच",
-    category: "स्वास्थ्य",
-    district: "दुमका",
-    location: "निझोर",
-    time: "2 घंटे पहले",
-    image: news6,
-    link: "/news/nizhor-malaria-survey",
-  },
-  {
-    id: 7,
-    title: "मसलिया में SIR-2026 के द्वितीय चरण की तैयारियों को लेकर समीक्षा बैठक",
-    category: "प्रशासन",
-    district: "दुमका",
-    location: "मसलिया",
-    time: "2 घंटे पहले",
-    image: news7,
-    link: "/news/sir-2026-review-meeting",
-  },
-  {
-    id: 8,
-    title: "श्रावणी मेला क्षेत्र के 10 स्थलों पर संचालित मातृत्व विश्राम गृह",
-    category: "स्थानीय खबर",
-    district: "देवघर",
-    location: "देवघर",
-    time: "3 घंटे पहले",
-    image: news8,
-    link: "/news/maternity-rest-homes",
-  },
-];
+const defaultDistrictNews = [];
 
 const categoryLinks = [
   "सभी खबरें",
@@ -149,9 +56,10 @@ const categoryLinks = [
 function NewsMeta({ item }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-      <span className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
         <MapPin size={13} className="text-orange-500" />
         {item.district}
+        {item.subDistrict && <span className="text-orange-600">({item.subDistrict})</span>}
       </span>
 
       <span className="text-slate-300">•</span>
@@ -165,6 +73,7 @@ function NewsMeta({ item }) {
 }
 
 function FeaturedNewsCard({ item }) {
+  const { t } = useLanguage();
   return (
     <Link
       to={item.link}
@@ -174,24 +83,32 @@ function FeaturedNewsCard({ item }) {
         <img
           src={item.image}
           alt={item.title}
+          loading="lazy"
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-        <span className="absolute left-4 top-4 rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white">
-          {item.category}
-        </span>
+        <div className="absolute left-4 top-4 flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-orange-600 px-3 py-1 text-xs font-bold text-white shadow">
+            <Zap size={12} />
+            {t("featuredBadge")}
+          </span>
+
+          <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            {item.category}
+          </span>
+        </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-5 text-white sm:p-6">
           <NewsMeta item={item} />
 
-          <h2 className="mt-3 text-xl font-bold leading-7 sm:text-2xl">
+          <h2 className="mt-2 line-clamp-2 text-lg font-bold leading-7 text-white sm:text-2xl">
             {item.title}
           </h2>
 
           <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-orange-300">
-            पूरी खबर पढ़ें
+            {t("readFullStory")}
             <ArrowRight
               size={16}
               className="transition group-hover:translate-x-1"
@@ -242,7 +159,7 @@ function SmallNewsItem({ item, index }) {
       className="group flex gap-3 border-b border-slate-100 py-4 last:border-0"
     >
       <span className="text-2xl font-bold leading-none text-orange-200">
-        {String(index + 1).padStart(2, "0")}
+        {toHindiNumber(String(index + 1).padStart(2, "0"))}
       </span>
 
       <div>
@@ -259,9 +176,53 @@ function SmallNewsItem({ item, index }) {
 }
 
 export default function DistrictNews() {
+  const { language, t } = useLanguage();
   const [selectedDistrict, setSelectedDistrict] = useState("सभी जिले");
+  const [selectedSubDistrict, setSelectedSubDistrict] = useState("सभी प्रखण्ड");
   const [selectedCategory, setSelectedCategory] = useState("सभी खबरें");
   const [search, setSearch] = useState("");
+  const [articlesList, setArticlesList] = useState(() => getAllArticles());
+
+  useEffect(() => {
+    setArticlesList(getAllArticles());
+    syncArticlesFromServer().then((fresh) => {
+      if (Array.isArray(fresh)) setArticlesList(getAllArticles());
+    });
+
+    const handleUpdate = () => {
+      setArticlesList(getAllArticles());
+    };
+
+    window.addEventListener("sv_articles_change", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    return () => {
+      window.removeEventListener("sv_articles_change", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, []);
+
+  const districtNews = useMemo(() => {
+    const dynamicItems = articlesList.map((a, idx) => ({
+      id: a.id,
+      title: a.title,
+      category: a.category || "झारखंड",
+      district: a.district || "रांची",
+      subDistrict: a.subDistrict || "",
+      location: a.district || "झारखंड",
+      time: a.date || "आज",
+      image: a.image || getCategoryFallbackImage(a.category),
+      link: `/news/${a.id}`,
+      featured: idx === 0 || a.featured,
+    }));
+    return dynamicItems.length > 0 ? dynamicItems : defaultDistrictNews;
+  }, [articlesList]);
+
+  // Current subdistricts for the chosen district
+  const availableSubDistricts = useMemo(() => {
+    if (selectedDistrict === "सभी जिले" || selectedDistrict === "All Districts") return [];
+    return getSubDistrictsForDistrict(selectedDistrict);
+  }, [selectedDistrict]);
 
   const filteredNews = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -269,22 +230,62 @@ export default function DistrictNews() {
     return districtNews.filter((item) => {
       const districtMatch =
         selectedDistrict === "सभी जिले" ||
-        item.district === selectedDistrict;
+        selectedDistrict === "All Districts" ||
+        item.district === selectedDistrict ||
+        (selectedDistrict === "रांची" && (item.district === "Ranchi" || item.district === "रांची")) ||
+        (selectedDistrict === "दुमका" && (item.district === "Dumka" || item.district === "दुमका")) ||
+        (selectedDistrict === "धनबाद" && (item.district === "Dhanbad" || item.district === "धनबाद")) ||
+        (selectedDistrict === "बोकारो" && (item.district === "Bokaro" || item.district === "बोकारो")) ||
+        (selectedDistrict === "देवघर" && (item.district === "Deoghar" || item.district === "देवघर")) ||
+        (selectedDistrict === "गिरिडीह" && (item.district === "Giridih" || item.district === "गिरिडीह")) ||
+        (selectedDistrict === "हजारीबाग" && (item.district === "Hazaribagh" || item.district === "हजारीबाग")) ||
+        (selectedDistrict === "पलामू" && (item.district === "Palamu" || item.district === "पलामू")) ||
+        (selectedDistrict === "गढ़वा" && (item.district === "Garhwa" || item.district === "गढ़वा")) ||
+        (selectedDistrict === "चतरा" && (item.district === "Chatra" || item.district === "चतरा")) ||
+        (selectedDistrict === "लातेहार" && (item.district === "Latehar" || item.district === "लातेहार")) ||
+        (selectedDistrict === "गुमला" && (item.district === "Gumla" || item.district === "गुमला")) ||
+        (selectedDistrict === "सिमडेगा" && (item.district === "Simdega" || item.district === "सिमडेगा")) ||
+        (selectedDistrict === "लोहरदगा" && (item.district === "Lohardaga" || item.district === "लोहरदगा")) ||
+        (selectedDistrict === "खूंटी" && (item.district === "Khunti" || item.district === "खूंटी")) ||
+        (selectedDistrict === "रामगढ़" && (item.district === "Ramgarh" || item.district === "रामगढ़")) ||
+        (selectedDistrict === "पाकुड़" && (item.district === "Pakur" || item.district === "पाकुड़")) ||
+        (selectedDistrict === "गोड्डा" && (item.district === "Godda" || item.district === "गोड्डा")) ||
+        (selectedDistrict === "साहिबगंज" && (item.district === "Sahibganj" || item.district === "साहिबगंज")) ||
+        (selectedDistrict === "जामताड़ा" && (item.district === "Jamtara" || item.district === "जामताड़ा")) ||
+        (selectedDistrict === "कोडरमा" && (item.district === "Koderma" || item.district === "कोडरमा")) ||
+        (selectedDistrict === "सरायकेला खरसावां" && item.district && (item.district.includes("Seraikela") || item.district.includes("सरायकेला"))) ||
+        (selectedDistrict === "पश्चिमी सिंहभूम" && item.district && (item.district.includes("West Singhbhum") || item.district.includes("पश्चिमी सिंहभूम"))) ||
+        (selectedDistrict === "पूर्वी सिंहभूम" && item.district && (item.district.includes("East Singhbhum") || item.district.includes("पूर्वी सिंहभूम") || item.district.includes("जमशेदपुर")));
+
+      const subDistrictMatch =
+        selectedSubDistrict === "सभी प्रखण्ड" ||
+        selectedSubDistrict === "All Blocks" ||
+        !item.subDistrict ||
+        item.subDistrict === selectedSubDistrict ||
+        (item.title && item.title.includes(selectedSubDistrict));
 
       const categoryMatch =
         selectedCategory === "सभी खबरें" ||
-        item.category === selectedCategory;
+        selectedCategory === "All Categories" ||
+        selectedCategory === "ALL" ||
+        item.category === selectedCategory ||
+        (selectedCategory === "राजनीति" && (item.category === "Politics" || item.category === "राजनीति")) ||
+        (selectedCategory === "शिक्षा" && (item.category === "Education" || item.category === "शिक्षा")) ||
+        (selectedCategory === "स्वास्थ्य" && (item.category === "Health" || item.category === "स्वास्थ्य" || item.category === "Health & Wellness")) ||
+        (selectedCategory === "खेल" && (item.category === "Sports" || item.category === "खेल")) ||
+        (selectedCategory === "अपराध" && (item.category === "Crime" || item.category === "अपराध" || item.category === "Crime & Law")) ||
+        (selectedCategory === "प्रशासन" && (item.category === "Administration" || item.category === "प्रशासन"));
 
       const searchMatch =
-        !normalizedSearch ||
-        [item.title, item.category, item.district, item.location]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedSearch);
+        normalizedSearch === "" ||
+        (item.title && item.title.toLowerCase().includes(normalizedSearch)) ||
+        (item.district && item.district.toLowerCase().includes(normalizedSearch)) ||
+        (item.subDistrict && item.subDistrict.toLowerCase().includes(normalizedSearch)) ||
+        (item.category && item.category.toLowerCase().includes(normalizedSearch));
 
-      return districtMatch && categoryMatch && searchMatch;
+      return districtMatch && subDistrictMatch && categoryMatch && searchMatch;
     });
-  }, [selectedDistrict, selectedCategory, search]);
+  }, [districtNews, selectedDistrict, selectedSubDistrict, selectedCategory, search]);
 
   const featuredNews = filteredNews.filter((item) => item.featured);
   const latestNews = filteredNews.filter((item) => !item.featured);
@@ -292,12 +293,6 @@ export default function DistrictNews() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Tricolor accent */}
-      <div className="flex h-1.5 w-full">
-        <div className="w-1/3 bg-orange-500" />
-        <div className="w-1/3 bg-white" />
-        <div className="w-1/3 bg-green-600" />
-      </div>
 
       {/* Page header */}
       <section className="border-b border-slate-200 bg-white">
@@ -305,22 +300,21 @@ export default function DistrictNews() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-600">
-                Jharkhand local coverage
+                {language === "hi" ? "झारखंड जिला कवरेज" : "Jharkhand Local Coverage"}
               </p>
 
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-blue-950 sm:text-5xl">
-                जिला समाचार
+                {t("districtTitle")}
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-                झारखंड के सभी जिलों से जुड़ी ताजा खबरें, स्थानीय अपडेट,
-                प्रशासन, शिक्षा, स्वास्थ्य, खेल और जनसमस्याओं की खबरें।
+                {t("districtSubtitle")}
               </p>
             </div>
 
             <div className="flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700">
               <Zap size={17} />
-              ताजा जिला अपडेट
+              {language === "hi" ? "ताजा जिला अपडेट" : "Latest District Updates"}
             </div>
           </div>
         </div>
@@ -328,11 +322,11 @@ export default function DistrictNews() {
 
       {/* District selector */}
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-5 py-5 sm:px-8">
+        <div className="mx-auto max-w-7xl px-5 py-5 sm:px-8 space-y-3">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
             <div className="flex shrink-0 items-center gap-2 text-sm font-bold text-blue-950">
               <MapPin size={18} className="text-orange-500" />
-              जिला चुनें
+              {t("selectDistrict")}
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -340,8 +334,11 @@ export default function DistrictNews() {
                 <button
                   key={district}
                   type="button"
-                  onClick={() => setSelectedDistrict(district)}
-                  className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
+                  onClick={() => {
+                    setSelectedDistrict(district);
+                    setSelectedSubDistrict(language === "hi" ? "सभी प्रखण्ड" : "All Blocks");
+                  }}
+                  className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition cursor-pointer ${
                     selectedDistrict === district
                       ? "bg-orange-500 text-white shadow-sm"
                       : "border border-slate-200 bg-white text-slate-600 hover:border-orange-300 hover:text-orange-600"
@@ -352,6 +349,49 @@ export default function DistrictNews() {
               ))}
             </div>
           </div>
+
+          {/* Sub-district / Block Filter Strip if district has subdistricts */}
+          {availableSubDistricts.length > 0 && (
+            <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center gap-2.5 animate-fadeIn">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-orange-500" />
+                प्रखण्ड / उप-जिला चुनें:
+              </span>
+
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubDistrict("सभी प्रखण्ड")}
+                  className={`whitespace-nowrap rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer ${
+                    selectedSubDistrict === "सभी प्रखण्ड"
+                      ? "bg-blue-950 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  सभी प्रखण्ड
+                </button>
+
+                {availableSubDistricts.map((sub) => {
+                  const label = sub.hi;
+                  const isSelected = selectedSubDistrict === sub.hi || selectedSubDistrict === sub.en;
+                  return (
+                    <button
+                      key={sub.en}
+                      type="button"
+                      onClick={() => setSelectedSubDistrict(sub.hi)}
+                      className={`whitespace-nowrap rounded-lg px-3 py-1 text-xs font-semibold transition cursor-pointer ${
+                        isSelected
+                          ? "bg-orange-600 text-white shadow-sm"
+                          : "bg-slate-100 text-slate-600 hover:bg-orange-50 hover:text-orange-600"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -390,9 +430,9 @@ export default function DistrictNews() {
                 key={category}
                 type="button"
                 onClick={() => setSelectedCategory(category)}
-                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition cursor-pointer ${
                   selectedCategory === category
-                    ? "bg-emerald-600 text-white"
+                    ? "bg-emerald-600 text-white shadow-sm"
                     : "border border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:text-emerald-700"
                 }`}
               >
@@ -531,13 +571,6 @@ export default function DistrictNews() {
           </aside>
         </div>
       </section>
-
-      {/* Footer accent */}
-      <div className="flex h-1.5 w-full">
-        <div className="w-1/3 bg-orange-500" />
-        <div className="w-1/3 bg-white" />
-        <div className="w-1/3 bg-green-600" />
-      </div>
     </main>
   );
 }

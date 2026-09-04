@@ -1,14 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock, MapPin, User, ArrowRight, Globe } from "lucide-react";
-import { getArticlesByCategory } from "../data/newsData";
+import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function WorldPage() {
+  const { language, t } = useLanguage();
   const [articles, setArticles] = useState([]);
 
   useEffect(() => {
-    const data = getArticlesByCategory("World");
-    setArticles(data);
+    setArticles(getArticlesByCategory("World"));
+    syncArticlesFromServer().then((fresh) => {
+      if (Array.isArray(fresh)) setArticles(getArticlesByCategory("World"));
+    });
+
+    const handleUpdate = () => {
+      setArticles(getArticlesByCategory("World"));
+    };
+
+    window.addEventListener("sv_articles_change", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    return () => {
+      window.removeEventListener("sv_articles_change", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   const featured = articles.slice(0, 2);
@@ -22,17 +38,17 @@ export default function WorldPage() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <div>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-3">
-                <Globe size={14} /> अंतर्राष्ट्रीय समाचार (World News)
+                <Globe size={14} /> {t("worldTitle")}
               </span>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-                <span className="text-orange-500">World</span> &amp; Global News
+                <span className="text-orange-500">देश-विदेश</span> एवं अंतरराष्ट्रीय समाचार
               </h1>
               <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl">
-                वैश्विक कूटनीति, अंतर्राष्ट्रीय अर्थव्यवस्था, पर्यावरण सम्मेलन और दुनिया भर के प्रमुख घटनाक्रमों का विश्लेषण।
+                {t("worldSubtitle")}
               </p>
             </div>
             <div className="text-xs text-slate-500 font-medium">
-              कुल {articles.length} विश्व समाचार उपलब्ध
+              कुल {toHindiNumber(articles.length)} विश्व समाचार उपलब्ध
             </div>
           </div>
         </div>
@@ -42,7 +58,7 @@ export default function WorldPage() {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
           <span className="h-4 w-1.5 bg-orange-500 rounded-full"></span>
-          प्रमुख अंतर्राष्ट्रीय सुर्खियां (Top Headlines)
+          प्रमुख अंतर्राष्ट्रीय सुर्खियां
         </h2>
 
         {featured.length > 0 ? (
@@ -55,13 +71,13 @@ export default function WorldPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"}
+                      src={item.image || getCategoryFallbackImage(item.category || "देश-विदेश")}
                       alt={item.title}
                       className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
                     />
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                       <span className="px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-sm">
-                        {item.category || "WORLD"}
+                        {item.category || "देश-विदेश"}
                       </span>
                       {item.district && (
                         <span className="px-2.5 py-1 bg-blue-950/80 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white shadow-sm flex items-center gap-1">
@@ -118,13 +134,13 @@ export default function WorldPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || "https://images.unsplash.com/photo-1523885144112-bedc9e442f26?auto=format&fit=crop&w=800&q=80"}
+                      src={item.image || getCategoryFallbackImage(item.category || "देश-विदेश")}
                       alt={item.title}
                       className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />
                     <div className="absolute left-3 top-3 flex flex-wrap gap-1">
                       <span className="px-2 py-0.5 bg-white/95 rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
-                        {item.category || "WORLD"}
+                        {item.category || "देश-विदेश"}
                       </span>
                       {item.district && (
                         <span className="px-2 py-0.5 bg-blue-950/80 rounded-full text-[10px] font-medium text-white shadow-sm">
@@ -147,13 +163,13 @@ export default function WorldPage() {
 
                 <div className="p-4 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                   <span className="truncate max-w-[120px]">
-                    👤 {item.reporter || item.author || "विदेशी डेस्क"}
+                    👤 {item.reporter || item.author || t("reporterFallback")}
                   </span>
                   <Link
                     to={`/news/${item.id}`}
                     className="font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
                   >
-                    पढ़ें <ArrowRight size={12} />
+                    {t("readStory")} <ArrowRight size={12} />
                   </Link>
                 </div>
               </article>

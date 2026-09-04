@@ -14,40 +14,18 @@ import {
 } from "lucide-react";
 import {
   getAllArticles,
-  saveSubscriber,
+  syncArticlesFromServer,
   getAdvertisements,
   recordAdClick,
+  toHindiNumber,
 } from "../data/newsData";
+import { useLanguage } from "../context/LanguageContext";
+import SubscribeSection from "./SubscribeSection";
 
-// Reusable Ad Banner Component
+// Reusable Single Ad Banner Component
 function AdBanner({ ad, position = "top_banner", className = "" }) {
   if (!ad || ad.status !== "Active") {
-    return (
-      <div className={`rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-800 ${className}`}>
-        <div className="flex items-center gap-3 text-center sm:text-left">
-          <div className="h-10 w-10 rounded-xl bg-orange-600 text-white font-bold flex items-center justify-center shrink-0 shadow-sm">
-            स्व
-          </div>
-          <div>
-            <span className="text-[10px] uppercase tracking-wider font-extrabold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
-              विज्ञापन स्थान (Ad Space)
-            </span>
-            <h4 className="text-sm font-bold text-blue-950 mt-0.5">
-              स्वदेश वाणी पर अपना विज्ञापन प्रदर्शित करें
-            </h4>
-            <p className="text-xs text-slate-500">
-              लाखों पाठकों तक अपने व्यापार और ब्रांड का प्रचार करें
-            </p>
-          </div>
-        </div>
-        <Link
-          to="/advertisement"
-          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow transition shrink-0"
-        >
-          विज्ञापन दें (Advertise) &rarr;
-        </Link>
-      </div>
-    );
+    return null;
   }
 
   const handleClick = () => {
@@ -165,27 +143,171 @@ function AdBanner({ ad, position = "top_banner", className = "" }) {
   );
 }
 
+// Auto-rotating Single Advertisement Banner (Only ONE ad displayed at a time, changes every 2 seconds)
+function AutoRotatingAdBanner({ ads = [], intervalMs = 2000, className = "" }) {
+  const activeAds = Array.isArray(ads) ? ads.filter((a) => a && a.status === "Active") : [];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (activeAds.length <= 1 || isHovered) return;
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % activeAds.length);
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [activeAds.length, intervalMs, isHovered]);
+
+  if (activeAds.length === 0) return null;
+
+  const safeIndex = currentIndex % activeAds.length;
+  const ad = activeAds[safeIndex];
+  if (!ad) return null;
+
+  const handleClick = () => {
+    recordAdClick(ad.id);
+  };
+
+  const isExternal =
+    ad.link &&
+    (ad.link.startsWith("http") ||
+      ad.link.startsWith("tel:") ||
+      ad.link.startsWith("mailto:"));
+
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`relative rounded-3xl border border-orange-200 overflow-hidden shadow-md group ${className}`}
+    >
+      <div className="relative h-36 sm:h-44 bg-slate-900 overflow-hidden">
+        <img
+          key={ad.id}
+          src={ad.image}
+          alt={ad.title}
+          className="w-full h-full object-cover opacity-85 group-hover:scale-105 transition-all duration-700 animate-fadeIn"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent p-5 sm:p-7 flex flex-col justify-between text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="bg-orange-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                Sponsored / प्रायोजित विज्ञापन
+              </span>
+              <span className="text-xs text-orange-200 font-bold truncate max-w-[200px] sm:max-w-none">
+                {ad.sponsor || "प्रायोजक"}
+              </span>
+            </div>
+
+            {/* Slide indicators if multiple ads */}
+            {activeAds.length > 1 && (
+              <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                {activeAds.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentIndex(idx);
+                    }}
+                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                      idx === safeIndex
+                        ? "w-5 bg-orange-500"
+                        : "w-1.5 bg-white/50 hover:bg-white"
+                    }`}
+                    title={`Ad ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="max-w-2xl">
+            <h3 className="text-lg sm:text-2xl font-extrabold leading-tight drop-shadow line-clamp-1 sm:line-clamp-2">
+              {ad.title}
+            </h3>
+            {ad.tagline && (
+              <p className="text-xs sm:text-sm text-slate-200 mt-1 line-clamp-1">
+                {ad.tagline}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between">
+            {isExternal ? (
+              <a
+                href={ad.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleClick}
+                className="inline-flex items-center gap-2 px-4 py-1.5 sm:py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold rounded-xl shadow-lg transition cursor-pointer"
+              >
+                <span>विस्तार से जानें (Learn More)</span>
+                <ArrowRight size={13} />
+              </a>
+            ) : (
+              <Link
+                to={ad.link || "/advertisement"}
+                onClick={handleClick}
+                className="inline-flex items-center gap-2 px-4 py-1.5 sm:py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold rounded-xl shadow-lg transition cursor-pointer"
+              >
+                <span>विस्तार से जानें (Learn More)</span>
+                <ArrowRight size={13} />
+              </Link>
+            )}
+
+            {activeAds.length > 1 && (
+              <span className="text-[10px] text-slate-300 font-mono hidden sm:inline-block">
+                {safeIndex + 1}/{activeAds.length} • स्वतः परिवर्तन (2s)
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const Home = () => {
-  const [newsData, setNewsData] = useState([]);
+  const { language, t } = useLanguage();
+  const [newsData, setNewsData] = useState(() => getAllArticles());
   const [ads, setAds] = useState(() => getAdvertisements());
 
   // Subscribe form state
+  const [subMethod, setSubMethod] = useState("phone"); // "phone" | "email"
   const [subPhone, setSubPhone] = useState("");
   const [subEmail, setSubEmail] = useState("");
   const [subStatus, setSubStatus] = useState(null); // { type: 'success' | 'error', message: string }
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Initial load from local cache
     setNewsData(getAllArticles());
     setAds(getAdvertisements());
+
+    // Fetch latest articles from server
+    syncArticlesFromServer().then((fresh) => {
+      if (Array.isArray(fresh)) {
+        setNewsData(fresh);
+      }
+    });
+
+    const handleArticlesChange = () => {
+      setNewsData(getAllArticles());
+    };
 
     const handleAdsChange = () => {
       setAds(getAdvertisements());
     };
 
+    window.addEventListener("sv_articles_change", handleArticlesChange);
     window.addEventListener("sv_ads_change", handleAdsChange);
+    window.addEventListener("storage", handleArticlesChange);
+
     return () => {
+      window.removeEventListener("sv_articles_change", handleArticlesChange);
       window.removeEventListener("sv_ads_change", handleAdsChange);
+      window.removeEventListener("storage", handleArticlesChange);
     };
   }, []);
 
@@ -197,87 +319,88 @@ const Home = () => {
     e.preventDefault();
     setSubStatus(null);
 
-    // Validation
-    const cleanPhone = subPhone.trim().replace(/\D/g, "");
-    const cleanEmail = subEmail.trim();
-
-    // 10 digit Indian phone validation
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(cleanPhone)) {
-      setSubStatus({
-        type: "error",
-        message: "कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें (उदा. 9876543210)।",
-      });
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(cleanEmail)) {
-      setSubStatus({
-        type: "error",
-        message: "कृपया एक मान्य ईमेल आईडी दर्ज करें (उदा. name@example.com)।",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const res = saveSubscriber({ email: cleanEmail, phone: cleanPhone });
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-      if (res.success) {
-        setSubStatus({
-          type: "success",
-          message: "🎉 बधाई! आपका मोबाइल नंबर और ईमेल सफलतापूर्वक सब्सक्राइब हो गया है।",
-        });
-        // Notify admin via email (fire-and-forget)
-        fetch("/api/notify-subscriber", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: cleanEmail,
-            phone: cleanPhone,
-            subscribedAt: res.subscriber?.subscribedAt || new Date().toLocaleString("en-IN"),
-          }),
-        }).catch(() => {}); // silent fail — do not block the UI
-        setSubPhone("");
-        setSubEmail("");
-      } else {
+    if (subMethod === "phone") {
+      const cleanPhone = subPhone.trim().replace(/\D/g, "");
+      if (!cleanPhone) {
         setSubStatus({
           type: "error",
-          message: res.message || "सब्सक्रिप्शन में त्रुटि आई।",
+          message: language === "hi" ? "कृपया सदस्यता लेने के लिए अपना 10 अंकों का मोबाइल नंबर दर्ज करें।" : "Please enter your 10-digit mobile number.",
         });
+        return;
       }
-    }, 400);
+      if (cleanPhone.length < 10) {
+        setSubStatus({
+          type: "error",
+          message: language === "hi" ? "कृपया एक मान्य 10 अंकों का मोबाइल नंबर दर्ज करें।" : "Please enter a valid 10-digit mobile number.",
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+      const res = saveSubscriber({ phone: cleanPhone, email: "" });
+      setTimeout(() => {
+        setIsSubmitting(false);
+        if (res.success) {
+          setSubStatus({
+            type: "success",
+            message: language === "hi" ? `🎉 बधाई! आपका मोबाइल नंबर (+91 ${cleanPhone}) सफलतापूर्वक सब्सक्राइब हो गया है।` : `🎉 Congratulations! Your mobile (+91 ${cleanPhone}) is subscribed successfully!`,
+          });
+          setSubPhone("");
+        } else {
+          setSubStatus({
+            type: "error",
+            message: res.error || (language === "hi" ? "सदस्यता लेने में समस्या आई।" : "Subscription failed. Please try again."),
+          });
+        }
+      }, 400);
+    } else {
+      const cleanEmail = subEmail.trim();
+      if (!cleanEmail) {
+        setSubStatus({
+          type: "error",
+          message: language === "hi" ? "कृपया सदस्यता लेने के लिए अपना ईमेल पता दर्ज करें।" : "Please enter your email address.",
+        });
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        setSubStatus({
+          type: "error",
+          message: language === "hi" ? "कृपया एक मान्य ईमेल पता दर्ज करें।" : "Please enter a valid email address.",
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+      const res = saveSubscriber({ email: cleanEmail, phone: "" });
+      setTimeout(() => {
+        setIsSubmitting(false);
+        if (res.success) {
+          setSubStatus({
+            type: "success",
+            message: language === "hi" ? `🎉 बधाई! आपकी ईमेल (${cleanEmail}) सफलतापूर्वक सब्सक्राइब हो गई है।` : `🎉 Congratulations! Your email (${cleanEmail}) is subscribed successfully!`,
+          });
+          setSubEmail("");
+        } else {
+          setSubStatus({
+            type: "error",
+            message: res.error || (language === "hi" ? "सदस्यता लेने में समस्या आई।" : "Subscription failed. Please try again."),
+          });
+        }
+      }, 400);
+    }
   };
 
-  if (newsData.length === 0) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-      </div>
-    );
-  }
-
-  const mainNews = newsData[0];
+  const mainNews = newsData[0] || null;
   const latestNews = newsData.slice(1, 6);
   const topHeadlines = newsData.slice(6, 12);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Top Header Leaderboard Ad */}
-      <section className="mx-auto max-w-7xl px-5 pt-6 sm:px-8">
-        <AdBanner
-          ad={getAdByPosition("top_banner")}
-          position="top_banner"
-        />
-      </section>
-
       {/* Hero section */}
       <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
-        <div className="grid gap-6 lg:grid-cols-3">
+        {mainNews ? (
+          <div className="grid gap-6 lg:grid-cols-3">
           {/* Main news */}
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
             <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden">
@@ -323,7 +446,7 @@ const Home = () => {
 
                 <span className="flex items-center gap-1.5">
                   <User size={15} className="text-orange-500" />
-                  {mainNews.reporter || mainNews.author || "स्वदेश वाणी संवाददाता"}
+                  {mainNews.reporter || mainNews.author || (language === "hi" ? "स्वदेश वाणी संवाददाता" : "Swadesh Vani Bureau")}
                 </span>
 
                 <span className="flex items-center gap-1.5">
@@ -336,7 +459,7 @@ const Home = () => {
                 to={`/news/${mainNews.id}`}
                 className="mt-6 inline-flex items-center gap-2 font-semibold text-orange-600 transition hover:text-orange-700"
               >
-                पूरी खबर पढ़ें
+                {t("readMore")}
                 <ArrowRight size={18} />
               </Link>
             </div>
@@ -352,10 +475,10 @@ const Home = () => {
 
                 <div>
                   <h2 className="text-xl font-bold text-blue-950">
-                    ताजा खबरें
+                    {t("latestNews")}
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Latest updates
+                    {language === "hi" ? "ताज़ा ब्रेकिंग अपडेट्स" : "Latest Breaking Updates"}
                   </p>
                 </div>
               </div>
@@ -385,11 +508,11 @@ const Home = () => {
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
                       <span className="flex items-center gap-1">
                         <User size={12} className="text-slate-400" />
-                        {item.reporter || item.author || "ब्यूरो"}
+                        {item.reporter || item.author || (language === "hi" ? "ब्यूरो" : "Bureau")}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
-                        {item.date || "आज"}
+                        {item.date || (language === "hi" ? "आज" : "Today")}
                       </span>
                     </div>
                   </Link>
@@ -404,302 +527,212 @@ const Home = () => {
             />
           </aside>
         </div>
-      </section>
-
-      {/* All news counter */}
-      <section className="mx-auto max-w-7xl px-5 pb-5 sm:px-8">
-        <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-5 py-4">
-          <div>
-            <p className="text-sm font-semibold text-blue-950">
-              आज की प्रमुख खबरें
-            </p>
-            <p className="mt-1 text-xs text-blue-700">
-              स्थानीय, जिला, राज्य और देश की ताजा खबरें
-            </p>
+      ) : (
+        <div className="rounded-3xl border border-dashed border-orange-200 bg-orange-50/50 p-8 sm:p-14 text-center my-6 shadow-xs">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 mb-4">
+            <TrendingUp size={32} />
           </div>
-
-          <span className="rounded-full bg-orange-500 px-3 py-1 text-sm font-bold text-white">
-            कुल {newsData.length} खबरें
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-3.5 py-1 text-xs font-bold text-orange-700 uppercase tracking-wider mb-3">
+            स्वदेश वाणी डिजिटल मीडिया
           </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-950">
+            स्वदेश वाणी न्यूज़ पोर्टल पर आपका स्वागत है
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
+            वर्तमान में कोई समाचार उपलब्ध नहीं है। नए समाचार जल्द ही प्रकाशित किए जाएंगे।
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              to="/district"
+              className="inline-flex items-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-6 py-2.5 text-sm font-bold text-white transition shadow-sm"
+            >
+              जिलेवार खबरें देखें
+            </Link>
+          </div>
         </div>
+      )}
       </section>
+
+      {/* All news counter - shown only if newsData exists */}
+      {newsData.length > 0 && (
+        <section className="mx-auto max-w-7xl px-5 pb-5 sm:px-8">
+          <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-5 py-4">
+            <div>
+              <p className="text-sm font-semibold text-blue-950">
+                {t("todayTopStories")}
+              </p>
+              <p className="mt-1 text-xs text-blue-700">
+                {t("todayTopStoriesSubtitle")}
+              </p>
+            </div>
+
+            <span className="rounded-full bg-orange-500 px-3 py-1 text-sm font-bold text-white">
+              {language === "hi" ? `कुल ${toHindiNumber(newsData.length)} खबरें` : `Total ${newsData.length} Stories`}
+            </span>
+          </div>
+        </section>
+      )}
 
       {/* Top headlines */}
-      <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
-        <div className="mb-7 flex items-end justify-between">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-orange-600">
-              Featured Stories
-            </p>
+      {topHeadlines.length > 0 && (
+        <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+          <div className="mb-7 flex items-end justify-between">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-orange-600">
+                {t("featuredBadge")}
+              </p>
 
-            <h2 className="text-2xl font-bold text-blue-950 sm:text-3xl">
-              प्रमुख खबरें
-            </h2>
+              <h2 className="text-2xl font-bold text-blue-950 sm:text-3xl">
+                {t("featuredStories")}
+              </h2>
+            </div>
           </div>
-        </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {topHeadlines.map((item) => (
-            <article
-              key={item.id}
-              className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
-            >
-              <div>
-                <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-
-                  <div className="absolute left-4 top-4 flex flex-wrap gap-1.5">
-                    <span className="rounded-full bg-white/95 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm">
-                      {item.category}
-                    </span>
-                    {item.district && (
-                      <span className="rounded-full bg-blue-950/80 backdrop-blur-sm px-2.5 py-1 text-[11px] font-medium text-white shadow-sm flex items-center gap-1">
-                        <MapPin size={10} className="text-orange-400" />
-                        {item.district}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-
-                <div className="p-5">
-                  <h3 className="line-clamp-3 text-lg font-bold leading-7 text-blue-950">
-                    <Link
-                      to={`/news/${item.id}`}
-                      className="hover:text-orange-600 transition"
-                    >
-                      {item.title}
-                    </Link>
-                  </h3>
-
-                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
-                    {item.excerpt}
-                  </p>
-                </div>
-              </div>
-
-              <div className="px-5 pb-5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                <span className="flex items-center gap-1 truncate max-w-[150px]">
-                  <User size={13} className="text-orange-500 flex-shrink-0" />
-                  <span className="truncate">{item.reporter || item.author || "स्वदेश वाणी"}</span>
-                </span>
-
-                <Link
-                  to={`/news/${item.id}`}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 transition hover:text-orange-700"
-                >
-                  पढ़ें
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Middle Feed Leaderboard Ad */}
-      <section className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
-        <AdBanner
-          ad={getAdByPosition("middle_banner")}
-          position="middle_banner"
-        />
-      </section>
-
-      {/* Complete news list */}
-      <section className="mx-auto max-w-7xl px-5 pb-12 sm:px-8">
-        <div className="mb-7">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-orange-600">
-            Latest News
-          </p>
-
-          <h2 className="text-2xl font-bold text-blue-950 sm:text-3xl">
-            सभी समाचार
-          </h2>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {newsData.map((item, index) => (
-            <article
-              key={item.id}
-              className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-orange-200 hover:shadow-sm"
-            >
-              <Link to={`/news/${item.id}`} className="hidden h-24 w-32 shrink-0 overflow-hidden rounded-lg sm:block group">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
-                />
-              </Link>
-
-              <div className="min-w-0 flex-1 flex flex-col justify-between">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {topHeadlines.map((item) => (
+              <article
+                key={item.id}
+                className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
+              >
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-bold text-orange-600">
-                      #{index + 1}
-                    </span>
+                  <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
 
-                    <span className="text-xs font-medium text-slate-500">
-                      {item.category}
-                    </span>
-
-                    {item.district && (
-                      <span className="text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-medium">
-                        📍 {item.district}
+                    <div className="absolute left-4 top-4 flex flex-wrap gap-1.5">
+                      <span className="rounded-full bg-white/95 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm">
+                        {item.category}
                       </span>
-                    )}
-                  </div>
+                      {item.district && (
+                        <span className="rounded-full bg-blue-950/80 backdrop-blur-sm px-2.5 py-1 text-[11px] font-medium text-white shadow-sm flex items-center gap-1">
+                          <MapPin size={10} className="text-orange-400" />
+                          {item.district}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
 
-                  <h3 className="mt-1 line-clamp-2 font-bold leading-6 text-blue-950">
-                    <Link to={`/news/${item.id}`} className="hover:text-orange-600 transition">
-                      {item.title}
-                    </Link>
-                  </h3>
+                  <div className="p-5">
+                    <h3 className="line-clamp-3 text-lg font-bold leading-7 text-blue-950">
+                      <Link
+                        to={`/news/${item.id}`}
+                        className="hover:text-orange-600 transition"
+                      >
+                        {item.title}
+                      </Link>
+                    </h3>
+
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
+                      {item.excerpt}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <User size={12} className="text-slate-400" />
-                    {item.reporter || item.author || "स्वदेश वाणी संवाददाता"}
+                <div className="px-5 pb-5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                  <span className="flex items-center gap-1 truncate max-w-[150px]">
+                    <User size={13} className="text-orange-500 flex-shrink-0" />
+                    <span className="truncate">{item.reporter || item.author || t("reporterFallback")}</span>
                   </span>
 
                   <Link
                     to={`/news/${item.id}`}
-                    className="inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 transition hover:text-orange-700"
                   >
-                    पढ़ें
+                    {t("readStory")}
                     <ArrowRight size={14} />
                   </Link>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Bottom Section Banner Ad */}
-      <section className="mx-auto max-w-7xl px-5 pb-8 sm:px-8">
-        <AdBanner
-          ad={getAdByPosition("bottom_banner")}
-          position="bottom_banner"
-        />
+      {/* Complete news list */}
+      {newsData.length > 0 && (
+        <section className="mx-auto max-w-7xl px-5 pb-12 sm:px-8">
+          <div className="mb-7">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-orange-600">
+              {language === "hi" ? "ताज़ा अपडेट्स" : "LATEST STORIES"}
+            </p>
+
+            <h2 className="text-2xl font-bold text-blue-950 sm:text-3xl">
+              {t("allNews")}
+            </h2>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {newsData.map((item, index) => (
+              <article
+                key={item.id}
+                className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-orange-200 hover:shadow-sm"
+              >
+                <Link to={`/news/${item.id}`} className="hidden h-24 w-32 shrink-0 overflow-hidden rounded-lg sm:block group">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                </Link>
+
+                <div className="min-w-0 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold text-orange-600">
+                        #{toHindiNumber(index + 1)}
+                      </span>
+
+                      <span className="text-xs font-medium text-slate-500">
+                        {item.category}
+                      </span>
+
+                      {item.district && (
+                        <span className="text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-medium">
+                          📍 {item.district}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="mt-1 line-clamp-2 font-bold leading-6 text-blue-950">
+                      <Link to={`/news/${item.id}`} className="hover:text-orange-600 transition">
+                        {item.title}
+                      </Link>
+                    </h3>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <User size={12} className="text-slate-400" />
+                      {item.reporter || item.author || t("reporterFallback")}
+                    </span>
+
+                    <Link
+                      to={`/news/${item.id}`}
+                      className="inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700"
+                    >
+                      {t("readStory")}
+                      <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Auto-Rotating Single Advertisement Banner right after 'सभी समाचार' (Changes every 2 seconds) */}
+      <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-8">
+        <AutoRotatingAdBanner ads={ads} intervalMs={2000} />
       </section>
 
       {/* Newsletter & WhatsApp Subscription Form */}
       <section className="border-t border-slate-200 bg-white py-16">
         <div className="mx-auto max-w-4xl px-5 sm:px-8">
-          <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50/50 via-white to-blue-50/40 p-8 sm:p-12 shadow-lg shadow-orange-500/5">
-            <div className="text-center max-w-2xl mx-auto">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-3.5 py-1 text-xs font-bold text-orange-700 uppercase tracking-wider mb-3">
-                <Mail size={13} className="text-orange-600" /> दैनिक समाचार सदस्यता
-              </span>
-
-              <h2 className="text-2xl font-extrabold text-blue-950 sm:text-3xl lg:text-4xl">
-                न्यूज़ अपडेट और ब्रेकिंग अलर्ट्स प्राप्त करें
-              </h2>
-
-              <p className="mt-3 text-sm sm:text-base leading-relaxed text-slate-600">
-                झारखंड, देश और दुनिया की ताजा खबरें, ब्रेकिंग न्यूज़ एवं महत्वपूर्ण सूचनाएं सीधे अपने व्हाट्सएप और ईमेल पर प्राप्त करें।
-              </p>
-            </div>
-
-            {/* Notification alert */}
-            {subStatus && (
-              <div
-                className={`mt-6 flex items-start gap-3 rounded-2xl p-4 text-sm transition-all duration-300 ${
-                  subStatus.type === "success"
-                    ? "bg-green-50 border border-green-200 text-green-800"
-                    : "bg-red-50 border border-red-200 text-red-800"
-                }`}
-              >
-                {subStatus.type === "success" ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                )}
-                <div className="flex-1 font-medium">{subStatus.message}</div>
-              </div>
-            )}
-
-            <form onSubmit={handleSubscribe} className="mt-8 space-y-4 max-w-2xl mx-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Mobile Number Input */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    मोबाइल नंबर (WhatsApp / SMS) *
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Phone size={16} />
-                    </div>
-                    <input
-                      type="tel"
-                      value={subPhone}
-                      onChange={(e) => setSubPhone(e.target.value)}
-                      placeholder="10 अंकों का मोबाइल नंबर"
-                      maxLength={10}
-                      required
-                      className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100"
-                    />
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-1 block">
-                    उदा. 9876543210
-                  </span>
-                </div>
-
-                {/* Email Address Input */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    ईमेल पता (Email Address) *
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Mail size={16} />
-                    </div>
-                    <input
-                      type="email"
-                      value={subEmail}
-                      onChange={(e) => setSubEmail(e.target.value)}
-                      placeholder="अपना ईमेल दर्ज करें"
-                      required
-                      className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-100"
-                    />
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-1 block">
-                    उदा. yourname@example.com
-                  </span>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-amber-600 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <span>सब्सक्राइब किया जा रहा है...</span>
-                ) : (
-                  <>
-                    <span>मुफ्त सदस्यता लें (Subscribe Free)</span>
-                    <ArrowRight size={16} />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-center text-xs text-slate-500">
-              <span className="flex items-center gap-1">
-                🔒 आपका डेटा 100% सुरक्षित और गोपनीय है
-              </span>
-              <span>•</span>
-              <span>📰 कोई स्पैम नहीं</span>
-              <span>•</span>
-              <span>🚫 कभी भी अनसब्सक्राइब करें</span>
-            </div>
-          </div>
+          <SubscribeSection />
         </div>
       </section>
     </div>

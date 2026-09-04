@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import {
   FaArrowRight,
@@ -6,9 +6,10 @@ import {
   FaLanguage,
   FaCheckCircle,
 } from "react-icons/fa";
+import { useLanguage } from "../context/LanguageContext";
 
 const aboutContent = {
-  hindi: {
+  hi: {
     language: "हिंदी",
     badge: "हमारे बारे में",
     title: "आपकी खबर। आपकी आवाज़। आपका स्वदेश।",
@@ -43,7 +44,7 @@ const aboutContent = {
     footerLine: "आपकी खबर। आपकी आवाज़। आपका स्वदेश।",
   },
 
-  english: {
+  en: {
     language: "English",
     badge: "About Us",
     title: "Your News. Your Voice. Your Swadesh.",
@@ -80,8 +81,9 @@ const aboutContent = {
 };
 
 export default function About() {
-  const [language, setLanguage] = useState("hindi");
-  const content = aboutContent[language];
+  const { language, setLanguage } = useLanguage();
+  const langKey = language === "en" ? "en" : "hi";
+  const content = aboutContent[langKey] || aboutContent.hi;
 
   return (
     <main className="min-h-screen bg-[#fffdf9] text-slate-800">
@@ -110,33 +112,6 @@ export default function About() {
             <p className="mt-6 max-w-3xl text-base leading-8 text-slate-600 md:text-lg">
               {content.intro}
             </p>
-
-            {/* Language switcher */}
-            <div className="mt-8 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1">
-              <FaLanguage className="ml-3 text-orange-500" />
-
-              <button
-                onClick={() => setLanguage("hindi")}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  language === "hindi"
-                    ? "bg-orange-500 text-white"
-                    : "text-slate-600 hover:text-orange-600"
-                }`}
-              >
-                हिंदी
-              </button>
-
-              <button
-                onClick={() => setLanguage("english")}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  language === "english"
-                    ? "bg-orange-500 text-white"
-                    : "text-slate-600 hover:text-orange-600"
-                }`}
-              >
-                English
-              </button>
-            </div>
           </div>
         </div>
       </section>

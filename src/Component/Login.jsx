@@ -6,6 +6,7 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
+  ArrowLeft,
   AlertCircle,
   CheckCircle2,
   Home,
@@ -84,7 +85,7 @@ export default function LoginPage() {
     }
   }, [navigate, redirectPath]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -99,8 +100,8 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const result = authenticateAccount(identifier, password, rememberMe);
+    try {
+      const result = await authenticateAccount(identifier, password, rememberMe);
       setIsLoading(false);
 
       if (result.success) {
@@ -127,7 +128,10 @@ export default function LoginPage() {
       } else {
         setErrorMsg(result.message);
       }
-    }, 300);
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMsg("लॉगिन में त्रुटि आई। कृपया पुनः प्रयास करें।");
+    }
   };
 
   // ===== SIGNUP STATE =====
@@ -344,10 +348,10 @@ export default function LoginPage() {
       <div className="mb-6 text-center relative z-10">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white hover:bg-orange-50 border border-orange-200 text-orange-700 hover:text-orange-800 text-xs font-medium backdrop-blur transition mb-4 shadow-sm"
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white hover:bg-orange-600 hover:text-white border border-orange-200 text-orange-700 text-xs font-bold backdrop-blur transition-all duration-200 mb-4 shadow-sm group cursor-pointer"
         >
-          <Home size={14} className="text-orange-600" />
-          <span>मुख्य पृष्ठ पर वापस जाएं (Back to Home)</span>
+          <Home size={14} className="text-orange-600 group-hover:text-white" />
+          <span>← मुख्य पृष्ठ पर वापस जाएं (Back to Home)</span>
         </Link>
 
         <div className="flex justify-center mb-2.5">
@@ -485,21 +489,13 @@ export default function LoginPage() {
                     <span className="text-xs text-slate-600">Remember me</span>
                   </label>
 
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => { setShowForgotModal(true); setForgotStatus(null); }}
-                      className="text-xs text-orange-600 hover:text-orange-700 transition cursor-pointer font-medium"
-                    >
-                      पासवर्ड भूल गए? (Forgot Password)
-                    </button>
-                    <Link
-                      to="/"
-                      className="text-xs text-slate-500 hover:text-slate-700 transition"
-                    >
-                      होम पर जाएं
-                    </Link>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgotModal(true); setForgotStatus(null); }}
+                    className="text-xs text-orange-600 hover:text-orange-700 transition cursor-pointer font-semibold"
+                  >
+                    पासवर्ड भूल गए?
+                  </button>
                 </div>
 
                 <button
@@ -773,8 +769,19 @@ export default function LoginPage() {
           )}
         </div>
 
+        {/* Bottom Back to Home Link */}
+        <div className="mt-5 text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/80 hover:bg-white text-slate-700 hover:text-orange-600 border border-orange-200 text-xs font-bold shadow-sm transition"
+          >
+            <ArrowLeft size={14} className="text-orange-500" />
+            <span>← मुख्य पृष्ठ पर वापस जाएं (Back to Homepage)</span>
+          </Link>
+        </div>
+
         {/* Footer info */}
-        <p className="mt-5 text-center text-xs text-slate-500">
+        <p className="mt-4 text-center text-xs text-slate-500">
           Swadesh Vaani &copy; {new Date().getFullYear()} &bull; All Rights Reserved
         </p>
       </div>

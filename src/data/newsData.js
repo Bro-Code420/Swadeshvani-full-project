@@ -8,6 +8,10 @@ import news7 from "../Component/photos/news7.jpeg";
 import news8 from "../Component/photos/news8.jpeg";
 import news9 from "../Component/photos/news9.jpeg";
 import news10 from "../Component/photos/news10.jpeg";
+export { toHindiNumber } from "../utils/hindiNumbers";
+import { broadcastLocalEvent } from "../utils/realtimeEngine";
+import { convex } from "../utils/convexClient";
+import { api } from "../../convex/_generated/api";
 
 export const JHARKHAND_DISTRICTS = [
   "Ranchi",
@@ -37,251 +41,462 @@ export const JHARKHAND_DISTRICTS = [
   "State / National / Other",
 ];
 
+export const JHARKHAND_DISTRICTS_DATA = {
+  "Ranchi": {
+    hi: "रांची",
+    en: "Ranchi",
+    subDistricts: [
+      { hi: "सदर रांची", en: "Ranchi Sadar" },
+      { hi: "कांके", en: "Kanke" },
+      { hi: "रातू", en: "Ratu" },
+      { hi: "नामकुम", en: "Namkum" },
+      { hi: "नगड़ी", en: "Nagri" },
+      { hi: "ओरमांझी", en: "Ormanjhi" },
+      { hi: "अनगड़ा", en: "Angara" },
+      { hi: "सिल्ली", en: "Silli" },
+      { hi: "बुंडू", en: "Bundu" },
+      { hi: "तमाड़", en: "Tamar" },
+      { hi: "सोनाहातू", en: "Sonahatu" },
+      { hi: "राहे", en: "Rahe" },
+      { hi: "बेड़ो", en: "Bero" },
+      { hi: "इटकी", en: "Itki" },
+      { hi: "मांडर", en: "Mandar" },
+      { hi: "चान्हो", en: "Chanho" },
+      { hi: "लापुंग", en: "Lapung" },
+      { hi: "बुढ़मू", en: "Burmu" },
+      { hi: "खलारी", en: "Khelari" }
+    ]
+  },
+  "Dumka": {
+    hi: "दुमका",
+    en: "Dumka",
+    subDistricts: [
+      { hi: "दुमका सदर", en: "Dumka Sadar" },
+      { hi: "जरमुंडी", en: "Jarmundi" },
+      { hi: "शिकारीपाड़ा", en: "Shikaripara" },
+      { hi: "रानीश्वर", en: "Ranishwar" },
+      { hi: "जामा", en: "Jama" },
+      { hi: "रामगढ़", en: "Ramgarh" },
+      { hi: "काठीकुंड", en: "Kathikund" },
+      { hi: "गोपीकांदर", en: "Gopikandar" },
+      { hi: "मसलिया", en: "Masalia" },
+      { hi: "सरैयाहाट", en: "Saraiyahat" }
+    ]
+  },
+  "Deoghar": {
+    hi: "देवघर",
+    en: "Deoghar",
+    subDistricts: [
+      { hi: "देवघर सदर", en: "Deoghar Sadar" },
+      { hi: "मधुपुर", en: "Madhupur" },
+      { hi: "सारठ", en: "Sarath" },
+      { hi: "सारवां", en: "Sarwan" },
+      { hi: "मोहनपुर", en: "Mohanpur" },
+      { hi: "देवीपुर", en: "Devipur" },
+      { hi: "पालोजोरी", en: "Palojori" },
+      { hi: "करौं", en: "Karon" },
+      { hi: "मारगोमुंडा", en: "Margomunda" },
+      { hi: "सोनारायठाढ़ी", en: "Sonaraithari" }
+    ]
+  },
+  "Dhanbad": {
+    hi: "धनबाद",
+    en: "Dhanbad",
+    subDistricts: [
+      { hi: "धनबाद सदर", en: "Dhanbad Sadar" },
+      { hi: "झरिया", en: "Jharia" },
+      { hi: "बाघमारा", en: "Baghmara" },
+      { hi: "निरसा", en: "Nirsa" },
+      { hi: "गोविंदपुर", en: "Govindpur" },
+      { hi: "टुंडी", en: "Tundi" },
+      { hi: "तोपचांची", en: "Topchanchi" },
+      { hi: "बलियापुर", en: "Baliapur" },
+      { hi: "एग्यारकुंड", en: "Egarkund" },
+      { hi: "कलियासोल", en: "Kaliasole" },
+      { hi: "पूर्वी टुंडी", en: "Purba Tundi" }
+    ]
+  },
+  "Bokaro": {
+    hi: "बोकारो",
+    en: "Bokaro",
+    subDistricts: [
+      { hi: "चास", en: "Chas" },
+      { hi: "चंदनकियारी", en: "Chandankyari" },
+      { hi: "बेरमो", en: "Bermo" },
+      { hi: "गोमिया", en: "Gomia" },
+      { hi: "पेटरवार", en: "Peterbar" },
+      { hi: "जरीडीह", en: "Jaridih" },
+      { hi: "कसमार", en: "Kasmar" },
+      { hi: "नावाडीह", en: "Nawadih" },
+      { hi: "चंद्रपुरा", en: "Chandrapura" }
+    ]
+  },
+  "East Singhbhum (Jamshedpur)": {
+    hi: "पूर्वी सिंहभूम (जमशेदपुर)",
+    en: "East Singhbhum (Jamshedpur)",
+    subDistricts: [
+      { hi: "जमशेदपुर (गोलमुरी-जुगसलाई)", en: "Jamshedpur (Golmuri-Jugsalai)" },
+      { hi: "घाटशिला", en: "Ghatshila" },
+      { hi: "पोटका", en: "Potka" },
+      { hi: "पटमदा", en: "Patamda" },
+      { hi: "बोड़ाम", en: "Boram" },
+      { hi: "मुसाबनी", en: "Musabani" },
+      { hi: "चाकुलिया", en: "Chakulia" },
+      { hi: "बहरागोड़ा", en: "Baharagora" },
+      { hi: "धालभूमगढ़", en: "Dhalbhumgarh" },
+      { hi: "डुमरिया", en: "Dumaria" },
+      { hi: "गुड़ाबांदा", en: "Gurabandha" }
+    ]
+  },
+  "West Singhbhum (Chaibasa)": {
+    hi: "पश्चिमी सिंहभूम (चाईबासा)",
+    en: "West Singhbhum (Chaibasa)",
+    subDistricts: [
+      { hi: "चाईबासा सदर", en: "Chaibasa Sadar" },
+      { hi: "चक्रधरपुर", en: "Chakradharpur" },
+      { hi: "जगन्नाथपुर", en: "Jagannathpur" },
+      { hi: "मनोहरपुर", en: "Manoharpur" },
+      { hi: "नोवामुंडी", en: "Noamundi" },
+      { hi: "झिंकपानी", en: "Jhinkpani" },
+      { hi: "टोंटो", en: "Tonto" },
+      { hi: "खूंटपानी", en: "Khuntpani" },
+      { hi: "तांतनगर", en: "Tantnagar" },
+      { hi: "मझगांव", en: "Majhgaon" },
+      { hi: "कुमारडुंगी", en: "Kumardungi" },
+      { hi: "हाटगम्हरिया", en: "Hatgamharia" },
+      { hi: "सोनुवा", en: "Sonua" },
+      { hi: "आनंदपुर", en: "Anandpur" },
+      { hi: "गोइलकेरा", en: "Goilkera" },
+      { hi: "गुदरी", en: "Gudri" },
+      { hi: "बंदगांव", en: "Bandgaon" }
+    ]
+  },
+  "Hazaribagh": {
+    hi: "हजारीबाग",
+    en: "Hazaribagh",
+    subDistricts: [
+      { hi: "हजारीबाग सदर", en: "Hazaribagh Sadar" },
+      { hi: "बरही", en: "Barhi" },
+      { hi: "बड़कागांव", en: "Barkagaon" },
+      { hi: "कटकमसांडी", en: "Katkamsandi" },
+      { hi: "चौपारण", en: "Chouparan" },
+      { hi: "इचाक", en: "Ichak" },
+      { hi: "दारू", en: "Daru" },
+      { hi: "पद्मा", en: "Padma" },
+      { hi: "चुरचू", en: "Churchu" },
+      { hi: "विष्णुगढ़", en: "Vishnugarh" },
+      { hi: "बरकट्ठा", en: "Barkatha" },
+      { hi: "चलकुशा", en: "Chalkusha" },
+      { hi: "कटकमदाग", en: "Katkamdag" },
+      { hi: "डाडी", en: "Dadi" },
+      { hi: "केरेडारी", en: "Keredari" }
+    ]
+  },
+  "Giridih": {
+    hi: "गिरिडीह",
+    en: "Giridih",
+    subDistricts: [
+      { hi: "गिरिडीह सदर", en: "Giridih Sadar" },
+      { hi: "गांडेय", en: "Gandey" },
+      { hi: "बेंगाबाद", en: "Bengabad" },
+      { hi: "पीरटांड़", en: "Pirtand" },
+      { hi: "डुमरी", en: "Dumri" },
+      { hi: "बगोदर", en: "Bagodar" },
+      { hi: "सरिया", en: "Sariya" },
+      { hi: "बिरनी", en: "Birni" },
+      { hi: "धनवार", en: "Dhanwar" },
+      { hi: "जमुआ", en: "Jamua" },
+      { hi: "देवरी", en: "Deori" },
+      { hi: "तिसरी", en: "Tisri" },
+      { hi: "गावां", en: "Gawan" }
+    ]
+  },
+  "Palamu": {
+    hi: "पलामू",
+    en: "Palamu",
+    subDistricts: [
+      { hi: "मेदिनीनगर (डाल्टनगंज)", en: "Medininagar (Daltonganj)" },
+      { hi: "हुसैनाबाद", en: "Hussainabad" },
+      { hi: "छतरपुर", en: "Chhatarpur" },
+      { hi: "चैनपुर", en: "Chainpur" },
+      { hi: "पाटन", en: "Patan" },
+      { hi: "विश्रामपुर", en: "Vishrampur" },
+      { hi: "हरिहरगंज", en: "Hariharganj" },
+      { hi: "पांडु", en: "Pandu" },
+      { hi: "ऊंटारी रोड", en: "Untari Road" },
+      { hi: "लेस्लीगंज (नीलांबर-पीतांबरपुर)", en: "Lesliganj" },
+      { hi: "मनातू", en: "Manatu" },
+      { hi: "तरहासी", en: "Tarhasi" },
+      { hi: "पांकी", en: "Panki" },
+      { hi: "सतबरवा", en: "Satbarwa" },
+      { hi: "हैदरनगर", en: "Haidarnagar" },
+      { hi: "मोहम्मदगंज", en: "Mohammadganj" },
+      { hi: "पिपरा", en: "Pipra" },
+      { hi: "नौडीहा बाजार", en: "Naudiha Bazar" },
+      { hi: "नावा बाजार", en: "Nawa Bazar" }
+    ]
+  },
+  "Garhwa": {
+    hi: "गढ़वा",
+    en: "Garhwa",
+    subDistricts: [
+      { hi: "गढ़वा सदर", en: "Garhwa Sadar" },
+      { hi: "नगर उंटारी (श्री बंशीधर नगर)", en: "Nagar Untari" },
+      { hi: "रंका", en: "Ranka" },
+      { hi: "मेराल", en: "Meral" },
+      { hi: "भवनाथपुर", en: "Bhawnathpur" },
+      { hi: "मझिआंव", en: "Majhiaon" },
+      { hi: "कांडी", en: "Kandi" },
+      { hi: "खरौंधी", en: "Kharoundhi" },
+      { hi: "धुरकी", en: "Dhurki" },
+      { hi: "रमना", en: "Ramna" },
+      { hi: "डंडई", en: "Dandai" },
+      { hi: "चिनिया", en: "Chiniya" },
+      { hi: "रामकंडा", en: "Ramkanda" },
+      { hi: "भंडारिया", en: "Bhandaria" },
+      { hi: "सगमा", en: "Sagma" },
+      { hi: "केतार", en: "Ketar" },
+      { hi: "बरडीहा", en: "Bardiha" }
+    ]
+  },
+  "Godda": {
+    hi: "गोड्डा",
+    en: "Godda",
+    subDistricts: [
+      { hi: "गोड्डा सदर", en: "Godda Sadar" },
+      { hi: "महागामा", en: "Mahagama" },
+      { hi: "मेहरमा", en: "Meharma" },
+      { hi: "बोआरीजोर", en: "Boarijor" },
+      { hi: "पथरगामा", en: "Pathargama" },
+      { hi: "पोड़ैयाहाट", en: "Poraiyahat" },
+      { hi: "सुंदरपहाड़ी", en: "Sundarpahari" },
+      { hi: "ठाकुरगंगती", en: "Thakurgangti" },
+      { hi: "बसंतराय", en: "Basantrai" }
+    ]
+  },
+  "Sahibganj": {
+    hi: "साहिबगंज",
+    en: "Sahibganj",
+    subDistricts: [
+      { hi: "साहिबगंज सदर", en: "Sahibganj Sadar" },
+      { hi: "राजमहल", en: "Rajmahal" },
+      { hi: "बोरियो", en: "Borio" },
+      { hi: "बरहेट", en: "Barhait" },
+      { hi: "तालझारी", en: "Taljhari" },
+      { hi: "पतना", en: "Pathna" },
+      { hi: "बरहरवा", en: "Barharwa" },
+      { hi: "मंडरो", en: "Mandro" },
+      { hi: "उधवा", en: "Udhwa" }
+    ]
+  },
+  "Pakur": {
+    hi: "पाकुड़",
+    en: "Pakur",
+    subDistricts: [
+      { hi: "पाकुड़ सदर", en: "Pakur Sadar" },
+      { hi: "हिरणपुर", en: "Hiranpur" },
+      { hi: "लिट्टीपाड़ा", en: "Littipara" },
+      { hi: "अमड़ापाड़ा", en: "Amrapara" },
+      { hi: "महेशपुर", en: "Maheshpur" },
+      { hi: "पाकुड़िया", en: "Pakuria" }
+    ]
+  },
+  "Jamtara": {
+    hi: "जामताड़ा",
+    en: "Jamtara",
+    subDistricts: [
+      { hi: "जामताड़ा सदर", en: "Jamtara Sadar" },
+      { hi: "करमाटांड़ (विद्यासागर)", en: "Karmatar" },
+      { hi: "नाला", en: "Nala" },
+      { hi: "कुंडहित", en: "Kundhit" },
+      { hi: "नारायणपुर", en: "Narayanpur" },
+      { hi: "फतेहपुर", en: "Fatehpur" }
+    ]
+  },
+  "Latehar": {
+    hi: "लातेहार",
+    en: "Latehar",
+    subDistricts: [
+      { hi: "लातेहार सदर", en: "Latehar Sadar" },
+      { hi: "महुआडांड़", en: "Mahuadanr" },
+      { hi: "चंदवा", en: "Chandwa" },
+      { hi: "बालूमाथ", en: "Balumath" },
+      { hi: "मनिका", en: "Manika" },
+      { hi: "बरवाडीह", en: "Barwadih" },
+      { hi: "गारू", en: "Garu" },
+      { hi: "बारियातू", en: "Bariyatu" },
+      { hi: "हेरहंज", en: "Herhanj" }
+    ]
+  },
+  "Chatra": {
+    hi: "चतरा",
+    en: "Chatra",
+    subDistricts: [
+      { hi: "चतरा सदर", en: "Chatra Sadar" },
+      { hi: "सिमरिया", en: "Simaria" },
+      { hi: "हंटरगंज", en: "Hunterganj" },
+      { hi: "इटखोरी", en: "Itkhori" },
+      { hi: "टंडवा", en: "Tandwa" },
+      { hi: "प्रतापपुर", en: "Pratappur" },
+      { hi: "कान्हाचट्टी", en: "Kanhachatti" },
+      { hi: "गिद्धौर", en: "Gidhour" },
+      { hi: "लावालोंग", en: "Lawalong" },
+      { hi: "पत्थलगड़ा", en: "Pathalgada" },
+      { hi: "मयूरहंड", en: "Mayurhand" },
+      { hi: "कुंदा", en: "Kunda" }
+    ]
+  },
+  "Gumla": {
+    hi: "गुमला",
+    en: "Gumla",
+    subDistricts: [
+      { hi: "गुमला सदर", en: "Gumla Sadar" },
+      { hi: "बिशुनपुर", en: "Bishunpur" },
+      { hi: "घाघरा", en: "Ghaghra" },
+      { hi: "सिसई", en: "Sisai" },
+      { hi: "भरनो", en: "Bharno" },
+      { hi: "कामडारा", en: "Kamdara" },
+      { hi: "बसिया", en: "Basia" },
+      { hi: "रायडीह", en: "Raidih" },
+      { hi: "पालकोट", en: "Palkot" },
+      { hi: "चैनपुर", en: "Chainpur" },
+      { hi: "डुमरी", en: "Dumri" },
+      { hi: "अल्बर्ट एक्का (जारी)", en: "Albert Ekka (Jari)" }
+    ]
+  },
+  "Simdega": {
+    hi: "सिमडेगा",
+    en: "Simdega",
+    subDistricts: [
+      { hi: "सिमडेगा सदर", en: "Simdega Sadar" },
+      { hi: "कोलेबिरा", en: "Kolebira" },
+      { hi: "ठेठईटांगर", en: "Thethaitangar" },
+      { hi: "बोलबा", en: "Bolba" },
+      { hi: "कुरडेग", en: "Kurdeg" },
+      { hi: "जलडेगा", en: "Jaldega" },
+      { hi: "बानो", en: "Bano" },
+      { hi: "केरसई", en: "Kersai" },
+      { hi: "पाकरटांड़", en: "Pakartanr" }
+    ]
+  },
+  "Lohardaga": {
+    hi: "लोहरदगा",
+    en: "Lohardaga",
+    subDistricts: [
+      { hi: "लोहरदगा सदर", en: "Lohardaga Sadar" },
+      { hi: "कुडू", en: "Kuru" },
+      { hi: "सेन्हा", en: "Senha" },
+      { hi: "भंडरा", en: "Bhandra" },
+      { hi: "किस्को", en: "Kisko" },
+      { hi: "पेशरार", en: "Peshrar" }
+    ]
+  },
+  "Ramgarh": {
+    hi: "रामगढ़",
+    en: "Ramgarh",
+    subDistricts: [
+      { hi: "रामगढ़ सदर", en: "Ramgarh Sadar" },
+      { hi: "गोला", en: "Gola" },
+      { hi: "मांडू", en: "Mandu" },
+      { hi: "पतरातू", en: "Patratu" },
+      { hi: "दुलमी", en: "Dulmi" },
+      { hi: "चितरपुर", en: "Chitarpur" }
+    ]
+  },
+  "Koderma": {
+    hi: "कोडरमा",
+    en: "Koderma",
+    subDistricts: [
+      { hi: "कोडरमा सदर", en: "Koderma Sadar" },
+      { hi: "झुमरी तिलैया / चंदवारा", en: "Chandwara (Jhumri Telaiya)" },
+      { hi: "जयनगर", en: "Jainagar" },
+      { hi: "मरकच्चो", en: "Markacho" },
+      { hi: "सतगावां", en: "Satgawan" },
+      { hi: "डोमचांच", en: "Domchanch" }
+    ]
+  },
+  "Khunti": {
+    hi: "खूंटी",
+    en: "Khunti",
+    subDistricts: [
+      { hi: "खूंटी सदर", en: "Khunti Sadar" },
+      { hi: "मुरहू", en: "Murhu" },
+      { hi: "तोरपा", en: "Torpa" },
+      { hi: "रनियां", en: "Rania" },
+      { hi: "कर्रा", en: "Karra" },
+      { hi: "अड़की", en: "Arki" }
+    ]
+  },
+  "Seraikela Kharsawan": {
+    hi: "सरायकेला खरसावां",
+    en: "Seraikela Kharsawan",
+    subDistricts: [
+      { hi: "सरायकेला", en: "Seraikela" },
+      { hi: "खरसावां", en: "Kharsawan" },
+      { hi: "चांडिल", en: "Chandil" },
+      { hi: "आदित्यपुर (गम्हरिया)", en: "Adityapur (Gamharia)" },
+      { hi: "राजनगर", en: "Rajnagar" },
+      { hi: "कुचाई", en: "Kuchai" },
+      { hi: "नीमडीह", en: "Nimdih" },
+      { hi: "ईचागढ़", en: "Ichagarh" },
+      { hi: "कुकड़ू", en: "Kukru" }
+    ]
+  },
+  "State / National / Other": {
+    hi: "अन्य / राज्य स्तर",
+    en: "State / National / Other",
+    subDistricts: [
+      { hi: "समस्त झारखंड", en: "All Jharkhand" },
+      { hi: "राष्ट्रीय स्तर", en: "National Level" }
+    ]
+  }
+};
+
+export const getSubDistrictsForDistrict = (districtName) => {
+  if (!districtName) return [];
+  const found = JHARKHAND_DISTRICTS_DATA[districtName];
+  if (found && found.subDistricts) return found.subDistricts;
+
+  // Search by partial or Hindi
+  const entry = Object.entries(JHARKHAND_DISTRICTS_DATA).find(([key, val]) =>
+    key.toLowerCase() === districtName.toLowerCase() ||
+    val.hi === districtName ||
+    val.en.toLowerCase() === districtName.toLowerCase()
+  );
+  return entry ? entry[1].subDistricts : [];
+};
+
 export const NEWS_CATEGORIES = [
-  "Jharkhand",
-  "National",
-  "International",
-  "Politics",
-  "Education",
-  "Sports",
-  "Technology",
-  "Business",
-  "Entertainment",
-  "Historic Jharkhand",
-  "Crime & Law",
-  "Health & Wellness",
-  "Weather & Agriculture",
+  "राजनीति",
+  "शिक्षा",
+  "स्वास्थ्य",
+  "खेल",
+  "अपराध",
+  "प्रशासन",
+  "झारखंड",
+  "देश-विदेश",
+  "तकनीक",
+  "व्यापार",
+  "मनोरंजन",
+  "ऐतिहासिक झारखंड",
+  "मौसम व कृषि",
 ];
 
-export const initialArticles = [
-  {
-    id: "1",
-    slug: "aamagachi-transformer",
-    title: "जरमुंडी प्रखंड के आमगाछी गांव में आकाशीय बिजली का शिकार हुआ विद्युत ट्रांसफार्मर",
-    category: "Jharkhand",
-    district: "Dumka",
-    author: "स्वदेश वाणी ब्यूरो",
-    reporter: "स्वदेश वाणी ब्यूरो",
-    date: "16 Aug 2026",
-    readTime: "3 मिनट",
-    image: news1,
-    excerpt: "जरमुंडी प्रखंड के आमगाछी गांव में बीती रात आकाशीय बिजली गिरने से 25 केवीए का ट्रांसफार्मर जल गया, जिससे पूरे गांव में अंधेरा छा गया है।",
-    content: `<p><strong>जरमुंडी (दुमका):</strong> जरमुंडी प्रखंड क्षेत्र के अंतर्गत आने वाले आमगाछी गांव में देर रात तेज गर्जना के साथ गिरी आकाशीय बिजली की चपेट में आने से गांव का मुख्य 25 केवीए का विद्युत ट्रांसफार्मर पूरी तरह जलकर खाक हो गया।</p>
-<p>घटना के बाद पूरे गांव में अंधेरा छा गया है और ग्रामीणों को भीषण उमस और गर्मी में भारी परेशानियों का सामना करना पड़ रहा है। ग्रामीणों ने बताया कि बिजली गिरने से जोरदार धमाका हुआ और ट्रांसफार्मर से धुआं निकलने लगा।</p>
-<blockquote>"गांव में पेयजल आपूर्ति और रोजमर्रा के कार्य पूरी तरह बाधित हो गए हैं। हमने बिजली विभाग के कनीय अभियंता को लिखित आवेदन देकर जल्द से जल्द नया ट्रांसफार्मर लगाने की मांग की है।" - स्थानीय ग्रामीण</blockquote>
-<p>विद्युत विभाग के अधिकारियों ने मामले का संज्ञान लेते हुए आश्वासन दिया है कि जल्द ही तकनीकी टीम भेजकर जांच कराई जाएगी और नया ट्रांसफार्मर स्थापित कर विद्युत आपूर्ति बहाल की जाएगी।</p>`,
-  },
-  {
-    id: "2",
-    slug: "jpsc-student-movement",
-    title: "JPSC मुद्दे पर जारी आंदोलन को सोनम वांगचुक का समर्थन",
-    category: "Politics",
-    district: "Ranchi",
-    author: "अमित कुमार",
-    reporter: "अमित कुमार (विशेष संवाददाता)",
-    date: "15 Aug 2026",
-    readTime: "4 मिनट",
-    image: news2,
-    excerpt: "झारखंड लोक सेवा आयोग (JPSC) की अनियमितताओं को लेकर अभ्यर्थियों द्वारा किए जा रहे आंदोलन को पर्यावरणविद् सोनम वांगचुक का समर्थन मिला।",
-    content: `<p><strong>रांची:</strong> झारखंड लोक सेवा आयोग (JPSC) की विभिन्न परीक्षाओं में पारदर्शिता और समयबद्ध परिणाम की मांग को लेकर राजधानी रांची में चल रहे छात्र आंदोलन को अब राष्ट्रीय स्तर पर समर्थन मिलने लगा है।</p>
-<p>प्रसिद्ध शिक्षा सुधारक और पर्यावरणविद् सोनम वांगचुक ने छात्रों के इस शांतिपूर्ण आंदोलन को अपना खुला समर्थन देते हुए कहा कि युवाओं का भविष्य किसी भी राज्य और देश की रीढ़ होता है। परीक्षा प्रक्रियाओं में पूर्ण निष्पक्षता और जवाबदेही सुनिश्चित की जानी चाहिए।</p>
-<blockquote>"जब देश का युवा अपनी वाजिब मांगों के लिए सड़कों पर उतरता है, तो सरकारों को उनकी बात गंभीरता से सुननी चाहिए।" - सोनम वांगचुक</blockquote>
-<p>आंदोलनकारी छात्रों ने कहा कि जब तक आयोग उनकी सभी मांगों पर ठोस निर्णय नहीं लेता, उनका लोकतांत्रिक विरोध जारी रहेगा।</p>`,
-  },
-  {
-    id: "3",
-    slug: "mohan-bhagwat-students",
-    title: "देश की शिक्षा व्यवस्था में सुधार की जरूरत: मोहन भागवत",
-    category: "National",
-    district: "State / National / Other",
-    author: "स्वदेश वाणी ब्यूरो",
-    reporter: "स्वदेश वाणी ब्यूरो (नई दिल्ली)",
-    date: "14 Aug 2026",
-    readTime: "3 मिनट",
-    image: news3,
-    excerpt: "राष्ट्रीय स्वयंसेवक संघ के सरसंघचालक मोहन भागवत ने शिक्षा व्यवस्था में आधुनिकता और नैतिक मूल्यों के समन्वय पर बल दिया।",
-    content: `<p><strong>नई दिल्ली:</strong> राष्ट्रीय स्वयंसेवक संघ के प्रमुख मोहन भागवत ने एक राष्ट्रीय संगोष्ठी को संबोधित करते हुए कहा कि भारत की शिक्षा व्यवस्था को आत्मनिर्भर और मूल्य-आधारित बनाने के लिए निरंतर सुधारों की आवश्यकता है।</p>
-<p>उन्होंने कहा कि केवल डिग्री हासिल करना ही शिक्षा का उद्देश्य नहीं होना चाहिए, बल्कि विद्यार्थियों में राष्ट्रीय चरित्र, स्वावलंबन और सामाजिक सरोकार की भावना विकसित करना अनिवार्य है।</p>
-<p>कार्यक्रम में शिक्षाविदों और विचारकों ने भी नई राष्ट्रीय शिक्षा नीति के प्रभावी क्रियान्वयन पर अपने विचार रखे।</p>`,
-  },
-  {
-    id: "4",
-    slug: "tinghara-school-problem",
-    title: "जर्जर शौचालय और बंद बिजली से परेशान तीनघरा विद्यालय के 132 छात्र-छात्राएं",
-    category: "Education",
-    district: "Dumka",
-    author: "संजय मुर्मू",
-    reporter: "संजय मुर्मू (शिक्षा संवाददाता)",
-    date: "13 Aug 2026",
-    readTime: "3 मिनट",
-    image: news4,
-    excerpt: "मूलभूत सुविधाओं के अभाव से जूझ रहा तीनघरा का प्राथमिक विद्यालय, शिक्षकों और अभिभावकों ने जताई चिंता।",
-    content: `<p><strong>दुमका:</strong> प्रखंड के तीनघरा प्राथमिक विद्यालय में बुनियादी सुविधाओं का घोर अभाव देखने को मिल रहा है। विद्यालय में अध्ययनरत 132 छात्र-छात्राएं जर्जर शौचालय और कई महीनों से कटी बिजली के कारण भारी परेशानियों के बीच पढ़ाई करने को विवश हैं।</p>
-<p>गर्मी के मौसम में बिजली न होने से पंखे बंद रहते हैं, जिससे बच्चों का कक्षा में बैठना दूभर हो जाता है। अभिभावकों ने शिक्षा विभाग के आला अधिकारियों से तत्काल मरम्मत कार्य कराने की अपील की है।</p>`,
-  },
-  {
-    id: "5",
-    slug: "ramgarh-football-tournament",
-    title: "स्वतंत्रता दिवस पर दो दिवसीय फुटबॉल प्रतियोगिता की तैयारी",
-    category: "Sports",
-    district: "Ramgarh",
-    author: "राकेश महतो",
-    reporter: "राकेश महतो (खेल संवाददाता)",
-    date: "12 Aug 2026",
-    readTime: "2 मिनट",
-    image: news5,
-    excerpt: "रामगढ़ में स्वतंत्रता दिवस के उपलक्ष्य में भव्य दो दिवसीय ग्रामीण फुटबॉल टूर्नामेंट का आयोजन किया जाएगा।",
-    content: `<p><strong>रामगढ़:</strong> स्वतंत्रता दिवस के पावन अवसर पर रामगढ़ उच्च विद्यालय मैदान में दो दिवसीय अंतर-प्रखंड फुटबॉल प्रतियोगिता का आयोजन किया जाएगा। इस टूर्नामेंट में कुल 16 टीमें भाग लेंगी।</p>
-<p>आयोजन समिति के सदस्यों ने बताया कि विजेता और उपविजेता टीमों को आकर्षक ट्रॉफी और नकद पुरस्कार से सम्मानित किया जाएगा। खेल प्रेमियों में इस आयोजन को लेकर खासा उत्साह है।</p>`,
-  },
-  {
-    id: "6",
-    slug: "nizhor-malaria-survey",
-    title: "निझोर गांव में मलेरिया मास सर्वे, 34 लोगों की जांच",
-    category: "Health & Wellness",
-    district: "Dumka",
-    author: "डॉ. विकास गुप्ता",
-    reporter: "डॉ. विकास गुप्ता (स्वास्थ्य डेस्क)",
-    date: "11 Aug 2026",
-    readTime: "2 मिनट",
-    image: news6,
-    excerpt: "स्वास्थ्य विभाग की टीम ने निझोर गांव में शिविर लगाकर ग्रामीणों का मलेरिया और डेंगू का सघन परीक्षण किया।",
-    content: `<p><strong>दुमका:</strong> मानसून सीजन में जलजमाव और मौसमी बीमारियों की रोकथाम के लिए स्वास्थ्य विभाग की ओर से निझोर गांव में मलेरिया मास सर्वे अभियान चलाया गया।</p>
-<p>अभियान के दौरान 34 ग्रामीणों के रक्त के नमूने लिए गए तथा उन्हें निःशुल्क दवाइयों का वितरण किया गया। साथ ही ग्रामीणों को पानी जमा न होने देने और मच्छरदानी का उपयोग करने के प्रति जागरूक किया गया।</p>`,
-  },
-  {
-    id: "7",
-    slug: "sir-2026-review-meeting",
-    title: "मसलिया में SIR-2026 के द्वितीय चरण की तैयारियों को लेकर समीक्षा बैठक",
-    category: "Jharkhand",
-    district: "Dumka",
-    author: "प्रशासनिक संवाददाता",
-    reporter: "प्रशासनिक संवाददाता",
-    date: "10 Aug 2026",
-    readTime: "3 मिनट",
-    image: news7,
-    excerpt: "प्रखंड सभागार में अधिकारियों एवं कर्मियों के साथ विकास योजनाओं की प्रगति की गहन समीक्षा की गई।",
-    content: `<p><strong>मसलिया:</strong> प्रखंड मुख्यालय सभागार में SIR-2026 के द्वितीय चरण की कार्ययोजना को लेकर प्रशासनिक अधिकारियों की महत्वपूर्ण समीक्षा बैठक आयोजित की गई।</p>
-<p>बैठक में लंबित योजनाओं को तय समय सीमा के भीतर गुणवत्तापूर्ण तरीके से पूरा करने के कड़े निर्देश दिए गए। लापरवाही बरतने वाले कर्मियों पर अनुशासनात्मक कार्रवाई की चेतावनी दी गई।</p>`,
-  },
-  {
-    id: "8",
-    slug: "maternity-rest-homes",
-    title: "श्रावणी मेला क्षेत्र के 10 स्थलों पर संचालित मातृत्व विश्राम गृह",
-    category: "Jharkhand",
-    district: "Deoghar",
-    author: "स्वदेश वाणी ब्यूरो",
-    reporter: "स्वदेश वाणी ब्यूरो (देवघर)",
-    date: "09 Aug 2026",
-    readTime: "3 मिनट",
-    image: news8,
-    excerpt: "विश्व प्रसिद्ध श्रावणी मेले में महिला कांवरियों और धात्री माताओं की सुविधा हेतु 10 अत्याधुनिक मातृत्व विश्राम गृह कार्यरत।",
-    content: `<p><strong>देवघर:</strong> बाबा बैद्यनाथ धाम में चल रहे विश्व प्रसिद्ध श्रावणी मेले में आने वाली महिला श्रद्धालुओं और नवजात शिशुओं की माताओं के लिए प्रशासन द्वारा मेला क्षेत्र के 10 प्रमुख स्थलों पर विशेष मातृत्व विश्राम गृह संचालित किए जा रहे हैं।</p>
-<p>इन केंद्रों पर स्वच्छ पेयजल, स्तनपान कक्ष, प्राथमिक चिकित्सा और विश्राम की समुचित व्यवस्था की गई है, जिसकी महिला कांवरियों द्वारा व्यापक सराहना की जा रही है।</p>`,
-  },
-  {
-    id: "9",
-    slug: "sp-college-student-protest",
-    title: "एस.पी. कॉलेज, दुमका में छात्र समन्वय समिति की अनिश्चितकालीन तालाबंदी शुरू",
-    category: "Education",
-    district: "Dumka",
-    author: "संजय मुर्मू",
-    reporter: "संजय मुर्मू (छात्र प्रतिनिधि)",
-    date: "08 Aug 2026",
-    readTime: "3 मिनट",
-    image: news9,
-    excerpt: "विभिन्न छात्र मांगों और छात्रावास समस्याओं को लेकर एस.पी. कॉलेज में तालाबंदी का ऐलान।",
-    content: `<p><strong>दुमका:</strong> संथाल परगना के प्रतिष्ठित एस.पी. कॉलेज में छात्र समन्वय समिति के नेतृत्व में छात्रों ने मुख्य द्वार पर अनिश्चितकालीन तालाबंदी कर जोरदार प्रदर्शन किया।</p>
-<p>छात्रों की मुख्य मांगों में छात्रावासों की समुचित मरम्मत, पुस्तकालय में आधुनिक पुस्तकों की उपलब्धता और नियमित कक्षाओं का संचालन शामिल है। कॉलेज प्रशासन ने छात्रों से वार्ता का प्रस्ताव दिया है।</p>`,
-  },
-  {
-    id: "10",
-    slug: "basko-transformer-restored",
-    title: "बास्को गांव में 63 केवीए का नया ट्रांसफार्मर लगते ही बहाल हुई बिजली",
-    category: "Jharkhand",
-    district: "Ramgarh",
-    author: "ग्रामीण संवाददाता",
-    reporter: "ग्रामीण संवाददाता",
-    date: "07 Aug 2026",
-    readTime: "2 मिनट",
-    image: news10,
-    excerpt: "पिछले 10 दिनों से अंधेरे में डूबे बास्को गांव में नया ट्रांसफार्मर स्थापित कर विद्युत आपूर्ति सुचारू कर दी गई।",
-    content: `<p><strong>रामगढ़:</strong> बास्को गांव में पिछले दस दिनों से ट्रांसफार्मर जल जाने के कारण उत्पन्न विद्युत संकट का समाधान हो गया है। विद्युत विभाग ने त्वरित कार्रवाई करते हुए 63 केवीए का नया ट्रांसफार्मर स्थापित कर दिया है।</p>
-<p>बिजली बहाल होते ही ग्रामीणों के चेहरे खिल उठे और उन्होंने स्वदेश वाणी की खबर के असर को धन्यवाद दिया।</p>`,
-  },
+export const getCategoryFallbackImage = (categoryName) => {
+  if (!categoryName) return news1;
+  const cat = String(categoryName).toLowerCase().trim();
+  if (cat.includes("sport") || cat.includes("खेल")) return news9;
+  if (cat.includes("tech") || cat.includes("तकनीक")) return news10;
+  if (cat.includes("edu") || cat.includes("शिक्षा")) return news3;
+  if (cat.includes("politic") || cat.includes("राजनीति")) return news2;
+  if (cat.includes("crime") || cat.includes("अपराध")) return news8;
+  if (cat.includes("admin") || cat.includes("प्रशासन")) return news6;
+  if (cat.includes("health") || cat.includes("स्वास्थ्य") || cat.includes("धर्म")) return news7;
+  if (cat.includes("bussiness") || cat.includes("व्यापार")) return news5;
+  return news1;
+};
 
-  // Category Specific Articles
-  {
-    id: "edu-1",
-    slug: "curriculum-overhaul",
-    title: "Government unveils major overhaul of national curriculum",
-    category: "Education",
-    district: "Ranchi",
-    author: "Education Desk",
-    reporter: "Education Desk",
-    date: "15 Aug 2026",
-    readTime: "3 min",
-    image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "The new framework aims to modernize classrooms, emphasize critical thinking, and integrate digital skills across subjects.",
-    content: `<p>The Ministry of Education today announced comprehensive changes to the national school and higher education curriculum framework, emphasizing hands-on practical skills and digital literacy from primary grades.</p><p>Key focus areas include coding, vernacular language learning, and interdisciplinary project work designed to prepare students for the evolving global workforce.</p>`,
-  },
-  {
-    id: "edu-2",
-    slug: "hybrid-learning",
-    title: "Top universities embrace hybrid learning for upcoming session",
-    category: "Education",
-    district: "Ranchi",
-    author: "Academic Bureau",
-    reporter: "Academic Bureau",
-    date: "14 Aug 2026",
-    readTime: "4 min",
-    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Institutions are redesigning campuses and timetables to blend online flexibility with on-campus experience.",
-    content: `<p>Premier universities across the country have formalized flexible hybrid learning programs for undergraduate and postgraduate courses starting this academic session.</p><p>Students will have access to high-definition recorded lectures, collaborative online labs, and structured on-campus workshops.</p>`,
-  },
-  {
-    id: "sports-1",
-    slug: "cricket-dramatic-final",
-    title: "National cricket team clinches series in dramatic final over",
-    category: "Sports",
-    district: "Ranchi",
-    author: "Sports Bureau",
-    reporter: "Sports Bureau",
-    date: "15 Aug 2026",
-    readTime: "3 min",
-    image: "https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "An inspired lower-order partnership and tight bowling in the death overs sealed the series for the home side.",
-    content: `<p>In a thrilling series decider that went down to the penultimate ball, the national cricket team defended 14 runs in the final over to secure a sensational victory against the visiting side.</p><p>The player of the match attributed the triumph to calm leadership and disciplined execution under immense pressure.</p>`,
-  },
-  {
-    id: "world-1",
-    slug: "global-climate-summit",
-    title: "Global summit agrees on new climate action roadmap",
-    category: "International",
-    district: "State / National / Other",
-    author: "International Desk",
-    reporter: "International Desk",
-    date: "15 Aug 2026",
-    readTime: "4 min",
-    image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Leaders from over 100 countries commit to accelerated emissions cuts and expanded green financing over the next decade.",
-    content: `<p>At the conclusion of the international climate summit, member nations signed an ambitious pact guaranteeing increased funding for renewable energy infrastructure and transition support for developing economies.</p>`,
-  },
-  {
-    id: "tech-1",
-    slug: "ai-advancements-2026",
-    title: "New generation AI models transform software development and research",
-    category: "Technology",
-    district: "East Singhbhum (Jamshedpur)",
-    author: "Tech Bureau",
-    reporter: "Tech Bureau",
-    date: "15 Aug 2026",
-    readTime: "3 min",
-    image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Breakthrough autonomous agents accelerate scientific discoveries, data analytics, and developer productivity.",
-    content: `<p>The tech industry marked another leap forward this week with the deployment of autonomous multi-agent coding systems capable of building and maintaining production-grade applications with unprecedented reliability.</p>`,
-  },
-];
+export const initialArticles = [];
 
 // LocalStorage keys
 const STORAGE_KEY = "savdeshvani_articles_store";
@@ -289,69 +504,56 @@ const SUBSCRIBERS_KEY = "savdeshvani_subscribers";
 const NOTIFICATIONS_KEY = "savdeshvani_notifications";
 const ADVERTISEMENTS_KEY = "savdeshvani_advertisements";
 
-// Default initial sample advertisements
-export const initialAdvertisements = [
-  {
-    id: "ad-top-hero",
-    title: "झारखंड पर्यटन महोत्सव 2026 — प्राकृतिक सौंदर्य और ऐतिहासिक धरोहर",
-    sponsor: "झारखंड पर्यटन विभाग (Tourism Dept)",
-    position: "top_banner", // 'top_banner' | 'sidebar' | 'middle_banner' | 'bottom_banner'
-    image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
-    link: "https://tourism.jharkhand.gov.in",
-    tagline: "प्राकृतिक सौंदर्य एवं जनजातीय संस्कृति का संगम",
-    status: "Active",
-    clicks: 142,
-    impressions: 1250,
-    createdAt: "10 Aug 2026",
-  },
-  {
-    id: "ad-sidebar-edu",
-    title: "JPSC & JSSC प्रारंभिक एवं मुख्य परीक्षा विशेष फाउंडेशन बैच",
-    sponsor: "संकल्प IAS Academy, Ranchi",
-    position: "sidebar",
-    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=600&q=80",
-    link: "tel:+917979093015",
-    tagline: "नया बैच प्रारंभ • विशेषज्ञ फैकल्टी व टेस्ट सीरीज",
-    status: "Active",
-    clicks: 89,
-    impressions: 980,
-    createdAt: "12 Aug 2026",
-  },
-  {
-    id: "ad-middle-business",
-    title: "डिजिटल भारत, वोकल फॉर लोकल — अपने व्यापार को दें नई डिजिटल पहचान",
-    sponsor: "स्वदेश वाणी डिजिटल मीडिया नेटवर्क",
-    position: "middle_banner",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
-    link: "/advertisement",
-    tagline: "लाखों पाठकों तक अपने उत्पाद और सेवाएं पहुंचाएं",
-    status: "Active",
-    clicks: 215,
-    impressions: 2400,
-    createdAt: "14 Aug 2026",
-  },
-  {
-    id: "ad-bottom-bank",
-    title: "किसान समृद्धि एवं ग्रामीण विकास ऋण योजना — त्वरित स्वीकृति",
-    sponsor: "झारखंड राज्य ग्रामीण बैंक व सहकारिता समिति",
-    position: "bottom_banner",
-    image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80",
-    link: "/advertisement",
-    tagline: "आसान किश्तों व न्यूनतम ब्याज दर पर ऋण सुविधा",
-    status: "Active",
-    clicks: 64,
-    impressions: 870,
-    createdAt: "15 Aug 2026",
-  },
-];
+// Default advertisements (stored and synced dynamically via Convex DB)
+export const initialAdvertisements = [];
+
+const DELETED_ADS_KEY = "savdeshvani_deleted_ad_ids";
+
+export const syncAdvertisementsFromServer = async () => {
+  try {
+    // 1. Try Convex live database query
+    try {
+      const convexAds = await convex.query(api.advertisements.get);
+      if (Array.isArray(convexAds) && convexAds.length > 0) {
+        localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(convexAds));
+        window.dispatchEvent(new Event("sv_ads_change"));
+        return getAdvertisements();
+      }
+    } catch {}
+
+    // 2. Fallback to API server
+    const res = await fetch("/api/advertisements");
+    if (res.ok) {
+      const data = await res.json();
+      if (data) {
+        if (Array.isArray(data.deletedIds)) {
+          const currentDeleted = new Set(
+            JSON.parse(localStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
+          );
+          data.deletedIds.forEach((id) => currentDeleted.add(String(id)));
+          localStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...currentDeleted]));
+        }
+        if (Array.isArray(data.advertisements)) {
+          localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(data.advertisements));
+        }
+        window.dispatchEvent(new Event("sv_ads_change"));
+        return getAdvertisements();
+      }
+    }
+  } catch (e) {}
+  return getAdvertisements();
+};
 
 export const getAdvertisements = () => {
   try {
     const saved = localStorage.getItem(ADVERTISEMENTS_KEY);
-    if (saved) {
+    if (saved !== null) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+      if (Array.isArray(parsed)) {
+        const deletedIds = new Set(
+          JSON.parse(localStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
+        );
+        return parsed.filter((a) => !deletedIds.has(String(a.id)));
       }
     }
   } catch (e) {
@@ -386,6 +588,17 @@ export const saveAdvertisement = (adData) => {
         }),
     };
 
+    // Remove from deleted list if restoring or creating
+    try {
+      const deletedIds = new Set(
+        JSON.parse(localStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
+      );
+      if (deletedIds.has(adId)) {
+        deletedIds.delete(adId);
+        localStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...deletedIds]));
+      }
+    } catch {}
+
     const index = ads.findIndex((a) => String(a.id) === String(adToSave.id));
     let updated;
     if (index >= 0) {
@@ -395,8 +608,32 @@ export const saveAdvertisement = (adData) => {
       updated = [adToSave, ...ads];
     }
 
-    localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    try {
+      localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    } catch {}
     window.dispatchEvent(new Event("sv_ads_change"));
+
+    // Persist to Convex Real-time DB
+    convex.mutation(api.advertisements.save, {
+      customId: adId,
+      title: adToSave.title,
+      sponsor: adToSave.sponsor,
+      tagline: adToSave.tagline,
+      position: adToSave.position,
+      image: adToSave.image,
+      link: adToSave.link,
+      status: adToSave.status,
+      clicks: Number(adToSave.clicks || 0),
+      impressions: Number(adToSave.impressions || 0),
+    }).catch(() => {});
+
+    // Async persist to Express server
+    fetch("/api/advertisements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(adToSave),
+    }).catch(() => {});
+
     return { success: true, advertisement: adToSave, ads: updated };
   } catch (e) {
     console.error("Error saving advertisement:", e);
@@ -406,10 +643,26 @@ export const saveAdvertisement = (adData) => {
 
 export const deleteAdvertisement = (id) => {
   try {
+    const idStr = String(id);
+    const deletedIds = new Set(
+      JSON.parse(localStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
+    );
+    deletedIds.add(idStr);
+    localStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...deletedIds]));
+
     const ads = getAdvertisements();
-    const filtered = ads.filter((a) => String(a.id) !== String(id));
-    localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(filtered));
+    const filtered = ads.filter((a) => String(a.id) !== idStr);
+    try {
+      localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(filtered));
+    } catch {}
     window.dispatchEvent(new Event("sv_ads_change"));
+
+    // Delete in Convex DB
+    convex.mutation(api.advertisements.remove, { id: idStr }).catch(() => {});
+
+    fetch(`/api/advertisements/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }).catch(() => {});
     return filtered;
   } catch (e) {
     console.error("Error deleting advertisement:", e);
@@ -429,8 +682,17 @@ export const toggleAdStatus = (id) => {
       }
       return ad;
     });
-    localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    try {
+      localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    } catch {}
     window.dispatchEvent(new Event("sv_ads_change"));
+
+    // Toggle in Convex DB
+    convex.mutation(api.advertisements.toggleStatus, { id: String(id) }).catch(() => {});
+
+    fetch(`/api/advertisements/${encodeURIComponent(id)}/toggle`, {
+      method: "POST",
+    }).catch(() => {});
     return updated;
   } catch (e) {
     console.error("Error toggling ad status:", e);
@@ -450,8 +712,17 @@ export const recordAdClick = (id) => {
       }
       return ad;
     });
-    localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    try {
+      localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+    } catch {}
     window.dispatchEvent(new Event("sv_ads_change"));
+
+    // Record in Convex DB
+    convex.mutation(api.advertisements.recordClick, { id: String(id) }).catch(() => {});
+
+    fetch(`/api/advertisements/${encodeURIComponent(id)}/click`, {
+      method: "POST",
+    }).catch(() => {});
   } catch (e) {
     console.error("Error recording ad click:", e);
   }
@@ -482,20 +753,7 @@ export const getNotifications = () => {
   } catch (e) {
     console.error("Error reading notifications:", e);
   }
-  // Default seed notification
-  return [
-    {
-      id: "notif-init-1",
-      articleId: "1",
-      title: "जरमुंडी प्रखंड के आमगाछी गांव में आकाशीय बिजली का शिकार हुआ विद्युत ट्रांसफार्मर",
-      category: "Jharkhand",
-      district: "Dumka",
-      image: "",
-      timestamp: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
-      date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
-      read: false,
-    },
-  ];
+  return [];
 };
 
 export const requestNotificationPermission = async () => {
@@ -534,6 +792,14 @@ export const addNotification = (article) => {
     // Dispatch global custom event for Navbar & UI reactivity
     window.dispatchEvent(new CustomEvent("sv_notification_received", { detail: newNotif }));
 
+    // Persist to Convex DB
+    convex.mutation(api.notifications.send, {
+      title: article.title || "ताज़ा समाचार प्रकाशित हुआ",
+      message: article.excerpt || article.title || "स्वदेश वाणी ताज़ा समाचार",
+      type: article.category || "Breaking",
+      target: "all",
+    }).catch(() => {});
+
     // Browser Push / Web Notification
     if ("Notification" in window && Notification.permission === "granted") {
       try {
@@ -553,6 +819,8 @@ export const addNotification = (article) => {
   }
 };
 
+export const saveNotification = addNotification;
+
 export const markNotificationAsRead = (id) => {
   try {
     const notifications = getNotifications();
@@ -561,6 +829,10 @@ export const markNotificationAsRead = (id) => {
     );
     localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("sv_notifications_change"));
+
+    // Convex mark read
+    convex.mutation(api.notifications.markRead, { id: String(id) }).catch(() => {});
+
     return updated;
   } catch (e) {
     console.error("Error marking notification as read:", e);
@@ -581,10 +853,37 @@ export const markAllNotificationsAsRead = () => {
   }
 };
 
+export const syncNotificationsFromServer = async () => {
+  try {
+    // 1. Try Convex query
+    try {
+      const convexNotifs = await convex.query(api.notifications.get);
+      if (Array.isArray(convexNotifs) && convexNotifs.length > 0) {
+        localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(convexNotifs));
+        window.dispatchEvent(new Event("sv_notifications_change"));
+        return convexNotifs;
+      }
+    } catch {}
+
+    // 2. Fallback to API server
+    const res = await fetch("/api/notifications");
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.notifications)) {
+        localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(data.notifications));
+        window.dispatchEvent(new Event("sv_notifications_change"));
+        return data.notifications;
+      }
+    }
+  } catch (e) {}
+  return getNotifications();
+};
+
 export const clearNotifications = () => {
   try {
     localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify([]));
     window.dispatchEvent(new Event("sv_notifications_change"));
+    fetch("/api/notifications", { method: "DELETE" }).catch(() => {});
     return [];
   } catch (e) {
     console.error("Error clearing notifications:", e);
@@ -592,16 +891,62 @@ export const clearNotifications = () => {
   }
 };
 
-// Get all articles (Merged base + LocalStorage custom created articles)
+// Sync articles and deletions from backend server across all user devices
+export const syncArticlesFromServer = async () => {
+  try {
+    // 1. Try Convex real-time DB query first
+    try {
+      const convexArticles = await convex.query(api.articles.get);
+      if (Array.isArray(convexArticles) && convexArticles.length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(convexArticles));
+        window.dispatchEvent(new Event("sv_articles_change"));
+        return getAllArticles();
+      }
+    } catch {}
+
+    // 2. Fallback to API server
+    const res = await fetch("/api/articles");
+    if (res.ok) {
+      const data = await res.json();
+      if (data) {
+        // 1. Sync deleted article IDs across devices so deleted news never reappears
+        if (Array.isArray(data.deletedIds)) {
+          const currentDeleted = new Set(
+            JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
+          );
+          data.deletedIds.forEach((id) => currentDeleted.add(String(id)));
+          localStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...currentDeleted]));
+        }
+
+        // 2. Sync articles list
+        if (Array.isArray(data.articles)) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.articles));
+        }
+
+        window.dispatchEvent(new Event("sv_articles_change"));
+        return getAllArticles();
+      }
+    }
+  } catch (e) {
+    // Backend offline or local fallback
+  }
+  return getAllArticles();
+};
+
+const DELETED_ARTICLES_KEY = "sv_deleted_article_ids";
+
+// Get all articles (Returns localStorage / synced articles, fallback to initial seeds only on cold start)
 export const getAllArticles = () => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const customArticles = JSON.parse(saved);
-      // Merge unique by ID (custom articles have priority on top)
-      const customIds = new Set(customArticles.map((a) => String(a.id)));
-      const filteredBase = initialArticles.filter((a) => !customIds.has(String(a.id)));
-      return [...customArticles, ...filteredBase];
+    if (saved !== null) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const deletedIds = new Set(
+          JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
+        );
+        return parsed.filter((a) => !deletedIds.has(String(a.id)));
+      }
     }
   } catch (e) {
     console.error("Error reading articles from localStorage:", e);
@@ -612,18 +957,34 @@ export const getAllArticles = () => {
 // Find single article by exact ID, slug, or title match
 export const getArticleById = (idOrSlug) => {
   if (!idOrSlug) return null;
-  const articles = getAllArticles();
-  const searchKey = decodeURIComponent(String(idOrSlug)).toLowerCase().trim();
+  const rawKey = decodeURIComponent(String(idOrSlug)).trim();
+  const searchKey = rawKey.replace(/\/+$/, "").replace(/\?.*$/, "").toLowerCase();
 
-  return (
-    articles.find(
-      (a) =>
-        String(a.id).toLowerCase() === searchKey ||
-        (a.slug && a.slug.toLowerCase() === searchKey) ||
-        (a.link && a.link.toLowerCase().includes(searchKey)) ||
-        (a.title && a.title.toLowerCase().includes(searchKey))
-    ) || null
-  );
+  const articles = getAllArticles();
+
+  // 1. Exact ID or slug match
+  let found = articles.find((a) => {
+    const aId = String(a.id).toLowerCase();
+    const aSlug = (a.slug || "").toLowerCase();
+    const aLink = (a.link || "").toLowerCase();
+    return (
+      aId === searchKey ||
+      aSlug === searchKey ||
+      aLink === searchKey ||
+      aLink.endsWith(`/${searchKey}`)
+    );
+  });
+
+  if (found) return found;
+
+  // 2. Title slug or title match
+  found = articles.find((a) => {
+    const aTitleSlug = a.title ? generateSlug(a.title).toLowerCase() : "";
+    const aTitle = (a.title || "").toLowerCase().trim();
+    return aTitleSlug === searchKey || aTitle === searchKey;
+  });
+
+  return found || null;
 };
 
 // Filter articles by category (handles aliases and multilingual matching)
@@ -661,6 +1022,7 @@ export const saveArticleToStore = (articleData) => {
       link: `/news/${articleId}`,
       category: articleData.category || "Jharkhand",
       district: articleData.district || "Ranchi",
+      subDistrict: articleData.subDistrict || "",
       reporter: articleData.reporter || articleData.author || "स्वदेश वाणी ब्यूरो",
       author: articleData.reporter || articleData.author || "स्वदेश वाणी ब्यूरो",
       status: articleData.status || "Published",
@@ -673,6 +1035,17 @@ export const saveArticleToStore = (articleData) => {
         }),
     };
 
+    // Remove from deleted list if restoring or creating
+    try {
+      const deletedIds = new Set(
+        JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
+      );
+      if (deletedIds.has(String(articleToSave.id))) {
+        deletedIds.delete(String(articleToSave.id));
+        localStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...deletedIds]));
+      }
+    } catch {}
+
     // Check if exists, update or prepend
     const index = customArticles.findIndex((a) => String(a.id) === String(articleToSave.id));
     const isNew = index < 0;
@@ -681,12 +1054,52 @@ export const saveArticleToStore = (articleData) => {
     } else {
       customArticles = [articleToSave, ...customArticles];
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
+    // Safely persist to localStorage with quota-exceeded fallback
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
+    } catch (quotaErr) {
+      console.warn("Storage quota limit reached. Pruning older articles to save new article:", quotaErr);
+      while (customArticles.length > 5) {
+        customArticles.pop();
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
+          break;
+        } catch {}
+      }
+    }
+
+    // Dispatch global events for instant reactivity across all open views
+    window.dispatchEvent(new Event("sv_articles_change"));
+    broadcastLocalEvent("articles_update", { article: articleToSave });
 
     // If published, trigger notification
     if (articleToSave.status === "Published") {
       addNotification(articleToSave);
     }
+
+    // Persist to Convex Real-time DB
+    convex.mutation(api.articles.save, {
+      customId: articleId,
+      title: articleToSave.title,
+      slug: articleToSave.slug,
+      category: articleToSave.category,
+      district: articleToSave.district,
+      subDistrict: articleToSave.subDistrict,
+      reporter: articleToSave.reporter,
+      author: articleToSave.author,
+      excerpt: articleToSave.excerpt,
+      content: articleToSave.content,
+      image: articleToSave.image,
+      date: articleToSave.date,
+      readTime: articleToSave.readTime,
+    }).catch(() => {});
+
+    // Persist to Express backend (fire-and-forget / async)
+    fetch("/api/articles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(articleToSave),
+    }).catch(() => {});
 
     return { articles: customArticles, savedArticle: articleToSave, isNew };
   } catch (e) {
@@ -695,22 +1108,68 @@ export const saveArticleToStore = (articleData) => {
   return { articles: [], savedArticle: null, isNew: false };
 };
 
-// Delete article from store
+// Delete article from store (Permanent deletion for both custom and initial seed articles)
 export const deleteArticleFromStore = (id) => {
   try {
+    const idStr = String(id);
+    const deletedIds = new Set(
+      JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
+    );
+    deletedIds.add(idStr);
+    localStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...deletedIds]));
+
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const customArticles = JSON.parse(saved).filter((a) => String(a.id) !== String(id));
+      const customArticles = JSON.parse(saved).filter((a) => String(a.id) !== idStr);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
     }
+
+    window.dispatchEvent(new Event("sv_articles_change"));
+    broadcastLocalEvent("articles_update", { deletedId: idStr, action: "delete" });
+
+    // Delete in Convex DB
+    convex.mutation(api.articles.remove, { id: idStr }).catch(() => {});
+
+    fetch(`/api/articles/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }).catch(() => {});
+    return true;
   } catch (e) {
     console.error("Error deleting article:", e);
+    return false;
   }
 };
+
 
 // ----------------------------------------------------
 // SUBSCRIBERS STORE APIS (Email + Mobile Number)
 // ----------------------------------------------------
+
+export const syncSubscribersFromServer = async () => {
+  try {
+    // 1. Try Convex query
+    try {
+      const convexSubs = await convex.query(api.subscribers.get);
+      if (Array.isArray(convexSubs) && convexSubs.length > 0) {
+        localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(convexSubs));
+        window.dispatchEvent(new Event("sv_subscribers_change"));
+        return convexSubs;
+      }
+    } catch {}
+
+    // 2. Fallback to API server
+    const res = await fetch("/api/subscribers");
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.subscribers)) {
+        localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(data.subscribers));
+        window.dispatchEvent(new Event("sv_subscribers_change"));
+        return data.subscribers;
+      }
+    }
+  } catch (e) {}
+  return getSubscribers();
+};
 
 export const getSubscribers = () => {
   try {
@@ -721,23 +1180,7 @@ export const getSubscribers = () => {
   } catch (e) {
     console.error("Error reading subscribers:", e);
   }
-  // Default sample seed for subscribers demo
-  return [
-    {
-      id: "sub-1",
-      phone: "9876543210",
-      email: "reader1@swadeshvaani.in",
-      subscribedAt: "16 Aug 2026, 10:30 AM",
-      status: "Active",
-    },
-    {
-      id: "sub-2",
-      phone: "9123456789",
-      email: "jharkhand.news@gmail.com",
-      subscribedAt: "15 Aug 2026, 04:15 PM",
-      status: "Active",
-    },
-  ];
+  return [];
 };
 
 export const saveSubscriber = ({ email, phone }) => {
@@ -761,18 +1204,27 @@ export const saveSubscriber = ({ email, phone }) => {
       id: "sub-" + Date.now(),
       phone: cleanPhone,
       email: cleanEmail,
-      subscribedAt: new Date().toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      subscribedAt: new Date().toLocaleString("en-IN"),
       status: "Active",
     };
 
     const updated = [newSub, ...subscribers];
     localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("sv_subscribers_change"));
+
+    // Persist to Convex DB
+    convex.mutation(api.subscribers.subscribe, {
+      email: cleanEmail,
+      phone: cleanPhone,
+    }).catch(() => {});
+
+    // Async persist to server
+    fetch("/api/subscribers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: cleanEmail, phone: cleanPhone }),
+    }).catch(() => {});
+
     return { success: true, message: "सफलतापूर्वक सब्सक्राइब किया गया!", subscriber: newSub };
   } catch (e) {
     console.error("Error saving subscriber:", e);
@@ -787,9 +1239,20 @@ export const deleteSubscriber = (idOrPhone) => {
       (s) => String(s.id) !== String(idOrPhone) && String(s.phone) !== String(idOrPhone)
     );
     localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(filtered));
+    window.dispatchEvent(new Event("sv_subscribers_change"));
+
+    // Delete in Convex DB
+    convex.mutation(api.subscribers.remove, { id: String(idOrPhone) }).catch(() => {});
+
+    fetch(`/api/subscribers/${encodeURIComponent(idOrPhone)}`, {
+      method: "DELETE",
+    }).catch(() => {});
+
     return filtered;
   } catch (e) {
     console.error("Error deleting subscriber:", e);
     return [];
   }
 };
+
+

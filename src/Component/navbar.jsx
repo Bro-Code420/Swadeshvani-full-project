@@ -26,6 +26,7 @@ import {
   Trash2,
   ExternalLink,
   Volume2,
+  Languages,
 } from "lucide-react";
 
 import {
@@ -34,15 +35,17 @@ import {
   markNotificationAsRead,
   clearNotifications,
   requestNotificationPermission,
+  toHindiNumber,
   getAllArticles,
 } from "../data/newsData";
 
 import { isAdminAuthenticated, logoutAdmin, getAdminUser } from "../utils/auth";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { language, toggleLanguage, setLanguage, t } = useLanguage();
 
-  const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -140,7 +143,6 @@ const Navbar = () => {
     const query = searchQuery.trim();
     setSearchOpen(false);
     setSearchResults([]);
-    setMenuOpen(false);
     setSidebarOpen(false);
     navigate(`/News?q=${encodeURIComponent(query)}`);
   };
@@ -149,7 +151,6 @@ const Navbar = () => {
     setSearchOpen(false);
     setSearchQuery("");
     setSearchResults([]);
-    setMenuOpen(false);
     setSidebarOpen(false);
     navigate(`/news/${articleId}`);
   };
@@ -157,7 +158,6 @@ const Navbar = () => {
   const handleNotificationClick = (notif) => {
     markNotificationAsRead(notif.id);
     setNotifOpen(false);
-    setMenuOpen(false);
     if (notif.articleId) {
       navigate(`/news/${notif.articleId}`);
     }
@@ -173,7 +173,6 @@ const Navbar = () => {
   };
 
   const closeMenus = () => {
-    setMenuOpen(false);
     setSidebarOpen(false);
     setSearchOpen(false);
     setNotifOpen(false);
@@ -191,49 +190,50 @@ const Navbar = () => {
 
   const sidebarLinks = [
     {
-      section: "Main",
+      section: t("mainMenu"),
       items: [
-        { icon: <Home size={18} />, title: "Home", to: "/" },
-        { icon: <Newspaper size={18} />, title: "All News & Feeds", to: "/News" },
-        { icon: <Newspaper size={18} />, title: "District News", to: "/District" },
+        { icon: <Home size={18} />, title: t("home"), to: "/" },
+        { icon: <Newspaper size={18} />, title: t("allNews"), to: "/News" },
+        { icon: <Newspaper size={18} />, title: t("districtNews"), to: "/District" },
       ],
     },
     {
-      section: "Categories",
+      section: t("categories"),
       items: [
-        { icon: <GraduationCap size={18} />, title: "Education", to: "/Education" },
-        { icon: <Globe size={18} />, title: "World News", to: "/Worldnews" },
-        { icon: <Cpu size={18} />, title: "Technology", to: "/Technologynews" },
-        { icon: <Trophy size={18} />, title: "Sports", to: "/Sportsnews" },
+        { icon: <GraduationCap size={18} />, title: t("education"), to: "/Education" },
+        { icon: <Globe size={18} />, title: t("worldNews"), to: "/Worldnews" },
+        { icon: <Cpu size={18} />, title: t("technology"), to: "/Technologynews" },
+        { icon: <Trophy size={18} />, title: t("sports"), to: "/Sportsnews" },
       ],
     },
     {
-      section: "Jharkhand & Features",
+      section: t("jharkhandFeatures"),
       items: [
-        { icon: <History size={18} />, title: "Historic Jharkhand", to: "/HistoricJharkhand" },
-        { icon: <Video size={18} />, title: "YouTube Videos", to: "/YouTubeVideos" },
-        { icon: <Megaphone size={18} />, title: "Advertisement", to: "/Advertisement" },
-        { icon: <Info size={18} />, title: "About Us", to: "/About" },
+        { icon: <History size={18} />, title: t("historicJharkhand"), to: "/HistoricJharkhand" },
+        { icon: <Video size={18} />, title: t("videos"), to: "/YouTubeVideos" },
+        { icon: <Megaphone size={18} />, title: t("advertisement"), to: "/Advertisement" },
+        { icon: <Info size={18} />, title: t("aboutUs"), to: "/About" },
       ],
     },
     {
-      section: "Admin & Account",
+      section: t("adminAccount"),
       items: isAdmin
         ? [
-            { icon: <UserCog size={18} />, title: "Admin Panel", to: "/Admin" },
+            { icon: <UserCog size={18} />, title: t("adminPanel"), to: "/Admin" },
           ]
         : [
-            { icon: <User size={18} />, title: "Admin Login", to: "/Login" },
+            { icon: <User size={18} />, title: t("adminLogin"), to: "/Login" },
           ],
     },
   ];
 
   const headerCategories = [
-    { label: "Education", to: "/Education" },
-    { label: "World", to: "/Worldnews" },
-    { label: "Technology", to: "/Technologynews" },
-    { label: "Sports", to: "/Sportsnews" },
-    { label: "District", to: "/District" },
+    { label: t("education"), to: "/Education" },
+    { label: t("worldNews"), to: "/Worldnews" },
+    { label: t("technology"), to: "/Technologynews" },
+    { label: t("sports"), to: "/Sportsnews" },
+    { label: t("districtNews"), to: "/District" },
+    { label: t("historicJharkhand"), to: "/HistoricJharkhand" },
   ];
 
   return (
@@ -249,89 +249,72 @@ const Navbar = () => {
         }`}
       />
 
-      {/* Sidebar Drawer */}
+      {/* Sidebar Drawer (Right-aligned) */}
       <aside
-        className={`fixed left-0 top-0 z-50 h-full w-[300px] bg-white shadow-2xl transition-transform duration-300 flex flex-col justify-between ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 right-0 z-50 h-full w-80 max-w-[85vw] bg-white shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${
+          sidebarOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div>
-          {/* Sidebar header */}
-          <div className="flex h-20 items-center justify-between border-b border-gray-100 px-5">
-            <Link to="/" onClick={closeMenus}>
-              <img
-                src={hindilogo}
-                alt="Swadesh Vani Logo"
-                className="h-10 w-auto object-contain"
-              />
-            </Link>
-
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-orange-50 hover:text-orange-600"
-              aria-label="Close sidebar"
-            >
-              <X size={20} />
-            </button>
+        {/* Drawer Header */}
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
+          <div className="flex items-center gap-2.5">
+            <img
+              src={hindilogo}
+              alt="Swadesh Vani Logo"
+              className="h-10 w-auto object-contain"
+            />
           </div>
-
-          {/* Sidebar navigation list */}
-          <nav className="h-[calc(100vh-12rem)] overflow-y-auto py-4">
-            {sidebarLinks.map((sectionGroup) => (
-              <div key={sectionGroup.section} className="mb-5">
-                <p className="mb-1.5 px-5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  {sectionGroup.section}
-                </p>
-
-                <div className="space-y-0.5">
-                  {sectionGroup.items.map((item) => (
-                    <Link
-                      key={item.title}
-                      to={item.to}
-                      onClick={closeMenus}
-                      className="group flex w-full items-center justify-between px-5 py-2.5 transition hover:bg-orange-50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-orange-600">{item.icon}</span>
-                        <span className="text-sm font-medium text-gray-700 transition group-hover:text-orange-600">
-                          {item.title}
-                        </span>
-                      </div>
-                      <ChevronRight
-                        size={16}
-                        className="text-gray-300 transition group-hover:translate-x-1 group-hover:text-orange-600"
-                      />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
+          <button
+            onClick={closeMenus}
+            className="h-8 w-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition cursor-pointer"
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        {/* Sidebar Bottom Auth Status */}
+        {/* Sidebar Nav Links */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {sidebarLinks.map((section) => (
+            <div key={section.section} className="space-y-2">
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3">
+                {section.section}
+              </h3>
+              <div className="space-y-1">
+                {section.items.map((item) => (
+                  <Link
+                    key={item.title}
+                    to={item.to}
+                    onClick={closeMenus}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition group"
+                  >
+                    <span className="text-gray-400 group-hover:text-orange-600 transition">
+                      {item.icon}
+                    </span>
+                    <span>{item.title}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Admin Footer info */}
         {isAdmin && (
           <div className="p-4 border-t border-gray-100 bg-slate-50 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-orange-600 text-white flex items-center justify-center text-xs font-bold">
+              <div className="h-8 w-8 rounded-full bg-blue-950 text-white flex items-center justify-center font-bold text-xs">
                 A
               </div>
               <div className="text-xs">
-                <p className="font-bold text-slate-800">Admin Active</p>
-                <Link
-                  to="/Admin"
-                  onClick={closeMenus}
-                  className="text-orange-600 hover:underline text-[11px]"
-                >
-                  Go to Dashboard
-                </Link>
+                <p className="font-bold text-blue-950">Swadesh Vani Admin</p>
+                <p className="text-[10px] text-emerald-600 font-medium">Logged in</p>
               </div>
             </div>
 
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-600 transition"
-              title="Logout"
+              className="p-2 text-slate-400 hover:text-red-600 transition cursor-pointer"
+              title={t("logout")}
             >
               <LogOut size={16} />
             </button>
@@ -339,47 +322,44 @@ const Navbar = () => {
         )}
       </aside>
 
-      {/* Main Header */}
-      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-8">
-          <div className="relative flex h-20 items-center justify-between lg:h-24">
-            {/* Left menu trigger button */}
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="flex items-center gap-2 text-gray-700 transition hover:text-orange-600"
-              aria-label="Open menu"
-            >
-              <Menu size={22} />
-              <span className="hidden text-xs font-bold uppercase tracking-wider md:block">
-                Menu
-              </span>
-            </button>
-
-            {/* Center Brand Logo */}
-            <Link
-              to="/"
-              className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
-            >
-              <img
-                src={hindilogo}
-                alt="Swadesh Vani Logo"
-                className="h-14 w-auto select-none object-contain sm:h-18 lg:h-20"
-              />
-            </Link>
+      {/* Main Header - FULL WIDTH */}
+      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md w-full">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
+          <div className="flex h-20 items-center justify-between lg:h-24 gap-3 lg:gap-6">
+            {/* Left Side: Brand Logo */}
+            <div className="flex items-center shrink-0">
+              <Link
+                to="/"
+                className="flex items-center shrink-0 transition-transform hover:scale-[1.02]"
+              >
+                <img
+                  src={hindilogo}
+                  alt="Swadesh Vani Logo"
+                  className="h-12 w-auto select-none object-contain sm:h-16 lg:h-20"
+                />
+              </Link>
+            </div>
 
             {/* Right Desktop Controls */}
-            <div className="hidden items-center gap-4 lg:flex">
-              {/* Category shortcuts */}
-              <nav className="flex items-center gap-4">
-                {headerCategories.map((category) => (
-                  <Link
-                    key={category.label}
-                    to={category.to}
-                    className="text-xs font-bold text-gray-700 hover:text-orange-600 transition"
-                  >
-                    {category.label}
-                  </Link>
-                ))}
+            <div className="hidden items-center gap-3 xl:gap-5 lg:flex shrink-0">
+              {/* Category shortcuts - Modern Capsule Tabs */}
+              <nav className="flex items-center gap-1 xl:gap-1.5 bg-slate-50/90 p-1 rounded-2xl border border-slate-200/70">
+                {headerCategories.map((category) => {
+                  const isActive = location.pathname.toLowerCase() === category.to.toLowerCase();
+                  return (
+                    <Link
+                      key={category.label}
+                      to={category.to}
+                      className={`px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all duration-200 whitespace-nowrap ${
+                        isActive
+                          ? "bg-white text-orange-600 shadow-xs border border-orange-200/70"
+                          : "text-slate-600 hover:text-orange-600 hover:bg-white/80"
+                      }`}
+                    >
+                      {category.label}
+                    </Link>
+                  );
+                })}
               </nav>
 
               <div className="h-4 w-px bg-gray-200" />
@@ -427,7 +407,7 @@ const Navbar = () => {
                         type="submit"
                         className="rounded-full bg-orange-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-orange-700 shadow-sm"
                       >
-                        Search
+                        खोजें
                       </button>
 
                       <button
@@ -448,7 +428,7 @@ const Navbar = () => {
                       <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl bg-white p-2 shadow-2xl border border-gray-100 z-50 animate-fadeIn">
                         <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 flex items-center justify-between">
                           <span>मिलते-जुलते समाचार</span>
-                          <span className="text-orange-600">{searchResults.length}</span>
+                          <span className="text-orange-600">{toHindiNumber(searchResults.length)}</span>
                         </div>
                         <div className="divide-y divide-gray-50">
                           {searchResults.map((item) => (
@@ -501,12 +481,12 @@ const Navbar = () => {
                   <Bell size={18} />
                   {unreadNotifsCount > 0 && (
                     <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-600 text-[10px] font-extrabold text-white ring-2 ring-white">
-                      {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
+                      {unreadNotifsCount > 9 ? "९+" : toHindiNumber(unreadNotifsCount)}
                     </span>
                   )}
                 </button>
 
-                {/* Notifications Dropdown Panel */}
+                {/* Notifications Dropdown Panel (Desktop) */}
                 {notifOpen && (
                   <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-3xl bg-white shadow-2xl border border-gray-100 z-50 p-4 space-y-3 animate-fadeIn">
                     <div className="flex items-center justify-between border-b border-gray-100 pb-3">
@@ -515,7 +495,7 @@ const Navbar = () => {
                           <Bell size={14} />
                         </div>
                         <h4 className="text-xs font-bold text-blue-950 uppercase tracking-wider">
-                          समाचार सूचनाएं (Notifications)
+                          समाचार सूचनाएं
                         </h4>
                       </div>
 
@@ -525,7 +505,7 @@ const Navbar = () => {
                           className="text-[11px] font-bold text-orange-600 hover:underline flex items-center gap-1 cursor-pointer"
                         >
                           <Check size={12} />
-                          <span>Mark all read</span>
+                          <span>सभी पढ़ी गईं</span>
                         </button>
                       )}
                     </div>
@@ -538,9 +518,9 @@ const Navbar = () => {
                         </span>
                         <button
                           onClick={handleRequestPermission}
-                          className="px-2 py-1 bg-orange-600 text-white rounded-lg text-[10px] font-bold hover:bg-orange-700 transition"
+                          className="px-2 py-1 bg-orange-600 text-white rounded-lg text-[10px] font-bold hover:bg-orange-700 transition cursor-pointer"
                         >
-                          Allow
+                          स्वीकार करें
                         </button>
                       </div>
                     )}
@@ -590,7 +570,7 @@ const Navbar = () => {
                           onClick={clearNotifications}
                           className="text-gray-400 hover:text-red-600 font-medium flex items-center gap-1 cursor-pointer"
                         >
-                          <Trash2 size={12} /> Clear all
+                          <Trash2 size={12} /> सभी हटाएं
                         </button>
 
                         <Link
@@ -607,6 +587,21 @@ const Navbar = () => {
               </div>
 
               {/* Login / Admin Action Button */}
+              {/* Menu trigger button (Next to notification) */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-full border border-gray-200 bg-slate-50 hover:bg-orange-50 hover:border-orange-300 text-gray-700 hover:text-orange-600 transition cursor-pointer font-bold text-xs shadow-xs"
+                aria-label="Open menu"
+              >
+                <Menu size={18} />
+                <span className="hidden text-xs font-bold uppercase tracking-wider xl:block">
+                  {t("menu")}
+                </span>
+              </button>
+
+              <div className="h-4 w-px bg-gray-200" />
+
+              {/* Login / Admin Action Button (In menu's place) */}
               {isAdmin ? (
                 <div className="flex items-center gap-2">
                   <Link
@@ -614,12 +609,12 @@ const Navbar = () => {
                     className="flex items-center gap-1.5 rounded-full bg-blue-950 px-3.5 py-2 text-white text-xs font-bold shadow-sm hover:bg-blue-900 transition"
                   >
                     <UserCog size={15} className="text-orange-400" />
-                    <span>Admin Panel</span>
+                    <span>एडमिन पैनल</span>
                   </Link>
                   <button
                     onClick={handleLogout}
-                    title="Logout"
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-200 transition"
+                    title="लॉगआउट"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-200 transition cursor-pointer"
                   >
                     <LogOut size={15} />
                   </button>
@@ -630,97 +625,172 @@ const Navbar = () => {
                   className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3.5 py-2 text-gray-700 transition hover:border-orange-300 hover:text-orange-600 text-xs font-bold"
                 >
                   <User size={15} />
-                  <span>Login</span>
+                  <span>लॉगिन</span>
                 </Link>
               )}
             </div>
 
-            {/* Mobile Actions Header */}
+            {/* Mobile Actions Header (Right side: Search, Bell, Menu, Login) */}
             <div className="flex items-center gap-2 lg:hidden">
-              {/* Mobile Notification Bell */}
+              {/* Mobile Search Toggle */}
               <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-orange-300 hover:text-orange-600"
-                aria-label="Notifications"
+                onClick={() => {
+                  setSearchOpen(!searchOpen);
+                  if (!searchOpen) {
+                    setTimeout(() => searchInputRef.current?.focus(), 50);
+                  }
+                }}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                  searchOpen
+                    ? "border-orange-500 bg-orange-50 text-orange-600"
+                    : "border-gray-200 text-gray-700 hover:border-orange-300 hover:text-orange-600"
+                }`}
+                aria-label="Search news"
               >
-                <Bell size={18} />
-                {unreadNotifsCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full bg-orange-600 text-[9px] font-bold text-white flex items-center justify-center">
-                    {unreadNotifsCount}
-                  </span>
-                )}
+                {searchOpen ? <X size={17} /> : <Search size={17} />}
               </button>
 
-              {/* Mobile Menu Button */}
+              {/* Mobile Notification Bell */}
+              <div className="relative">
+                <button
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  className={`relative flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                    notifOpen
+                      ? "border-orange-500 bg-orange-50 text-orange-600"
+                      : "border-gray-200 text-gray-700 hover:border-orange-300 hover:text-orange-600"
+                  }`}
+                  aria-label="Notifications"
+                >
+                  <Bell size={18} />
+                  {unreadNotifsCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 h-4 w-4 rounded-full bg-orange-600 text-[9px] font-bold text-white flex items-center justify-center ring-1 ring-white">
+                      {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Mobile Notification Panel */}
+                {notifOpen && (
+                  <div className="fixed left-3 right-3 top-20 z-50 rounded-3xl bg-white shadow-2xl border border-gray-100 p-4 space-y-3 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
+                          <Bell size={14} />
+                        </div>
+                        <h4 className="text-xs font-bold text-blue-950 uppercase tracking-wider">
+                          समाचार सूचनाएं
+                        </h4>
+                      </div>
+
+                      {unreadNotifsCount > 0 && (
+                        <button
+                          onClick={markAllNotificationsAsRead}
+                          className="text-[11px] font-bold text-orange-600 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Check size={12} />
+                          <span>Mark all read</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-60 overflow-y-auto divide-y divide-gray-50 -mx-1 px-1">
+                      {notifications.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-gray-400">
+                          कोई नई सूचना नहीं है।
+                        </div>
+                      ) : (
+                        notifications.slice(0, 10).map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => handleNotificationClick(n)}
+                            className={`p-3 rounded-2xl transition flex items-start gap-3 cursor-pointer ${
+                              !n.read ? "bg-orange-50/50 hover:bg-orange-50" : "hover:bg-gray-50"
+                            }`}
+                          >
+                            <div
+                              className={`h-2.5 w-2.5 rounded-full mt-1.5 shrink-0 ${
+                                !n.read ? "bg-orange-600" : "bg-gray-200"
+                              }`}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className={`text-xs leading-snug line-clamp-2 ${
+                                  !n.read ? "font-bold text-gray-900" : "font-medium text-gray-600"
+                                }`}
+                              >
+                                {n.title}
+                              </p>
+                              <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
+                                <span className="text-orange-600 font-semibold">{n.category}</span>
+                                <span>&bull;</span>
+                                <span>{n.timestamp || n.date}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                      <button
+                        onClick={clearNotifications}
+                        className="text-gray-400 hover:text-red-600 font-medium flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={12} /> Clear all
+                      </button>
+
+                      <Link
+                        to="/News"
+                        onClick={() => setNotifOpen(false)}
+                        className="text-orange-600 font-bold hover:underline"
+                      >
+                        सभी ताज़ा खबरें &rarr;
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Menu Toggle (Next to Notification) */}
               <button
-                onClick={() => setMenuOpen((prev) => !prev)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-orange-300 hover:text-orange-600"
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                onClick={() => setSidebarOpen(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:border-orange-300 hover:text-orange-600 transition cursor-pointer"
+                aria-label="Open menu"
               >
-                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+                <Menu size={18} />
               </button>
+
+              {/* Mobile Login / User Icon (In Menu's place at the right end) */}
+              <Link
+                to={isAdmin ? "/Admin" : "/Login"}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-orange-300 hover:text-orange-600"
+                aria-label={isAdmin ? "Admin Dashboard" : "Login"}
+              >
+                {isAdmin ? <UserCog size={17} className="text-orange-600" /> : <User size={17} />}
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu */}
-        {menuOpen && (
-          <div className="border-t border-gray-100 bg-white lg:hidden animate-fadeIn">
-            <div className="mx-auto max-w-7xl px-5 py-4 space-y-4">
-              {/* Mobile Search Form */}
-              <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="समाचार खोजें..."
-                  className="flex-1 rounded-full border border-gray-300 px-4 py-2.5 text-xs outline-none focus:border-orange-500"
-                />
-                <button
-                  type="submit"
-                  className="rounded-full bg-orange-600 px-4 py-2.5 text-xs font-bold text-white"
-                >
-                  Search
-                </button>
-              </form>
-
-              {/* Mobile Links */}
-              <nav className="space-y-1">
-                {navLinks.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.to}
-                    onClick={() => setMenuOpen(false)}
-                    className="block rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-
-                {isAdmin ? (
-                  <Link
-                    to="/Admin"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center justify-between rounded-xl px-4 py-2.5 text-xs font-bold text-white bg-blue-950 mt-2"
-                  >
-                    <span className="flex items-center gap-2">
-                      <UserCog size={16} className="text-orange-400" />
-                      <span>Admin Dashboard</span>
-                    </span>
-                    <ChevronRight size={16} />
-                  </Link>
-                ) : (
-                  <Link
-                    to="/Login"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-orange-600 bg-orange-50 mt-2"
-                  >
-                    <User size={16} />
-                    <span>Admin Login</span>
-                  </Link>
-                )}
-              </nav>
-            </div>
+        {/* Mobile Search Bar Dropdown (When search is opened) */}
+        {searchOpen && (
+          <div className="border-t border-gray-100 bg-white px-4 py-3 shadow-sm lg:hidden animate-fadeIn">
+            <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="समाचार खोजें (Search news)..."
+                className="flex-1 rounded-full border border-orange-300 bg-orange-50/30 px-4 py-2 text-xs text-gray-800 outline-none focus:border-orange-500 focus:bg-white"
+              />
+              <button
+                type="submit"
+                className="rounded-full bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-orange-700 transition"
+              >
+                खोजें
+              </button>
+            </form>
           </div>
         )}
       </header>

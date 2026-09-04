@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Clock, ArrowRight, MapPin, User, Filter, Search, X } from "lucide-react";
-import { getAllArticles, JHARKHAND_DISTRICTS } from "../data/newsData";
+import { getAllArticles, syncArticlesFromServer, JHARKHAND_DISTRICTS } from "../data/newsData";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function CategoriesSection() {
+  const { language, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [articles, setArticles] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
@@ -13,6 +15,10 @@ export default function CategoriesSection() {
   // Sync initial and URL query params
   useEffect(() => {
     setArticles(getAllArticles());
+    syncArticlesFromServer().then((fresh) => {
+      if (fresh && fresh.length > 0) setArticles(fresh);
+    });
+
     const queryParam = searchParams.get("q");
     if (queryParam) {
       setSearchQuery(queryParam);
@@ -21,6 +27,18 @@ export default function CategoriesSection() {
     if (catParam) {
       setSelectedCategory(catParam);
     }
+
+    const handleUpdate = () => {
+      setArticles(getAllArticles());
+    };
+
+    window.addEventListener("sv_articles_change", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    return () => {
+      window.removeEventListener("sv_articles_change", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, [searchParams]);
 
   // Filter articles based on category, district, and search query
@@ -236,7 +254,7 @@ export default function CategoriesSection() {
                           <span className="flex items-center gap-1 text-xs text-slate-500">
                             <User size={13} className="text-orange-500" />
                             <span className="font-medium">
-                              {article.reporter || article.author || "स्वदेश वाणी ब्यूरो"}
+                              {article.reporter || article.author || t("reporterFallback")}
                             </span>
                           </span>
 
@@ -244,7 +262,7 @@ export default function CategoriesSection() {
                             to={`/news/${article.id}`}
                             className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700"
                           >
-                            पूरी खबर <ArrowRight size={14} />
+                            {t("readStory")} <ArrowRight size={14} />
                           </Link>
                         </div>
                       </div>
