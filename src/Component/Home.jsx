@@ -681,8 +681,12 @@ const Home = () => {
               >
                 <Link to={`/news/${item.id}`} className="hidden h-24 w-32 shrink-0 overflow-hidden rounded-lg sm:block group">
                   <img
-                    src={item.image}
+                    src={item.image || getCategoryFallbackImage(item.category)}
                     alt={item.title}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = getCategoryFallbackImage(item.category);
+                    }}
                     className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
                   />
                 </Link>

@@ -53,6 +53,7 @@ import {
   deleteAdvertisement,
   toggleAdStatus,
   getCategoryFallbackImage,
+  resolveArticleImage,
 } from "../data/newsData";
 
 import {
@@ -876,17 +877,15 @@ export default function Admin() {
                       className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 p-2 rounded-xl transition"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        {article.image ? (
-                          <img
-                            src={article.image}
-                            alt=""
-                            className="h-12 w-16 object-cover rounded-lg shrink-0 border border-slate-200"
-                          />
-                        ) : (
-                          <div className="h-12 w-16 bg-slate-100 rounded-lg shrink-0 flex items-center justify-center text-slate-400">
-                            <FaNewspaper />
-                          </div>
-                        )}
+                        <img
+                          src={resolveArticleImage(article.image, article.category)}
+                          alt=""
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = getCategoryFallbackImage(article.category);
+                          }}
+                          className="h-12 w-16 object-cover rounded-lg shrink-0 border border-slate-200"
+                        />
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-slate-900 truncate">
                             {article.title}
@@ -1009,7 +1008,7 @@ export default function Admin() {
                             <td className="py-3.5 px-5">
                               <div className="flex items-center gap-3 max-w-md">
                                 <img
-                                  src={article.image || getCategoryFallbackImage(article.category)}
+                                  src={resolveArticleImage(article.image, article.category)}
                                   alt=""
                                   onError={(e) => {
                                     e.currentTarget.onerror = null;

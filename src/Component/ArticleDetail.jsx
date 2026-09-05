@@ -434,17 +434,15 @@ export default function ArticleDetail() {
                     to={`/news/${rel.id}`}
                     className="group flex gap-3 items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0"
                   >
-                    {rel.image ? (
-                      <img
-                        src={rel.image}
-                        alt={rel.title}
-                        className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"
-                      />
-                    ) : (
-                      <div className="h-16 w-20 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                        News
-                      </div>
-                    )}
+                    <img
+                      src={rel.image || getCategoryFallbackImage(rel.category)}
+                      alt={rel.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getCategoryFallbackImage(rel.category);
+                      }}
+                      className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"
+                    />
                     <div className="flex-1 min-w-0">
                       <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider block mb-1">
                         {rel.category}

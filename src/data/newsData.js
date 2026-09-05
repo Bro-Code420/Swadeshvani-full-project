@@ -942,10 +942,22 @@ export const resolveArticleImage = (image, category) => {
     return getCategoryFallbackImage(category);
   }
   const trimmed = image.trim();
-  // Filter out broken relative /uploads/ URLs that lack local files
-  if (trimmed.startsWith("/uploads/") || trimmed.startsWith("uploads/")) {
-    return getCategoryFallbackImage(category);
+
+  // If it is already a full http/https URL or base64 data URI, return as-is
+  if (
+    trimmed.startsWith("data:image/") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://")
+  ) {
+    return trimmed;
   }
+
+  // If it is a relative /uploads/ path from the deployed server, resolve to production URL
+  if (trimmed.startsWith("/uploads/") || trimmed.startsWith("uploads/")) {
+    const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    return `https://swadeshvaani.com${cleanPath}`;
+  }
+
   return trimmed;
 };
 
