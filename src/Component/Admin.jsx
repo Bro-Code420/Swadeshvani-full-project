@@ -52,6 +52,7 @@ import {
   saveAdvertisement,
   deleteAdvertisement,
   toggleAdStatus,
+  getCategoryFallbackImage,
 } from "../data/newsData";
 
 import {
@@ -246,23 +247,17 @@ export default function Admin() {
         maxWidth: 1280,
         maxHeight: 720,
         quality: 0.82,
+        targetMaxSizeBytes: 180 * 1024,
       });
-
-      // 2. Try server upload if API server is reachable, or fallback to compressed data URL
-      let finalImageUrl = compressedDataUrl;
-      try {
-        const serverUrl = await uploadImageToServer(compressedDataUrl, file.name);
-        if (serverUrl) finalImageUrl = serverUrl;
-      } catch {}
 
       setFormData((prev) => ({
         ...prev,
-        image: finalImageUrl,
+        image: compressedDataUrl,
       }));
-      showToast(language === "hi" ? "तस्वीर सफलतापूर्वक अपलोड एवं तैयार हो गई!" : "Image uploaded and optimized successfully!", "success");
+      showToast(language === "hi" ? "तस्वीर सफलतापूर्वक प्रोसेस एवं तैयार हो गई!" : "Image processed and optimized successfully!", "success");
     } catch (err) {
       console.error("Image upload failed:", err);
-      showToast(language === "hi" ? "तस्वीर अपलोड करने में विफल।" : "Failed to process image.", "error");
+      showToast(language === "hi" ? "तस्वीर प्रोसेस करने में विफल।" : "Failed to process image.", "error");
     } finally {
       setIsUploadingImage(false);
       e.target.value = "";
@@ -280,22 +275,17 @@ export default function Admin() {
         maxWidth: 1200,
         maxHeight: 600,
         quality: 0.82,
+        targetMaxSizeBytes: 180 * 1024,
       });
-
-      let finalImageUrl = compressedDataUrl;
-      try {
-        const serverUrl = await uploadImageToServer(compressedDataUrl, file.name);
-        if (serverUrl) finalImageUrl = serverUrl;
-      } catch {}
 
       setAdForm((prev) => ({
         ...prev,
-        image: finalImageUrl,
+        image: compressedDataUrl,
       }));
-      showToast(language === "hi" ? "विज्ञापन बैनर सफलतापूर्वक अपलोड हुआ!" : "Ad banner uploaded successfully!", "success");
+      showToast(language === "hi" ? "विज्ञापन बैनर तैयार हो गया!" : "Ad banner optimized successfully!", "success");
     } catch (err) {
       console.error("Ad image upload failed:", err);
-      showToast(language === "hi" ? "बैनर अपलोड विफल रहा।" : "Failed to upload banner.", "error");
+      showToast(language === "hi" ? "बैनर प्रोसेस विफल रहा।" : "Failed to process banner.", "error");
     } finally {
       setIsUploadingAdImage(false);
       e.target.value = "";

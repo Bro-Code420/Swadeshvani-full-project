@@ -82,7 +82,7 @@ function FeaturedNewsCard({ item }) {
       to={item.link}
       className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
     >
-      <div className="relative h-64 overflow-hidden sm:h-80 bg-slate-900">
+      <div className="relative h-64 overflow-hidden sm:h-80">
         <img
           src={item.image || getCategoryFallbackImage(item.category)}
           alt={item.title}

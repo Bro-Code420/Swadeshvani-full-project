@@ -404,7 +404,7 @@ const Home = () => {
           <div className="grid gap-6 lg:grid-cols-3">
           {/* Main news */}
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
-            <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden bg-slate-100">
+            <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden">
               <img
                 src={mainNews.image || getCategoryFallbackImage(mainNews.category)}
                 alt={mainNews.title}
@@ -600,7 +600,7 @@ const Home = () => {
                 className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
               >
                 <div>
-                  <Link to={`/news/${item.id}`} className="block relative overflow-hidden bg-slate-100">
+                  <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
                     <img
                       src={item.image || getCategoryFallbackImage(item.category)}
                       alt={item.title}

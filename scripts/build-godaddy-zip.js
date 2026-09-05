@@ -89,8 +89,8 @@ async function createPackage() {
       }
     });
 
-    // 3. Directories (src, public, server, dist)
-    const dirs = ["src", "public", "server", "dist"];
+    // 3. Directories (src, public, server, dist, convex)
+    const dirs = ["src", "public", "server", "dist", "convex"];
     dirs.forEach((dir) => {
       const fullDir = path.join(projectRoot, dir);
       if (fs.existsSync(fullDir)) {
