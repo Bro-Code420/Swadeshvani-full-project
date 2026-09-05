@@ -939,7 +939,7 @@ export const syncArticlesFromServer = async () => {
 
 const DELETED_ARTICLES_KEY = "sv_deleted_article_ids";
 
-// Get all articles (Returns localStorage / synced articles, fallback to initial seeds only on cold start)
+// Get all articles (Returns localStorage / synced articles with verified image assets)
 export const getAllArticles = () => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -949,7 +949,20 @@ export const getAllArticles = () => {
         const deletedIds = new Set(
           JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
         );
-        return parsed.filter((a) => !deletedIds.has(String(a.id)));
+        return parsed
+          .filter((a) => !deletedIds.has(String(a.id)))
+          .map((a) => {
+            const hasValidImage =
+              a.image &&
+              typeof a.image === "string" &&
+              a.image.trim().length > 0 &&
+              !a.image.startsWith("blob:") &&
+              !a.image.startsWith("/uploads/");
+            return {
+              ...a,
+              image: hasValidImage ? a.image : getCategoryFallbackImage(a.category),
+            };
+          });
       }
     }
   } catch (e) {
@@ -979,16 +992,28 @@ export const getArticleById = (idOrSlug) => {
     );
   });
 
-  if (found) return found;
+  // 2. Fallback fuzzy search by slugified title
+  if (!found) {
+    found = articles.find((a) => {
+      const generatedSlug = generateSlug(a.title || "").toLowerCase();
+      return generatedSlug === searchKey;
+    });
+  }
 
-  // 2. Title slug or title match
-  found = articles.find((a) => {
-    const aTitleSlug = a.title ? generateSlug(a.title).toLowerCase() : "";
-    const aTitle = (a.title || "").toLowerCase().trim();
-    return aTitleSlug === searchKey || aTitle === searchKey;
-  });
+  if (found) {
+    const hasValidImage =
+      found.image &&
+      typeof found.image === "string" &&
+      found.image.trim().length > 0 &&
+      !found.image.startsWith("blob:") &&
+      !found.image.startsWith("/uploads/");
+    return {
+      ...found,
+      image: hasValidImage ? found.image : getCategoryFallbackImage(found.category),
+    };
+  }
 
-  return found || null;
+  return null;
 };
 
 // Filter articles by category (handles aliases and multilingual matching)

@@ -18,6 +18,7 @@ import {
   getAdvertisements,
   recordAdClick,
   toHindiNumber,
+  getCategoryFallbackImage,
 } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 import SubscribeSection from "./SubscribeSection";
@@ -403,10 +404,14 @@ const Home = () => {
           <div className="grid gap-6 lg:grid-cols-3">
           {/* Main news */}
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
-            <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden">
+            <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden bg-slate-100">
               <img
-                src={mainNews.image}
+                src={mainNews.image || getCategoryFallbackImage(mainNews.category)}
                 alt={mainNews.title}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = getCategoryFallbackImage(mainNews.category);
+                }}
                 className="h-[300px] w-full object-cover sm:h-[420px] group-hover:scale-105 transition duration-500"
               />
             </Link>
@@ -595,10 +600,14 @@ const Home = () => {
                 className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
               >
                 <div>
-                  <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
+                  <Link to={`/news/${item.id}`} className="block relative overflow-hidden bg-slate-100">
                     <img
-                      src={item.image}
+                      src={item.image || getCategoryFallbackImage(item.category)}
                       alt={item.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getCategoryFallbackImage(item.category);
+                      }}
                       className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
                     />
 

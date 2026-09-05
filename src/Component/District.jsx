@@ -82,11 +82,15 @@ function FeaturedNewsCard({ item }) {
       to={item.link}
       className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
     >
-      <div className="relative h-64 overflow-hidden sm:h-80">
+      <div className="relative h-64 overflow-hidden sm:h-80 bg-slate-900">
         <img
-          src={item.image}
+          src={item.image || getCategoryFallbackImage(item.category)}
           alt={item.title}
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = getCategoryFallbackImage(item.category);
+          }}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
         />
 
@@ -131,9 +135,13 @@ function NewsListItem({ item }) {
     >
       <div className="h-24 w-32 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-40">
         <img
-          src={item.image}
+          src={item.image || getCategoryFallbackImage(item.category)}
           alt={item.title}
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = getCategoryFallbackImage(item.category);
+          }}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
       </div>

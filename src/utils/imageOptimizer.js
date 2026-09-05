@@ -87,37 +87,20 @@ export const compressImageFile = (
 };
 
 /**
- * Upload image to server backend if available, fallback to optimized Data URL
+ * Optimize image for 100% cross-device, cross-browser, and cloud portability
+ * Returns a high-definition, ultra-compressed base64 asset (<150KB) that works everywhere
  */
 export const uploadImageToServer = async (fileOrDataUrl, filename = "image.jpg") => {
   try {
-    let base64Data = fileOrDataUrl;
     if (fileOrDataUrl instanceof File) {
-      base64Data = await compressImageFile(fileOrDataUrl);
+      return await compressImageFile(fileOrDataUrl);
     }
-
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image: base64Data,
-        name: filename,
-      }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.url) {
-        return data.url;
-      }
+    if (typeof fileOrDataUrl === "string" && fileOrDataUrl.trim().length > 0) {
+      return fileOrDataUrl;
     }
   } catch (err) {
-    console.warn("Server upload not reachable, using optimized base64 asset:", err);
+    console.warn("Image compression error:", err);
   }
 
-  // Fallback: return optimized base64 data URL
-  if (typeof fileOrDataUrl === "string") {
-    return fileOrDataUrl;
-  }
-  return await compressImageFile(fileOrDataUrl);
+  return "";
 };

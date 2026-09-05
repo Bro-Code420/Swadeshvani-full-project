@@ -71,8 +71,12 @@ export default function SportsPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || getCategoryFallbackImage(item.category)}
+                      src={item.image || getCategoryFallbackImage(item.category || "खेल")}
                       alt={item.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल");
+                      }}
                       className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
                     />
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
@@ -134,8 +138,12 @@ export default function SportsPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || getCategoryFallbackImage(item.category)}
+                      src={item.image || getCategoryFallbackImage(item.category || "खेल")}
                       alt={item.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल");
+                      }}
                       className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />
                     <div className="absolute left-3 top-3 flex flex-wrap gap-1">
