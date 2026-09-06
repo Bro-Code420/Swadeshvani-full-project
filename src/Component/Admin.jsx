@@ -69,7 +69,7 @@ import { toHindiNumber } from "../utils/hindiNumbers";
 
 export default function Admin() {
   const navigate = useNavigate();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, toggleLanguage, setLanguage, t } = useLanguage();
   const [adminUser, setAdminUser] = useState(null);
 
   // Authentication Guard
@@ -509,6 +509,38 @@ export default function Admin() {
 
           {/* Navigation Links */}
           <nav className="p-4 space-y-1.5">
+            {/* Admin Language Switcher */}
+            <div className="p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between mb-3 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                <span className="text-sm">🌐</span>
+                <span>{language === "hi" ? "भाषा (Lang)" : "Language"}</span>
+              </div>
+              <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setLanguage("hi")}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    language === "hi"
+                      ? "bg-orange-600 text-white shadow-xs"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  हिं
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage("en")}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    language === "en"
+                      ? "bg-orange-600 text-white shadow-xs"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+            </div>
+
             <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
               {t("mainMenu")}
             </p>
@@ -693,6 +725,17 @@ export default function Admin() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Language Switcher Pill in Admin Header */}
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-orange-200 bg-orange-50/80 hover:bg-orange-100 text-orange-950 text-xs font-bold transition shadow-2xs cursor-pointer group select-none"
+              title={language === "hi" ? "Switch Admin to English" : "एडमिन को हिंदी में बदलें"}
+            >
+              <span className="text-sm">🌐</span>
+              <span className="tracking-wide">{language === "hi" ? "English" : "हिंदी"}</span>
+            </button>
+
             {activePage === "ads" ? (
               <button
                 onClick={() => {
