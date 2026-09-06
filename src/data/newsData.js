@@ -8,6 +8,16 @@ import news7 from "../Component/photos/news7.jpeg";
 import news8 from "../Component/photos/news8.jpeg";
 import news9 from "../Component/photos/news9.jpeg";
 import news10 from "../Component/photos/news10.jpeg";
+import basukinath from "../Component/photos/basukinath.jpg";
+import baidyanath from "../Component/photos/baidyanath.jpg";
+import Maluti from "../Component/photos/Maluti.jpeg";
+import Betla from "../Component/photos/Betla.jpeg";
+import Hundrufalls from "../Component/photos/Hundrufalls.jpeg";
+import dassam from "../Component/photos/dassam.jpg";
+import netarhat from "../Component/photos/netarhat.jpg";
+import patratu from "../Component/photos/patratu.jpg";
+import dumkaImg from "../Component/photos/dumka.jpeg";
+import hijla from "../Component/photos/hijla.jpeg";
 export { toHindiNumber } from "../utils/hindiNumbers";
 import { broadcastLocalEvent } from "../utils/realtimeEngine";
 import { convex } from "../utils/convexClient";
@@ -485,19 +495,166 @@ export const NEWS_CATEGORIES = [
   "मौसम व कृषि",
 ];
 
-export const getCategoryFallbackImage = (categoryName) => {
-  if (!categoryName) return news1;
-  const cat = String(categoryName).toLowerCase().trim();
-  if (cat.includes("sport") || cat.includes("खेल")) return news9;
-  if (cat.includes("tech") || cat.includes("तकनीक")) return news10;
-  if (cat.includes("edu") || cat.includes("शिक्षा")) return news3;
-  if (cat.includes("politic") || cat.includes("राजनीति")) return news2;
-  if (cat.includes("crime") || cat.includes("अपराध") || cat.includes("दुर्घटना") || cat.includes("accident") || cat.includes("हादसा")) return news8;
-  if (cat.includes("admin") || cat.includes("प्रशासन")) return news6;
-  if (cat.includes("health") || cat.includes("स्वास्थ्य") || cat.includes("धर्म") || cat.includes("religion") || cat.includes("spiritual")) return news7;
-  if (cat.includes("bussiness") || cat.includes("व्यापार")) return news5;
-  if (cat.includes("आपदा") || cat.includes("disaster")) return news1;
-  return news1;
+// Curated diverse photo pools per category (All URLs verified & high-speed)
+export const EDUCATION_PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=80", // Classroom teaching
+  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1000&q=80", // Students study group
+  "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=1000&q=80", // Students in classroom
+  "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1000&q=80", // Teacher with students
+  "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1000&q=80", // Books & learning
+  "https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1000&q=80", // Modern school building
+  "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=1000&q=80", // Library & campus
+  "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=1000&q=80", // Classroom board
+];
+
+export const SPORTS_PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1000&q=80",
+  news9,
+];
+
+export const TECH_PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1000&q=80",
+  news10,
+];
+
+export const POLITICS_PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1000&q=80",
+  news2,
+  news6,
+];
+
+export const CRIME_ACCIDENT_PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1584483766114-2cea6facdf57?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1589994965851-a8f479c573a9?auto=format&fit=crop&w=1000&q=80",
+  news8,
+  news4,
+];
+
+export const HEALTH_PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1000&q=80",
+  news7,
+];
+
+export const RELIGION_CULTURE_PHOTO_POOL = [
+  baidyanath,
+  basukinath,
+  Maluti,
+  "https://images.unsplash.com/photo-1609766857041-ed402ea8069a?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1545063914-a1a6ec821c88?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1000&q=80",
+];
+
+export const BUSINESS_PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=80",
+  news5,
+];
+
+export const JHARKHAND_DISTRICT_PHOTO_POOL = [
+  baidyanath,
+  basukinath,
+  Maluti,
+  Betla,
+  Hundrufalls,
+  dassam,
+  netarhat,
+  patratu,
+  dumkaImg,
+  hijla,
+];
+
+export const WORLD_PHOTO_POOL = [
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80",
+  "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=1000&q=80",
+  news1,
+];
+
+export const getCategoryFallbackImage = (categoryName, seed = "", index = undefined) => {
+  const cat = String(categoryName || "").toLowerCase().trim();
+  let pool = [news1];
+
+  if (cat.includes("sport") || cat.includes("खेल")) {
+    pool = SPORTS_PHOTO_POOL;
+  } else if (cat.includes("tech") || cat.includes("तकनीक")) {
+    pool = TECH_PHOTO_POOL;
+  } else if (cat.includes("edu") || cat.includes("शिक्षा")) {
+    pool = EDUCATION_PHOTO_POOL;
+  } else if (cat.includes("politic") || cat.includes("राजनीति")) {
+    pool = POLITICS_PHOTO_POOL;
+  } else if (
+    cat.includes("crime") ||
+    cat.includes("अपराध") ||
+    cat.includes("दुर्घटना") ||
+    cat.includes("accident") ||
+    cat.includes("हादसा") ||
+    cat.includes("आपदा") ||
+    cat.includes("disaster")
+  ) {
+    pool = CRIME_ACCIDENT_PHOTO_POOL;
+  } else if (cat.includes("admin") || cat.includes("प्रशासन")) {
+    pool = POLITICS_PHOTO_POOL;
+  } else if (cat.includes("health") || cat.includes("स्वास्थ्य")) {
+    pool = HEALTH_PHOTO_POOL;
+  } else if (
+    cat.includes("धर्म") ||
+    cat.includes("religion") ||
+    cat.includes("spiritual") ||
+    cat.includes("संस्कृति") ||
+    cat.includes("culture")
+  ) {
+    pool = RELIGION_CULTURE_PHOTO_POOL;
+  } else if (cat.includes("bussiness") || cat.includes("व्यापार") || cat.includes("business")) {
+    pool = BUSINESS_PHOTO_POOL;
+  } else if (
+    cat.includes("jharkhand") ||
+    cat.includes("झारखंड") ||
+    cat.includes("dumka") ||
+    cat.includes("दुमका") ||
+    JHARKHAND_DISTRICTS.some((d) => cat.includes(d.toLowerCase()))
+  ) {
+    pool = JHARKHAND_DISTRICT_PHOTO_POOL;
+  } else if (cat.includes("world") || cat.includes("देश-विदेश") || cat.includes("राष्ट्रीय") || cat.includes("अंतरराष्ट्रीय")) {
+    pool = WORLD_PHOTO_POOL;
+  } else {
+    pool = [news1, news2, news4, news5, news6, news7, news8, news9, news10];
+  }
+
+  if (!Array.isArray(pool) || pool.length === 0) return news1;
+  if (pool.length === 1) return pool[0];
+
+  // Priority 1: If index is provided, cycle directly through pool
+  if (typeof index === "number" && !isNaN(index)) {
+    return pool[Math.abs(index) % pool.length];
+  }
+
+  // Priority 2: Deterministic seed hashing so different articles get distinct images
+  const str = String(seed || categoryName || "swadeshvaani");
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const idx = Math.abs(hash) % pool.length;
+  return pool[idx];
 };
 
 export const initialArticles = [];
@@ -937,25 +1094,31 @@ export const syncArticlesFromServer = async () => {
   return getAllArticles();
 };
 
-export const resolveArticleImage = (image, category) => {
+export const resolveArticleImage = (image, category, seed = "", index = undefined) => {
   if (!image || typeof image !== "string" || !image.trim()) {
-    return getCategoryFallbackImage(category);
+    return getCategoryFallbackImage(category, seed, index);
   }
   const trimmed = image.trim();
 
-  // If it is already a full http/https URL or base64 data URI, return as-is
-  if (
-    trimmed.startsWith("data:image/") ||
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://")
-  ) {
+  // If base64 data URI, return as-is
+  if (trimmed.startsWith("data:image/")) {
     return trimmed;
   }
 
-  // If it is a relative /uploads/ path from the deployed server, resolve to production URL
-  if (trimmed.startsWith("/uploads/") || trimmed.startsWith("uploads/")) {
-    const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-    return `https://swadeshvaani.com${cleanPath}`;
+  // Handle phantom /uploads/ paths that 404/return HTML on static hosting:
+  // Immediately map them to a unique, curated, category-appropriate photo using the seed/index!
+  if (
+    trimmed.startsWith("/uploads/") ||
+    trimmed.startsWith("uploads/") ||
+    trimmed.includes("swadeshvaani.com/uploads/") ||
+    trimmed.includes("airoapp.ai/uploads/")
+  ) {
+    return getCategoryFallbackImage(category, seed || trimmed, index);
+  }
+
+  // If it is a full http/https URL, return as-is
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
   }
 
   return trimmed;
@@ -975,9 +1138,9 @@ export const getAllArticles = () => {
         );
         return parsed
           .filter((a) => !deletedIds.has(String(a.id)))
-          .map((a) => ({
+          .map((a, idx) => ({
             ...a,
-            image: resolveArticleImage(a.image, a.category),
+            image: resolveArticleImage(a.image, a.category, a.id || a.title, idx),
           }));
       }
     }

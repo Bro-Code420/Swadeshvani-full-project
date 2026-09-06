@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock, MapPin, User, ArrowRight, Trophy } from "lucide-react";
-import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
+import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, resolveArticleImage, toHindiNumber } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function SportsPage() {
@@ -63,7 +63,7 @@ export default function SportsPage() {
 
         {featured.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {featured.map((item) => (
+            {featured.map((item, index) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col justify-between"
@@ -71,11 +71,11 @@ export default function SportsPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || getCategoryFallbackImage(item.category || "खेल")}
+                      src={resolveArticleImage(item.image, item.category || "खेल", item.id || item.title, index)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल");
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल", item.id || item.title, index);
                       }}
                       className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
                     />
@@ -121,16 +121,16 @@ export default function SportsPage() {
         )}
       </section>
 
-      {/* Grid of latest sports news */}
+      {/* Grid of More Sports News */}
       {others.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
           <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
             <span className="h-4 w-1.5 bg-orange-500 rounded-full"></span>
-            अन्य खेल समाचार
+            अन्य खेल प्रतियोगिता एवं समाचार
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {others.map((item) => (
+            {others.map((item, index) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-orange-200 hover:shadow-sm transition flex flex-col justify-between"
@@ -138,11 +138,11 @@ export default function SportsPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || getCategoryFallbackImage(item.category || "खेल")}
+                      src={resolveArticleImage(item.image, item.category || "खेल", item.id || item.title, index + featured.length)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल");
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल", item.id || item.title, index + featured.length);
                       }}
                       className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />

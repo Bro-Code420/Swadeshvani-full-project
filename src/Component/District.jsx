@@ -9,7 +9,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { getAllArticles, syncArticlesFromServer, JHARKHAND_DISTRICTS_DATA, getSubDistrictsForDistrict, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
+import { getAllArticles, syncArticlesFromServer, JHARKHAND_DISTRICTS_DATA, getSubDistrictsForDistrict, getCategoryFallbackImage, resolveArticleImage, toHindiNumber } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
 const districts = [
@@ -84,12 +84,12 @@ function FeaturedNewsCard({ item }) {
     >
       <div className="relative h-64 overflow-hidden sm:h-80">
         <img
-          src={item.image || getCategoryFallbackImage(item.category)}
+          src={resolveArticleImage(item.image, item.category || "झारखंड", item.id || item.title)}
           alt={item.title}
           loading="lazy"
           onError={(e) => {
             e.currentTarget.onerror = null;
-            e.currentTarget.src = getCategoryFallbackImage(item.category);
+            e.currentTarget.src = getCategoryFallbackImage(item.category || "झारखंड", item.id || item.title);
           }}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
         />
@@ -135,12 +135,12 @@ function NewsListItem({ item }) {
     >
       <div className="h-24 w-32 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-40">
         <img
-          src={item.image || getCategoryFallbackImage(item.category)}
+          src={resolveArticleImage(item.image, item.category || "झारखंड", item.id || item.title)}
           alt={item.title}
           loading="lazy"
           onError={(e) => {
             e.currentTarget.onerror = null;
-            e.currentTarget.src = getCategoryFallbackImage(item.category);
+            e.currentTarget.src = getCategoryFallbackImage(item.category || "झारखंड", item.id || item.title);
           }}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
@@ -222,7 +222,7 @@ export default function DistrictNews() {
       subDistrict: a.subDistrict || "",
       location: a.district || "झारखंड",
       time: a.date || "आज",
-      image: a.image || getCategoryFallbackImage(a.category),
+      image: resolveArticleImage(a.image, a.category || "झारखंड", a.id || a.title, idx),
       link: `/news/${a.id}`,
       featured: idx === 0 || a.featured,
     }));

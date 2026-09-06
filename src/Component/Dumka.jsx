@@ -298,7 +298,7 @@ export default function DumkaPage() {
                       alt={place.name}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage("झारखंड");
+                        e.currentTarget.src = getCategoryFallbackImage("झारखंड", place.name, index);
                       }}
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
                     />
@@ -400,7 +400,7 @@ export default function DumkaPage() {
 
           {filteredArticles.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredArticles.map((article) => (
+              {filteredArticles.map((article, index) => (
                 <article
                   key={article.id}
                   className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-lg hover:border-orange-300 transition duration-300 flex flex-col justify-between"
@@ -412,15 +412,19 @@ export default function DumkaPage() {
                       className="block relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100"
                     >
                       <img
-                        src={
-                          resolveArticleImage(article.image, article.category) ||
-                          getCategoryFallbackImage(article.category || "दुमका")
-                        }
+                        src={resolveArticleImage(
+                          article.image,
+                          article.category || "दुमका",
+                          article.id || article.title,
+                          index
+                        )}
                         alt={article.title}
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src = getCategoryFallbackImage(
-                            article.category || "दुमका"
+                            article.category || "दुमका",
+                            article.id || article.title,
+                            index
                           );
                         }}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500"

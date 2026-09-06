@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock, MapPin, User, ArrowRight, GraduationCap } from "lucide-react";
-import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
+import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, resolveArticleImage, toHindiNumber } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function EducationPage() {
@@ -63,7 +63,7 @@ export default function EducationPage() {
 
         {featured.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {featured.map((item) => (
+            {featured.map((item, index) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col justify-between"
@@ -71,11 +71,11 @@ export default function EducationPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || getCategoryFallbackImage(item.category || "शिक्षा")}
+                      src={resolveArticleImage(item.image, item.category || "शिक्षा", item.id || item.title, index)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "शिक्षा");
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "शिक्षा", item.id || item.title, index);
                       }}
                       className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
                     />
@@ -130,7 +130,7 @@ export default function EducationPage() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {others.map((item) => (
+            {others.map((item, index) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-orange-200 hover:shadow-sm transition flex flex-col justify-between"
@@ -138,11 +138,11 @@ export default function EducationPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={item.image || getCategoryFallbackImage(item.category || "शिक्षा")}
+                      src={resolveArticleImage(item.image, item.category || "शिक्षा", item.id || item.title, index + featured.length)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "शिक्षा");
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "शिक्षा", item.id || item.title, index + featured.length);
                       }}
                       className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />

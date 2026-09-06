@@ -20,7 +20,7 @@ import {
   FaTwitter,
   FaCopy,
 } from "react-icons/fa";
-import { getArticleById, getAllArticles, syncArticlesFromServer, getCategoryFallbackImage } from "../data/newsData";
+import { getArticleById, getAllArticles, syncArticlesFromServer, getCategoryFallbackImage, resolveArticleImage } from "../data/newsData";
 import { convex } from "../utils/convexClient";
 import { api } from "../../convex/_generated/api";
 import SubscribeSection from "./SubscribeSection";
@@ -350,11 +350,11 @@ export default function ArticleDetail() {
             {/* Featured Image */}
             <div className="mb-8 overflow-hidden rounded-2xl border border-slate-100 shadow-md">
               <img
-                src={article.image || getCategoryFallbackImage(article.category)}
+                src={resolveArticleImage(article.image, article.category, article.id || article.title)}
                 alt={article.title}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = getCategoryFallbackImage(article.category);
+                  e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
                 }}
                 className="w-full max-h-[480px] object-cover hover:scale-105 transition duration-500"
               />
@@ -423,18 +423,18 @@ export default function ArticleDetail() {
               </h4>
 
               <div className="space-y-4">
-                {relatedArticles.map((rel) => (
+                {relatedArticles.map((rel, index) => (
                   <Link
                     key={rel.id}
                     to={`/news/${rel.id}`}
                     className="group flex gap-3 items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0"
                   >
                     <img
-                      src={rel.image || getCategoryFallbackImage(rel.category)}
+                      src={resolveArticleImage(rel.image, rel.category, rel.id || rel.title, index)}
                       alt={rel.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(rel.category);
+                        e.currentTarget.src = getCategoryFallbackImage(rel.category, rel.id || rel.title, index);
                       }}
                       className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"
                     />

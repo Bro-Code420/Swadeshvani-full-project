@@ -19,6 +19,7 @@ import {
   recordAdClick,
   toHindiNumber,
   getCategoryFallbackImage,
+  resolveArticleImage,
 } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 import SubscribeSection from "./SubscribeSection";
@@ -406,11 +407,11 @@ const Home = () => {
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
             <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden">
               <img
-                src={mainNews.image || getCategoryFallbackImage(mainNews.category)}
+                src={resolveArticleImage(mainNews.image, mainNews.category, mainNews.id || mainNews.title)}
                 alt={mainNews.title}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = getCategoryFallbackImage(mainNews.category);
+                  e.currentTarget.src = getCategoryFallbackImage(mainNews.category, mainNews.id || mainNews.title);
                 }}
                 className="h-[300px] w-full object-cover sm:h-[420px] group-hover:scale-105 transition duration-500"
               />
@@ -594,7 +595,7 @@ const Home = () => {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {topHeadlines.map((item) => (
+            {topHeadlines.map((item, index) => (
               <article
                 key={item.id}
                 className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
@@ -602,11 +603,11 @@ const Home = () => {
                 <div>
                   <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
                     <img
-                      src={item.image || getCategoryFallbackImage(item.category)}
+                      src={resolveArticleImage(item.image, item.category, item.id || item.title, index)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category);
+                        e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title, index);
                       }}
                       className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
                     />
@@ -681,11 +682,11 @@ const Home = () => {
               >
                 <Link to={`/news/${item.id}`} className="hidden h-24 w-32 shrink-0 overflow-hidden rounded-lg sm:block group">
                   <img
-                    src={item.image || getCategoryFallbackImage(item.category)}
+                    src={resolveArticleImage(item.image, item.category, item.id || item.title, index + topHeadlines.length)}
                     alt={item.title}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
-                      e.currentTarget.src = getCategoryFallbackImage(item.category);
+                      e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title, index + topHeadlines.length);
                     }}
                     className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
                   />
