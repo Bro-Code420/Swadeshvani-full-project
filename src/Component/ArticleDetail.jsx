@@ -358,7 +358,7 @@ export default function ArticleDetail() {
                     if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                       e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
                     } else {
-                      e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
+                      e.currentTarget.parentElement.style.display = "none";
                     }
                   }}
                   className="w-full max-h-[480px] object-cover hover:scale-105 transition duration-500"
@@ -444,7 +444,7 @@ export default function ArticleDetail() {
                           if (rel.image && rel.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                             e.currentTarget.src = `https://swadeshvaani.com${rel.image}`;
                           } else {
-                            e.currentTarget.src = getCategoryFallbackImage(rel.category, rel.id || rel.title);
+                            e.currentTarget.style.display = "none";
                           }
                         }}
                         className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"

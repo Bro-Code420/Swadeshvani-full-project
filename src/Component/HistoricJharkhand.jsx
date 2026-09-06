@@ -452,7 +452,7 @@ export default function HistoricJharkhandPage() {
                           if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                             e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
                           } else {
-                            e.currentTarget.src = getCategoryFallbackImage("झारखंड", article.id || article.title);
+                            e.currentTarget.parentElement.style.display = "none";
                           }
                         }}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500"

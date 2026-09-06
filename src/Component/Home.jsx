@@ -415,7 +415,7 @@ const Home = () => {
                     if (mainNews.image && mainNews.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                       e.currentTarget.src = `https://swadeshvaani.com${mainNews.image}`;
                     } else {
-                      e.currentTarget.src = getCategoryFallbackImage(mainNews.category, mainNews.id || mainNews.title);
+                      e.currentTarget.parentElement.style.display = "none";
                     }
                   }}
                   className="h-[300px] w-full object-cover sm:h-[420px] group-hover:scale-105 transition duration-500"
@@ -617,7 +617,7 @@ const Home = () => {
                           if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                             e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
                           } else {
-                            e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
+                            e.currentTarget.parentElement.style.display = "none";
                           }
                         }}
                         className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
@@ -714,7 +714,7 @@ const Home = () => {
                         if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                           e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
                         } else {
-                          e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title || index);
+                          e.currentTarget.parentElement.style.display = "none";
                         }
                       }}
                       className="h-full w-full object-cover group-hover:scale-105 transition duration-300"

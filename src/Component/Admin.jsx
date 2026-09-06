@@ -1080,7 +1080,7 @@ export default function Admin() {
                                       if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                                         e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
                                       } else {
-                                        e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
+                                        e.currentTarget.style.display = "none";
                                       }
                                     }}
                                     className="h-11 w-14 object-cover rounded-lg shrink-0 border border-slate-200"

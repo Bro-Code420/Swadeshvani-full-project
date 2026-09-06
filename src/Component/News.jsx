@@ -221,7 +221,7 @@ export default function CategoriesSection() {
                               if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                                 e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
                               } else {
-                                e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
+                                e.currentTarget.parentElement.style.display = "none";
                               }
                             }}
                             className="w-full h-[220px] object-cover transition-transform duration-500 group-hover:scale-105"

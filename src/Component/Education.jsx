@@ -79,7 +79,7 @@ export default function EducationPage() {
                           if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                             e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
                           } else {
-                            e.currentTarget.src = getCategoryFallbackImage(item.category || "शिक्षा", item.id || item.title);
+                            e.currentTarget.parentElement.style.display = "none";
                           }
                         }}
                         className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
@@ -164,7 +164,7 @@ export default function EducationPage() {
                           if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
                             e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
                           } else {
-                            e.currentTarget.src = getCategoryFallbackImage(item.category || "शिक्षा", item.id || item.title);
+                            e.currentTarget.parentElement.style.display = "none";
                           }
                         }}
                         className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
