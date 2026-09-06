@@ -174,8 +174,13 @@ export default function Admin() {
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  const [isCustomCitySelected, setIsCustomCitySelected] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingAdImage, setIsUploadingAdImage] = useState(false);
+
+  const isPredefinedDistrict = JHARKHAND_DISTRICTS.includes(formData.district);
+  const isCustomDistrict = isCustomCitySelected || (!isPredefinedDistrict && Boolean(formData.district));
+  const districtSelectValue = isCustomDistrict ? "__OTHER__" : (isPredefinedDistrict ? formData.district : "__OTHER__");
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -332,6 +337,7 @@ export default function Admin() {
     }
 
     setFormData(initialFormState);
+    setIsCustomCitySelected(false);
     setEditingArticleId(null);
     if (isEdit) {
       setActivePage("news");
@@ -341,10 +347,14 @@ export default function Admin() {
   // Edit existing article
   const handleEditClick = (article) => {
     setEditingArticleId(article.id);
+    const dist = article.district || "Ranchi";
+    const isPredef = JHARKHAND_DISTRICTS.includes(dist);
+    setIsCustomCitySelected(!isPredef && Boolean(dist));
     setFormData({
       title: article.title || "",
-      category: article.category || "Jharkhand",
-      district: article.district || "Ranchi",
+      category: article.category || "झारखंड",
+      district: dist,
+      subDistrict: article.subDistrict || "",
       reporter: article.reporter || article.author || "स्वदेश वाणी ब्यूरो",
       excerpt: article.excerpt || "",
       content: article.content || "",
@@ -751,6 +761,7 @@ export default function Admin() {
               <button
                 onClick={() => {
                   setEditingArticleId(null);
+                  setIsCustomCitySelected(false);
                   setFormData(initialFormState);
                   setActivePage("add-news");
                 }}
@@ -1173,6 +1184,7 @@ export default function Admin() {
                     <button
                       onClick={() => {
                         setEditingArticleId(null);
+                        setIsCustomCitySelected(false);
                         setFormData(initialFormState);
                       }}
                       className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
@@ -1271,55 +1283,119 @@ export default function Admin() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        {language === "hi" ? "झारखंड जिला (District)" : "Jharkhand District"}
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                          {language === "hi" ? "जिला / शहर (City / District) *" : "City / District *"}
+                        </label>
+                        {isCustomDistrict && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCustomCitySelected(false);
+                              setFormData((prev) => ({ ...prev, district: "Ranchi", subDistrict: "" }));
+                            }}
+                            className="text-[11px] font-semibold text-orange-600 hover:underline cursor-pointer"
+                          >
+                            {language === "hi" ? "← सूची से चुनें" : "← Select from list"}
+                          </button>
+                        )}
+                      </div>
+
                       <select
-                        name="district"
-                        value={formData.district}
+                        name="districtSelect"
+                        value={districtSelectValue}
                         onChange={(e) => {
-                          const dist = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            district: dist,
-                            subDistrict: "",
-                          }));
+                          const val = e.target.value;
+                          if (val === "__OTHER__") {
+                            setIsCustomCitySelected(true);
+                            setFormData((prev) => ({
+                              ...prev,
+                              district: isPredefinedDistrict ? "" : prev.district,
+                              subDistrict: "",
+                            }));
+                          } else {
+                            setIsCustomCitySelected(false);
+                            setFormData((prev) => ({
+                              ...prev,
+                              district: val,
+                              subDistrict: "",
+                            }));
+                          }
                         }}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
                       >
-                        {JHARKHAND_DISTRICTS.map((dist) => {
-                          const distData = JHARKHAND_DISTRICTS_DATA[dist];
-                          const label = distData
-                            ? (language === "hi" ? `${distData.hi} (${distData.en})` : distData.en)
-                            : dist;
-                          return (
-                            <option key={dist} value={dist}>
-                              {label}
-                            </option>
-                          );
-                        })}
+                        <optgroup label={language === "hi" ? "झारखंड के 24 जिले (Jharkhand Districts)" : "24 Jharkhand Districts"}>
+                          {JHARKHAND_DISTRICTS.map((dist) => {
+                            const distData = JHARKHAND_DISTRICTS_DATA[dist];
+                            const label = distData
+                              ? (language === "hi" ? `${distData.hi} (${distData.en})` : distData.en)
+                              : dist;
+                            return (
+                              <option key={dist} value={dist}>
+                                {label}
+                              </option>
+                            );
+                          })}
+                        </optgroup>
+                        <optgroup label={language === "hi" ? "अन्य शहर / स्थान" : "Other Locations"}>
+                          <option value="__OTHER__">
+                            {language === "hi" ? "✍️ अन्य शहर / जिला (मैन्युअल नाम लिखें - Custom City)" : "✍️ Other City / District (Enter Manually)"}
+                          </option>
+                        </optgroup>
                       </select>
+
+                      {/* Manual City / District Input when Other is selected */}
+                      {isCustomDistrict && (
+                        <div className="mt-2.5 space-y-1 animate-fadeIn">
+                          <input
+                            type="text"
+                            name="district"
+                            value={formData.district}
+                            onChange={handleInputChange}
+                            placeholder={language === "hi" ? "शहर / जिले का नाम लिखें (उदा. पटना, दिल्ली, मुंबई, कोलकाता...)" : "Enter city / district name (e.g. Patna, Delhi, Mumbai...)"}
+                            required
+                            autoFocus
+                            className="w-full px-4 py-2.5 bg-orange-50/60 border border-orange-300 rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 placeholder:text-slate-400 shadow-2xs"
+                          />
+                          <p className="text-[11px] text-orange-700 font-medium">
+                            {language === "hi" ? "💡 यह शहर समाचार में जिला/स्थान के रूप में प्रकाशित होगा।" : "💡 This city name will be displayed as the location for this article."}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        {language === "hi" ? "उप-जिला / प्रखण्ड (Sub-district / Block)" : "Sub-district / Block"}
+                        {isCustomDistrict
+                          ? (language === "hi" ? "क्षेत्र / मोहल्ला (Area / Locality - Optional)" : "Area / Locality (Optional)")
+                          : (language === "hi" ? "उप-जिला / प्रखण्ड (Sub-district / Block)" : "Sub-district / Block")}
                       </label>
-                      <select
-                        name="subDistrict"
-                        value={formData.subDistrict || ""}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
-                      >
-                        <option value="">
-                          {language === "hi" ? "समस्त जिला / सदर (All / Sadar)" : "All / Sadar Block"}
-                        </option>
-                        {getSubDistrictsForDistrict(formData.district).map((sub) => (
-                          <option key={sub.en} value={sub.hi}>
-                            {language === "hi" ? `${sub.hi} (${sub.en})` : sub.en}
+                      {isCustomDistrict ? (
+                        <input
+                          type="text"
+                          name="subDistrict"
+                          value={formData.subDistrict || ""}
+                          onChange={handleInputChange}
+                          placeholder={language === "hi" ? "उदा. कंकड़बाग, सिविल लाइन्स, चांदनी चौक (वैकल्पिक)..." : "e.g. Civil Lines, South Ext (Optional)..."}
+                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm outline-none focus:border-orange-500 focus:bg-white"
+                        />
+                      ) : (
+                        <select
+                          name="subDistrict"
+                          value={formData.subDistrict || ""}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold outline-none focus:border-orange-500 focus:bg-white"
+                        >
+                          <option value="">
+                            {language === "hi" ? "समस्त जिला / सदर (All / Sadar)" : "All / Sadar Block"}
                           </option>
-                        ))}
-                      </select>
+                          {getSubDistrictsForDistrict(formData.district).map((sub) => (
+                            <option key={sub.en} value={sub.hi}>
+                              {language === "hi" ? `${sub.hi} (${sub.en})` : sub.en}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
 
