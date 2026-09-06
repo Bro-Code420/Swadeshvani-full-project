@@ -33,3 +33,30 @@ img {
   -webkit-user-drag: none;
   user-drag: none;
 }
+
+/* Google Translate Global Overrides (Keep UI 100% clean with no intrusive bars) */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.skiptranslate:not(#google_translate_element) {
+  display: none !important;
+}

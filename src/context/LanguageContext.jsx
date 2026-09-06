@@ -483,29 +483,93 @@ const LanguageContext = createContext({
 });
 
 export const LanguageProvider = ({ children }) => {
-  const [language, setLangState] = useState("hi");
+  const [language, setLangState] = useState(() => {
+    try {
+      return localStorage.getItem(LANGUAGE_KEY) || "hi";
+    } catch {
+      return "hi";
+    }
+  });
+
+  // Apply Google Translate cookie & trigger translation
+  const applyDOMTranslation = (targetLang) => {
+    try {
+      const gValue = targetLang === "en" ? "/hi/en" : "/hi/hi";
+      const hostname = window.location.hostname;
+      
+      // Set translate cookies for both domain and subdomains
+      document.cookie = `googtrans=${gValue}; path=/;`;
+      if (hostname) {
+        document.cookie = `googtrans=${gValue}; path=/; domain=${hostname}`;
+        const parts = hostname.split(".");
+        if (parts.length > 2) {
+          document.cookie = `googtrans=${gValue}; path=/; domain=.${parts.slice(-2).join(".")}`;
+        }
+      }
+
+      // If google translate select dropdown is rendered, update it
+      const select = document.querySelector(".goog-te-combo");
+      if (select) {
+        select.value = targetLang;
+        select.dispatchEvent(new Event("change"));
+      }
+    } catch (e) {
+      console.warn("Translation sync error:", e);
+    }
+  };
 
   useEffect(() => {
-    try {
-      localStorage.setItem(LANGUAGE_KEY, "hi");
-    } catch {}
+    // Initialize Google Translate Script dynamically if not present
+    if (typeof window !== "undefined" && !window.googleTranslateElementInit) {
+      window.googleTranslateElementInit = function () {
+        if (window.google && window.google.translate) {
+          new window.google.translate.TranslateElement(
+            {
+              pageLanguage: "hi",
+              includedLanguages: "hi,en",
+              autoDisplay: false,
+            },
+            "google_translate_element"
+          );
+        }
+      };
+
+      if (!document.getElementById("google-translate-script")) {
+        const script = document.createElement("script");
+        script.id = "google-translate-script";
+        script.type = "text/javascript";
+        script.async = true;
+        script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+        document.head.appendChild(script);
+      }
+    }
+
+    // Apply saved language on mount
+    applyDOMTranslation(language);
   }, []);
 
-  const setLanguage = () => {
-    setLangState("hi");
+  const setLanguage = (lang) => {
+    const validLang = lang === "en" ? "en" : "hi";
+    setLangState(validLang);
+    try {
+      localStorage.setItem(LANGUAGE_KEY, validLang);
+    } catch {}
+    applyDOMTranslation(validLang);
+    window.dispatchEvent(new CustomEvent("sv_language_change", { detail: validLang }));
   };
 
   const toggleLanguage = () => {
-    setLangState("hi");
+    const nextLang = language === "hi" ? "en" : "hi";
+    setLanguage(nextLang);
   };
 
   const t = (key) => {
     if (!key) return "";
-    return translations["hi"]?.[key] || key;
+    return translations[language]?.[key] || translations["hi"]?.[key] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language: "hi", toggleLanguage, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, toggleLanguage, setLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -302,6 +302,40 @@ const Navbar = () => {
 
         {/* Sidebar Nav Links */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Language Switcher Card */}
+          <div className="p-3 rounded-2xl bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border border-orange-100 flex items-center justify-between shadow-2xs">
+            <div className="flex items-center gap-2">
+              <Languages size={17} className="text-orange-600" />
+              <span className="text-xs font-bold text-slate-800">
+                {language === "hi" ? "भाषा (Language)" : "Language (भाषा)"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-orange-200/80 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setLanguage("hi")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  language === "hi"
+                    ? "bg-orange-600 text-white shadow-xs"
+                    : "text-slate-600 hover:text-orange-600"
+                }`}
+              >
+                हिंदी
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage("en")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  language === "en"
+                    ? "bg-orange-600 text-white shadow-xs"
+                    : "text-slate-600 hover:text-orange-600"
+                }`}
+              >
+                English
+              </button>
+            </div>
+          </div>
+
           {sidebarLinks.map((section) => {
             const isCollapsible = section.id === "categories";
             const isOpen = !!openSections[section.id];
@@ -463,7 +497,18 @@ const Navbar = () => {
             </nav>
 
             {/* Right Desktop Controls */}
-            <div className="hidden items-center gap-3 xl:gap-5 lg:flex shrink-0">
+            <div className="hidden items-center gap-3 xl:gap-4 lg:flex shrink-0">
+              {/* Language Toggle Pill */}
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-orange-200 bg-orange-50/80 hover:bg-orange-100 text-orange-900 text-xs font-bold transition shadow-2xs cursor-pointer group select-none"
+                title={language === "hi" ? "Switch to English" : "हिंदी में बदलें"}
+              >
+                <Languages size={15} className="text-orange-600 transition-transform duration-300 group-hover:rotate-12" />
+                <span className="tracking-wide">{language === "hi" ? "English" : "हिंदी"}</span>
+              </button>
+
               {/* Enhanced Search Input with Live Dropdown */}
               <div className="relative">
                 {!searchOpen ? (
@@ -730,8 +775,19 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Mobile Actions Header (Right side: Search, Bell, Menu, Login) */}
-            <div className="flex items-center gap-2 lg:hidden">
+            {/* Mobile Actions Header (Right side: Lang, Search, Bell, Menu, Login) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+              {/* Mobile Language Toggle */}
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-orange-200 bg-orange-50/90 text-orange-900 text-[11px] font-bold transition cursor-pointer select-none"
+                title={language === "hi" ? "Switch to English" : "हिंदी में बदलें"}
+              >
+                <Languages size={13} className="text-orange-600" />
+                <span>{language === "hi" ? "EN" : "हिं"}</span>
+              </button>
+
               {/* Mobile Search Toggle */}
               <button
                 onClick={() => {
