@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import hindilogo from "./photos/logo.jpeg";
 import {
   Menu,
@@ -50,6 +50,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { language, toggleLanguage, setLanguage, t } = useLanguage();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -60,6 +61,16 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState(() => getNotifications());
   const [isAdmin, setIsAdmin] = useState(() => isAdminAuthenticated());
   const [adminUser, setAdminUser] = useState(() => getAdminUser());
+
+  // Top Horizontal Navbar Links
+  const topNavLinks = [
+    { label: language === "hi" ? "शिक्षा" : "Education", to: "/Education" },
+    { label: language === "hi" ? "देश-विदेश" : "World", to: "/Worldnews" },
+    { label: language === "hi" ? "तकनीक" : "Tech", to: "/Technologynews" },
+    { label: language === "hi" ? "खेल" : "Sports", to: "/Sportsnews" },
+    { label: language === "hi" ? "जिले" : "Districts", to: "/District" },
+    { label: language === "hi" ? "झारखंड" : "Jharkhand", to: "/HistoricJharkhand" },
+  ];
 
   // Accordion state for categories dropdown (closed by default)
   const [openSections, setOpenSections] = useState({
@@ -213,7 +224,7 @@ const Navbar = () => {
       items: [
         { icon: <Home size={18} />, title: t("home"), to: "/" },
         { icon: <Newspaper size={18} />, title: t("allNews"), to: "/News" },
-        { icon: <Newspaper size={18} />, title: t("districtNews"), to: "/District" },
+        { icon: <MapPin size={18} />, title: t("districtNews"), to: "/District" },
       ],
     },
     {
@@ -234,7 +245,7 @@ const Navbar = () => {
       section: t("jharkhandFeatures"),
       items: [
         { icon: <History size={18} />, title: t("historicJharkhand"), to: "/HistoricJharkhand" },
-        { icon: <MapPin size={18} />, title: t("dumkaSpecial"), to: "/Dumka" },
+        { icon: <Building2 size={18} />, title: t("dumkaSpecial"), to: "/Dumka" },
         { icon: <Video size={18} />, title: t("videos"), to: "/YouTubeVideos" },
         { icon: <Megaphone size={18} />, title: t("advertisement"), to: "/Advertisement" },
         { icon: <Info size={18} />, title: t("aboutUs"), to: "/About" },
@@ -330,19 +341,26 @@ const Navbar = () => {
                   {/* Dropdown Options List */}
                   {isOpen && (
                     <div className="px-2 pb-2.5 pt-1 space-y-1 bg-white border-t border-slate-100 animate-fadeIn">
-                      {section.items.map((item) => (
-                        <Link
-                          key={item.title}
-                          to={item.to}
-                          onClick={closeMenus}
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition group"
-                        >
-                          <span className="text-gray-400 group-hover:text-orange-600 transition">
-                            {item.icon}
-                          </span>
-                          <span>{item.title}</span>
-                        </Link>
-                      ))}
+                      {section.items.map((item) => {
+                        const isActive = location.pathname === item.to;
+                        return (
+                          <Link
+                            key={item.title}
+                            to={item.to}
+                            onClick={closeMenus}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group ${
+                              isActive
+                                ? "bg-orange-50 text-orange-600 font-bold border border-orange-200/70"
+                                : "text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                            }`}
+                          >
+                            <span className={`${isActive ? "text-orange-600" : "text-gray-400 group-hover:text-orange-600"} transition`}>
+                              {item.icon}
+                            </span>
+                            <span>{item.title}</span>
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -356,19 +374,26 @@ const Navbar = () => {
                   {section.section}
                 </p>
                 <div className="space-y-0.5 pt-0.5">
-                  {section.items.map((item) => (
-                    <Link
-                      key={item.title}
-                      to={item.to}
-                      onClick={closeMenus}
-                      className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition group"
-                    >
-                      <span className="text-gray-400 group-hover:text-orange-600 transition">
-                        {item.icon}
-                      </span>
-                      <span>{item.title}</span>
-                    </Link>
-                  ))}
+                  {section.items.map((item) => {
+                    const isActive = location.pathname === item.to;
+                    return (
+                      <Link
+                        key={item.title}
+                        to={item.to}
+                        onClick={closeMenus}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group ${
+                          isActive
+                            ? "bg-orange-50 text-orange-600 font-bold border border-orange-200/70"
+                            : "text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                        }`}
+                      >
+                        <span className={`${isActive ? "text-orange-600" : "text-gray-400 group-hover:text-orange-600"} transition`}>
+                          {item.icon}
+                        </span>
+                        <span>{item.title}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -400,7 +425,7 @@ const Navbar = () => {
       </aside>
 
       {/* Main Header - FULL WIDTH */}
-      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md w-full">
+      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-md w-full shadow-2xs">
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="flex h-20 items-center justify-between lg:h-24 gap-3 lg:gap-6">
             {/* Left Side: Brand Logo */}
@@ -416,6 +441,26 @@ const Navbar = () => {
                 />
               </Link>
             </div>
+
+            {/* Center Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+              {topNavLinks.map((item) => {
+                const isActive = location.pathname === item.to;
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className={`px-3.5 xl:px-4 py-2 rounded-full text-xs xl:text-sm font-semibold transition-all duration-200 ${
+                      isActive
+                        ? "bg-orange-50 text-orange-600 font-bold border border-orange-200/80 shadow-2xs"
+                        : "text-slate-700 hover:text-orange-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
 
             {/* Right Desktop Controls */}
             <div className="hidden items-center gap-3 xl:gap-5 lg:flex shrink-0">
