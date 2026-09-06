@@ -64,19 +64,9 @@ const Navbar = () => {
   const [isAdmin, setIsAdmin] = useState(() => isAdminAuthenticated());
   const [adminUser, setAdminUser] = useState(() => getAdminUser());
 
-  // Top Horizontal Navbar Links
-  const topNavLinks = [
-    { label: language === "hi" ? "शिक्षा" : "Education", to: "/Education" },
-    { label: language === "hi" ? "देश-विदेश" : "World", to: "/Worldnews" },
-    { label: language === "hi" ? "तकनीक" : "Tech", to: "/Technologynews" },
-    { label: language === "hi" ? "खेल" : "Sports", to: "/Sportsnews" },
-    { label: language === "hi" ? "जिले" : "Districts", to: "/District" },
-    { label: language === "hi" ? "झारखंड" : "Jharkhand", to: "/HistoricJharkhand" },
-  ];
-
-  // Accordion state for categories dropdown (closed by default)
+  // Accordion state for categories dropdown in sidebar (open by default for quick access)
   const [openSections, setOpenSections] = useState({
-    categories: false,
+    categories: true,
   });
 
   const toggleSection = (sectionId) => {
@@ -227,6 +217,8 @@ const Navbar = () => {
         { icon: <Home size={18} />, title: t("home"), to: "/" },
         { icon: <Newspaper size={18} />, title: t("allNews"), to: "/News" },
         { icon: <MapPin size={18} />, title: t("districtNews"), to: "/District" },
+        { icon: <History size={18} />, title: t("historicJharkhand"), to: "/HistoricJharkhand" },
+        { icon: <Building2 size={18} />, title: t("dumkaSpecial"), to: "/Dumka" },
       ],
     },
     {
@@ -477,26 +469,6 @@ const Navbar = () => {
                 />
               </Link>
             </div>
-
-            {/* Center Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
-              {topNavLinks.map((item) => {
-                const isActive = location.pathname === item.to;
-                return (
-                  <Link
-                    key={item.label}
-                    to={item.to}
-                    className={`px-3.5 xl:px-4 py-2 rounded-full text-xs xl:text-sm font-semibold transition-all duration-200 ${
-                      isActive
-                        ? "bg-orange-50 text-orange-600 font-bold border border-orange-200/80 shadow-2xs"
-                        : "text-slate-700 hover:text-orange-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
 
             {/* Right Desktop Controls */}
             <div className="hidden items-center gap-3 xl:gap-4 lg:flex shrink-0">
