@@ -23,13 +23,25 @@ import {
 } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
-// Local authentic photos
-import palamuFortImage from "./photos/Palamu.jpeg";
-import malutiTemplesImage from "./photos/Maluti.jpeg";
-import ratuPalaceImage from "./photos/ratu.jpeg";
+// Local authentic photos for every single place
+import baidyanathImage from "./photos/baidyanath.jpg";
+import netarhatImage from "./photos/netarhat.jpg";
 import hundruFallsImage from "./photos/Hundrufalls.jpeg";
+import dassamFallsImage from "./photos/dassam.jpg";
+import jonhaFallsImage from "./photos/jonha.jpg";
+import parasnathImage from "./photos/parasnath.jpg";
+import palamuFortImage from "./photos/Palamu.jpeg";
 import betlaParkImage from "./photos/Betla.jpeg";
+import malutiTemplesImage from "./photos/Maluti.jpeg";
 import basukinathTempleImage from "./photos/baba.jpeg";
+import trikutHillsImage from "./photos/trikut.jpg";
+import mccluskieganjImage from "./photos/mccluskieganj.jpg";
+import patratuValleyImage from "./photos/patratu.jpg";
+import jagannathTempleImage from "./photos/jagannath.jpg";
+import ratuPalaceImage from "./photos/ratu.jpeg";
+import jubileeParkImage from "./photos/jubileepark.jpg";
+import naulakhaMandirImage from "./photos/naulakha.jpg";
+import rajmahalHillsImage from "./photos/rajmahal.jpg";
 import hijlaMelaImage from "./photos/hijla.jpeg";
 import dumkaRailwayImage from "./photos/railwaystation.jpeg";
 import dumkaCityImage from "./photos/dumka.jpeg";
@@ -41,8 +53,7 @@ export const incredibleJharkhandPlaces = [
     category: "धार्मिक एवं तीर्थ स्थल",
     type: "spiritual",
     location: "देवघर जिला",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Baidyanath_Temple_Deoghar.jpg/800px-Baidyanath_Temple_Deoghar.jpg",
-    fallbackImage: basukinathTempleImage,
+    image: baidyanathImage,
     description:
       "भगवान शिव के 12 पवित्र ज्योतिर्लिंगों में से एक और 51 शक्तिपीठों में से एक, बाबा बैद्यनाथ धाम संपूर्ण भारत के सबसे पावन तीर्थस्थलों में गिना जाता है। सावन के पावन माह में यहाँ लगने वाला विश्वप्रसिद्ध श्रावणी मेला एशिया का सबसे लंबा मानव समागम है, जहाँ लाखों कांवरिये सुल्तानगंज से 105 किमी पैदल गंगाजल लेकर जलार्पण करते हैं।",
     highlight:
@@ -54,10 +65,9 @@ export const incredibleJharkhandPlaces = [
     category: "हिल स्टेशन एवं प्राकृतिक सौंदर्य",
     type: "nature",
     location: "लातेहार जिला (समुद्र तल से 3,700 फीट)",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Pine_trees_of_Netarhat_Hill_station.jpg/800px-Pine_trees_of_Netarhat_Hill_station.jpg",
-    fallbackImage: betlaParkImage,
+    image: netarhatImage,
     description:
-      "घने देवदार, साल और बांस के वनों से घिरा नेतरहाट झारखंड का सबसे मनोरम हिल स्टेशन है। मैग्नोलिया प्वाइंट का विहंगम सूर्यास्त, सनराइज प्वाइंट, कोयल व्यू प्वाइंट और नेतरहाट आवासीय विद्यालय यहाँ के मुख्य आकर्षण हैं। सर्दियों में यहाँ का शांत और ठंडा वातावरण पर्यटकों को अद्भुत शांति प्रदान करता है।",
+      "घने देवदार, साल और चीड़ के वनों से घिरा नेतरहाट झारखंड का सबसे मनोरम हिल स्टेशन है। मैग्नोलिया प्वाइंट का विहंगम सूर्यास्त, सनराइज प्वाइंट, कोयल व्यू प्वाइंट और नेतरहाट आवासीय विद्यालय यहाँ के मुख्य आकर्षण हैं। सर्दियों में यहाँ का शांत और ठंडा वातावरण पर्यटकों को अद्भुत शांति प्रदान करता है।",
     highlight:
       "मैग्नोलिया सनसेट प्वाइंट पर शाम 5 बजे से पहले पहुँचें और ब्रिटिश काल की लोकगाथाओं का अनुभव करें।",
   },
@@ -68,7 +78,6 @@ export const incredibleJharkhandPlaces = [
     type: "nature",
     location: "अंगड़ा प्रखंड, रांची जिला",
     image: hundruFallsImage,
-    fallbackImage: hundruFallsImage,
     description:
       "स्वर्णरेखा नदी का 320 फीट की ऊंचाई से विशाल चट्टानों पर गिरना हुंडरू जलप्रपात को झारखंड का सबसे शानदार जलप्रपात बनाता है। गिरने वाले पानी से नीचे बने प्राकृतिक कुंड और चारों ओर फैले घने जंगल पर्यटकों और फोटोग्राफरों के लिए स्वर्ग समान हैं।",
     highlight:
@@ -80,8 +89,7 @@ export const incredibleJharkhandPlaces = [
     category: "प्राकृतिक जलप्रपात",
     type: "nature",
     location: "ताैमारा के पास, कांची नदी, रांची",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Dassam_fall%2C_ranchi.jpg/800px-Dassam_fall%2C_ranchi.jpg",
-    fallbackImage: hundruFallsImage,
+    image: dassamFallsImage,
     description:
       "कांची नदी का पानी जब 144 फीट की ऊंचाई से 10 अलग-अलग धाराओं में नीचे गिरता है, तो इसे 'दसम' (दस धार) कहा जाता है। पहाड़ियों और हरी-भरी घाटियों के बीच स्थित यह जलप्रपात अपनी गर्जना और दूधिया फुहारों के लिए विख्यात है।",
     highlight:
@@ -93,8 +101,7 @@ export const incredibleJharkhandPlaces = [
     category: "जलप्रपात एवं बौद्ध धरोहर",
     type: "nature",
     location: "राढ़ू नदी, अनगड़ा, रांची",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Jonha_falls%2C_Jharkhand.jpg/800px-Jonha_falls%2C_Jharkhand.jpg",
-    fallbackImage: hundruFallsImage,
+    image: jonhaFallsImage,
     description:
       "राढ़ू नदी पर स्थित 141 फीट ऊंचा जोन्हा जलप्रपात प्राकृतिक सौंदर्य के साथ-साथ आध्यात्मिक महत्व भी रखता है। मान्यता है कि भगवान बुद्ध ने यहाँ स्नान किया था। जलप्रपात के समीप स्थित बौद्ध आश्रम और 722 सीढ़ियों का रोमांचक सफर पर्यटकों को आकर्षित करता है।",
     highlight:
@@ -106,8 +113,7 @@ export const incredibleJharkhandPlaces = [
     category: "जैन महातीर्थ एवं सर्वोच्च पर्वत",
     type: "spiritual",
     location: "गिरिडीह जिला (ऊंचाई: 1,365 मीटर)",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Tonk_SHRI_10008_PARASNATH_BHAGVAN.jpg/800px-Tonk_SHRI_10008_PARASNATH_BHAGVAN.jpg",
-    fallbackImage: basukinathTempleImage,
+    image: parasnathImage,
     description:
       "पारसनाथ पहाड़ी झारखंड की सबसे ऊंची पर्वत चोटी है। जैन धर्म के 24 तीर्थंकरों में से 20 तीर्थंकरों ने इसी पवित्र पर्वत पर मोक्ष (निर्वाण) प्राप्त किया था। विश्वभर के जैन श्रद्धालुओं के लिए सम्मेद शिखरजी की 27 किलोमीटर की वंदना परिक्रमा जीवन की सबसे पुण्य यात्रा मानी जाती है।",
     highlight:
@@ -120,7 +126,6 @@ export const incredibleJharkhandPlaces = [
     type: "historic",
     location: "बेतला के पास, लातेहार/पलामू जिला",
     image: palamuFortImage,
-    fallbackImage: palamuFortImage,
     description:
       "औरंगा नदी के तट पर घने जंगलों के बीच खड़े पुराना और नया पलामू किला 16वीं-17वीं शताब्दी के चेरो राजाओं (मेदिनी राय) के वैभवशाली इतिहास के गवाह हैं। किले का प्रसिद्ध 'नागपुरी दरवाजा' और पत्थर की बारीक नक्काशी आज भी स्थापत्य कला का नायाब नमूना है।",
     highlight:
@@ -133,7 +138,6 @@ export const incredibleJharkhandPlaces = [
     type: "nature",
     location: "लातेहार एवं पलामू जिला",
     image: betlaParkImage,
-    fallbackImage: betlaParkImage,
     description:
       "1974 में भारत के प्रारंभिक टाइगर प्रोजेक्ट रिजर्व्स में शामिल बेतला नेशनल पार्क साल और बांस के घने जंगलों में हाथियों, बाघों, तेंदुओं, चीतलों, गौर (भारतीय बाइसन) और दुर्लभ पक्षियों का प्राकृतिक आवास है। यहाँ की जीप सफारी वन्यजीव प्रेमियों को रोमांच से भर देती है।",
     highlight:
@@ -146,7 +150,6 @@ export const incredibleJharkhandPlaces = [
     type: "spiritual",
     location: "मलूटी, शिकारीपाड़ा, दुमका जिला",
     image: malutiTemplesImage,
-    fallbackImage: malutiTemplesImage,
     description:
       "दुमका जिले का मलूटी गांव 108 प्राचीन टेराकोटा मंदिरों के अद्भुत संकुल के लिए वैश्विक स्तर पर प्रसिद्ध है। 17वीं शताब्दी के ननकर राजाओं द्वारा निर्मित इन मंदिरों की लाल पकी ईंटों पर रामायण, महाभारत और मां दुर्गा के महिषासुर मर्दिनी प्रसंगों की अद्वितीय नक्काशी की गई है।",
     highlight:
@@ -159,7 +162,6 @@ export const incredibleJharkhandPlaces = [
     type: "spiritual",
     location: "बासुकीनाथ, जरमुंडी, दुमका जिला",
     image: basukinathTempleImage,
-    fallbackImage: basukinathTempleImage,
     description:
       "भगवान शिव का अत्यंत जागृत दरबार, जहाँ भक्त अपनी मनोकामनाएं लेकर 'फौजदारी बाबा' के समक्ष अर्जी लगाते हैं। देवघर बैद्यनाथ धाम में जलार्पण के उपरांत बासुकीनाथ में पूजा करने की सनातन परंपरा सदियों से चली आ रही है।",
     highlight:
@@ -171,8 +173,7 @@ export const incredibleJharkhandPlaces = [
     category: "पर्वतीय पर्यटन एवं साहसिक स्थल",
     type: "nature",
     location: "देवघर-दुमका मार्ग, देवघर",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Trikut_Pahar_Deoghar.jpg/800px-Trikut_Pahar_Deoghar.jpg",
-    fallbackImage: basukinathTempleImage,
+    image: trikutHillsImage,
     description:
       "ब्रह्मा, विष्णु और महेश के नाम पर तीन चोटियों वाला त्रिकूट पर्वत 2,470 फीट ऊंचा है। यहाँ मयूराक्षी नदी का उद्गम स्थल, रावण का हेलीपैड कही जाने वाली प्राचीन शिला, स्वामी दयानंद का त्रिकूटाचल आश्रम और भारत का सबसे तीव्र ऊर्ध्वाधर रोपवे स्थित है।",
     highlight:
@@ -184,8 +185,7 @@ export const incredibleJharkhandPlaces = [
     category: "औपनिवेशिक धरोहर एवं हिल रिट्रीट",
     type: "historic",
     location: "रांची जिला (रांची से 60 किमी)",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/McCluskieganj_Bungalow.jpg/800px-McCluskieganj_Bungalow.jpg",
-    fallbackImage: ratuPalaceImage,
+    image: mccluskieganjImage,
     description:
       "1930 के दशक में अर्नेस्ट टिमोथी मैक्लुस्की द्वारा बसाई गई दुनिया की एकमात्र एंग्लो-इंडियन बस्ती। यहाँ अंग्रेजों के जमाने के लाल खपरैल वाले कॉटेज, यूरोपीय शैली के बंगले, पुरानी बेकरी और साल के शांत जंगल ब्रिटिश काल के खूबसूरत इतिहास को जीवंत करते हैं।",
     highlight:
@@ -197,8 +197,7 @@ export const incredibleJharkhandPlaces = [
     category: "घुमावदार घाटी एवं जल पर्यटन",
     type: "nature",
     location: "रामगढ़ जिला (रांची से 35 किमी)",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Patratu_Valley_at_night.jpg/800px-Patratu_Valley_at_night.jpg",
-    fallbackImage: hundruFallsImage,
+    image: patratuValleyImage,
     description:
       "जलेबीनुमा घुमावदार हरी-भरी सड़कें, गहरे मोड़ और खूबसूरत पतरातू डैम इस घाटी को झारखंड का सबसे लोकप्रिय वीकेंड ड्राइव बनाता है। डैम में बोटिंग, वाटर स्पोर्ट्स, आइलैंड कैफे और सूर्यास्त का दृश्य पर्यटकों को मंत्रमुग्ध कर देता है।",
     highlight:
@@ -210,8 +209,7 @@ export const incredibleJharkhandPlaces = [
     category: "17वीं सदी का ऐतिहासिक मंदिर",
     type: "historic",
     location: "धुर्वा पहाड़ी, रांची",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Jagannath_Temple%2C_Ranchi.jpg/800px-Jagannath_Temple%2C_Ranchi.jpg",
-    fallbackImage: ratuPalaceImage,
+    image: jagannathTempleImage,
     description:
       "1691 ईस्वी में बड़कागढ़ के राजा ठाकुर एनी नाथ शाहदेव द्वारा पुरी के जगन्नाथ मंदिर की स्थापत्य शैली पर निर्मित यह पहाड़ी मंदिर रांची का गौरव है। आषाढ़ माह में यहाँ आयोजित होने वाली ऐतिहासिक रथ यात्रा में लाखों श्रद्धालु शामिल होते हैं।",
     highlight:
@@ -224,7 +222,6 @@ export const incredibleJharkhandPlaces = [
     type: "historic",
     location: "रातू, रांची जिला",
     image: ratuPalaceImage,
-    fallbackImage: ratuPalaceImage,
     description:
       "छोटानागपुर के 2000 साल पुराने नागवंशी राजवंश की अंतिम राजधानी रातू का यह विशाल राजमहल ब्रिटिश और भारतीय वास्तुकला के सम्मिश्रण का सुंदर उदाहरण है। यहाँ की ऐतिहासिक दुर्गा पूजा और राजमहल का पुराना वैभव आज भी दर्शनीय है।",
     highlight:
@@ -236,8 +233,7 @@ export const incredibleJharkhandPlaces = [
     category: "उद्यान एवं जंगली हाथी अभयारण्य",
     type: "nature",
     location: "जमशेदपुर / पूर्वी सिंहभूम",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Jubilee_Park_Jamshedpur.jpg/800px-Jubilee_Park_Jamshedpur.jpg",
-    fallbackImage: betlaParkImage,
+    image: jubileeParkImage,
     description:
       "मैसूर के वृंदावन गार्डन की तर्ज पर बना 200 एकड़ का जुबली पार्क और निकट स्थित दलमा की पहाड़ियों में एशियाई जंगली हाथियों, हिरणों और तेंदुओं का अभयारण्य जमशेदपुर को 'ग्रीन स्टील सिटी' का दर्जा दिलाते हैं।",
     highlight:
@@ -249,8 +245,7 @@ export const incredibleJharkhandPlaces = [
     category: "भव्य राधा-कृष्ण स्थापत्य मंदिर",
     type: "spiritual",
     location: "देवघर शहर (बैद्यनाथ धाम से 1.5 किमी)",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Naulakha_Mandir_Deoghar.jpg/800px-Naulakha_Mandir_Deoghar.jpg",
-    fallbackImage: basukinathTempleImage,
+    image: naulakhaMandirImage,
     description:
       "146 फीट ऊंचा यह भव्य मंदिर बेलूर मठ की स्थापत्य कला से प्रेरित है। 1948 में रानी चारुशीला द्वारा 9 लाख रुपये के दान से निर्मित होने के कारण इसे 'नौलाखा मंदिर' कहा जाता है। मंदिर में स्थापित राधा-कृष्ण की संगमरमरी प्रतिमाएं अत्यंत मनमोहक हैं।",
     highlight:
@@ -262,8 +257,7 @@ export const incredibleJharkhandPlaces = [
     category: "भूगर्भीय धरोहर एवं गंगा संगम",
     type: "nature",
     location: "साहिबगंज जिला",
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Rajmahal_Hills_Ganges.jpg/800px-Rajmahal_Hills_Ganges.jpg",
-    fallbackImage: dumkaCityImage,
+    image: rajmahalHillsImage,
     description:
       "6.8 करोड़ से 15 करोड़ वर्ष पुराने जुरासिक काल के पादप जीवाश्मों (Plant Fossils) को संजोए राजमहल की पहाड़ियां विश्वभर के भूवैज्ञानिकों के आकर्षण का केंद्र हैं। साहिबगंज में पतित पावनी गंगा नदी झारखंड की सीमा को स्पर्श करती हुई आगे बढ़ती है।",
     highlight:
@@ -276,7 +270,6 @@ export const incredibleJharkhandPlaces = [
     type: "historic",
     location: "हिजला, मयूराक्षी नदी तट, दुमका",
     image: hijlaMelaImage,
-    fallbackImage: hijlaMelaImage,
     description:
       "1890 से आयोजित होने वाला हिजला मेला संताल परगना की समृद्ध आदिवासी संस्कृति, लोककला, हस्तशिल्प, लोकनृत्य और पारंपरिक जीवनशैली का ऐतिहासिक उत्सव है, जो मयूराक्षी नदी के मनोरम तट पर लगता है।",
     highlight:
@@ -289,7 +282,6 @@ export const incredibleJharkhandPlaces = [
     type: "historic",
     location: "दुमका शहर, दुमका जिला",
     image: dumkaRailwayImage,
-    fallbackImage: dumkaRailwayImage,
     description:
       "झारखंड की उप-राजधानी दुमका और इसका आधुनिक रेलवे स्टेशन संताल परगना के प्रमुख धार्मिक स्थलों (बासुकीनाथ, मलूटी) और पर्यटन केंद्रों का मुख्य प्रवेश द्वार है।",
     highlight:
@@ -508,7 +500,7 @@ export default function HistoricJharkhandPage() {
         </section>
       )}
 
-      {/* सभी स्थायी धरोहर एवं पर्यटन स्थल (Incredible India Complete List with Authentic Photos) */}
+      {/* सभी स्थायी धरोहर एवं पर्यटन स्थल (Incredible India Complete List with 100% Unique Authentic Photos) */}
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 border-t border-slate-200">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>
@@ -555,7 +547,7 @@ export default function HistoricJharkhandPage() {
                     loading="lazy"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
-                      e.currentTarget.src = place.fallbackImage || getCategoryFallbackImage("झारखंड");
+                      e.currentTarget.src = getCategoryFallbackImage("झारखंड");
                     }}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
