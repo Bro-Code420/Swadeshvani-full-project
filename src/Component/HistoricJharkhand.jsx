@@ -445,10 +445,15 @@ export default function HistoricJharkhandPage() {
                       className="block relative h-48 overflow-hidden bg-slate-100"
                     >
                       <img
-                        src={article.image}
+                        src={resolveArticleImage(article.image, article.category || "झारखंड", article.id || article.title)}
                         alt={article.title}
                         onError={(e) => {
-                          e.currentTarget.style.display = "none";
+                          e.currentTarget.onerror = null;
+                          if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                            e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
+                          } else {
+                            e.currentTarget.src = getCategoryFallbackImage("झारखंड", article.id || article.title);
+                          }
                         }}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                       />

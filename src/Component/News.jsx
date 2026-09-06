@@ -214,10 +214,15 @@ export default function CategoriesSection() {
                           className="overflow-hidden rounded-xl bg-slate-100 block"
                         >
                           <img
-                            src={article.image}
+                            src={resolveArticleImage(article.image, article.category, article.id || article.title)}
                             alt={article.title}
                             onError={(e) => {
-                              e.currentTarget.style.display = "none";
+                              e.currentTarget.onerror = null;
+                              if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                                e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
+                              } else {
+                                e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
+                              }
                             }}
                             className="w-full h-[220px] object-cover transition-transform duration-500 group-hover:scale-105"
                           />

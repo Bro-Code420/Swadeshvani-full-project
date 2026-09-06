@@ -558,10 +558,15 @@ const Navbar = () => {
                             >
                               {item.image ? (
                                 <img
-                                  src={item.image}
+                                  src={resolveArticleImage(item.image, item.category, item.id || item.title)}
                                   alt=""
                                   onError={(e) => {
-                                    e.currentTarget.style.display = "none";
+                                    e.currentTarget.onerror = null;
+                                    if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                                      e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
+                                    } else {
+                                      e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
+                                    }
                                   }}
                                   className="h-10 w-12 object-cover rounded-lg shrink-0 border border-gray-200"
                                 />

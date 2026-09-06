@@ -85,11 +85,16 @@ function FeaturedNewsCard({ item }) {
       {item.image ? (
         <div className="relative h-64 overflow-hidden sm:h-80">
           <img
-            src={item.image}
+            src={resolveArticleImage(item.image, item.category, item.id || item.title)}
             alt={item.title}
             loading="lazy"
             onError={(e) => {
-              e.currentTarget.style.display = "none";
+              e.currentTarget.onerror = null;
+              if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
+              } else {
+                e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
+              }
             }}
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           />
@@ -160,11 +165,16 @@ function NewsListItem({ item }) {
       {item.image ? (
         <div className="h-24 w-32 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-40">
           <img
-            src={item.image}
+            src={resolveArticleImage(item.image, item.category, item.id || item.title)}
             alt={item.title}
             loading="lazy"
             onError={(e) => {
-              e.currentTarget.style.display = "none";
+              e.currentTarget.onerror = null;
+              if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
+              } else {
+                e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
+              }
             }}
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />

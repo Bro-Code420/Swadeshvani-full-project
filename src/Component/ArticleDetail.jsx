@@ -351,10 +351,15 @@ export default function ArticleDetail() {
             {article.image ? (
               <div className="mb-8 overflow-hidden rounded-2xl border border-slate-100 shadow-md">
                 <img
-                  src={article.image}
+                  src={resolveArticleImage(article.image, article.category, article.id || article.title)}
                   alt={article.title}
                   onError={(e) => {
-                    e.currentTarget.parentElement.style.display = "none";
+                    e.currentTarget.onerror = null;
+                    if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                      e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
+                    } else {
+                      e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
+                    }
                   }}
                   className="w-full max-h-[480px] object-cover hover:scale-105 transition duration-500"
                 />
@@ -432,10 +437,15 @@ export default function ArticleDetail() {
                   >
                     {rel.image && (
                       <img
-                        src={rel.image}
+                        src={resolveArticleImage(rel.image, rel.category, rel.id || rel.title)}
                         alt={rel.title}
                         onError={(e) => {
-                          e.currentTarget.style.display = "none";
+                          e.currentTarget.onerror = null;
+                          if (rel.image && rel.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                            e.currentTarget.src = `https://swadeshvaani.com${rel.image}`;
+                          } else {
+                            e.currentTarget.src = getCategoryFallbackImage(rel.category, rel.id || rel.title);
+                          }
                         }}
                         className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"
                       />

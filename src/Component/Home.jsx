@@ -408,10 +408,15 @@ const Home = () => {
             {mainNews.image ? (
               <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden">
                 <img
-                  src={mainNews.image}
+                  src={resolveArticleImage(mainNews.image, mainNews.category, mainNews.id || mainNews.title)}
                   alt={mainNews.title}
                   onError={(e) => {
-                    e.currentTarget.style.display = "none";
+                    e.currentTarget.onerror = null;
+                    if (mainNews.image && mainNews.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                      e.currentTarget.src = `https://swadeshvaani.com${mainNews.image}`;
+                    } else {
+                      e.currentTarget.src = getCategoryFallbackImage(mainNews.category, mainNews.id || mainNews.title);
+                    }
                   }}
                   className="h-[300px] w-full object-cover sm:h-[420px] group-hover:scale-105 transition duration-500"
                 />
@@ -605,10 +610,15 @@ const Home = () => {
                   {item.image ? (
                     <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
                       <img
-                        src={item.image}
+                        src={resolveArticleImage(item.image, item.category, item.id || item.title)}
                         alt={item.title}
                         onError={(e) => {
-                          e.currentTarget.style.display = "none";
+                          e.currentTarget.onerror = null;
+                          if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                            e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
+                          } else {
+                            e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
+                          }
                         }}
                         className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
                       />
@@ -697,10 +707,15 @@ const Home = () => {
                 {item.image ? (
                   <Link to={`/news/${item.id}`} className="hidden h-24 w-32 shrink-0 overflow-hidden rounded-lg sm:block group">
                     <img
-                      src={item.image}
+                      src={resolveArticleImage(item.image, item.category, item.id || item.title || index)}
                       alt={item.title}
                       onError={(e) => {
-                        e.currentTarget.style.display = "none";
+                        e.currentTarget.onerror = null;
+                        if (item.image && item.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                          e.currentTarget.src = `https://swadeshvaani.com${item.image}`;
+                        } else {
+                          e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title || index);
+                        }
                       }}
                       className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
                     />

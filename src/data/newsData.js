@@ -1000,7 +1000,7 @@ export const syncArticlesFromServer = async () => {
 };
 
 export const resolveArticleImage = (image) => {
-  if (!image || typeof image !== "string" || !image.trim()) {
+  if (!image || typeof image !== "string" || !image.trim() || image === "none" || image === "null") {
     return "";
   }
   const trimmed = image.trim();
@@ -1011,6 +1011,14 @@ export const resolveArticleImage = (image) => {
     trimmed.startsWith("http://") ||
     trimmed.startsWith("https://")
   ) {
+    return trimmed;
+  }
+
+  // Relative /uploads path - resolve on localhost to live server
+  if (trimmed.startsWith("/uploads/")) {
+    if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+      return `https://swadeshvaani.com${trimmed}`;
+    }
     return trimmed;
   }
 

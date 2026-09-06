@@ -933,10 +933,15 @@ export default function Admin() {
                       <div className="flex items-center gap-3 min-w-0">
                         {article.image ? (
                           <img
-                            src={article.image}
+                            src={resolveArticleImage(article.image, article.category, article.id || article.title)}
                             alt=""
                             onError={(e) => {
-                              e.currentTarget.style.display = "none";
+                              e.currentTarget.onerror = null;
+                              if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                                e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
+                              } else {
+                                e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
+                              }
                             }}
                             className="h-12 w-16 object-cover rounded-lg shrink-0 border border-slate-200"
                           />
@@ -1068,10 +1073,15 @@ export default function Admin() {
                               <div className="flex items-center gap-3 max-w-md">
                                 {article.image ? (
                                   <img
-                                    src={article.image}
+                                    src={resolveArticleImage(article.image, article.category, article.id || article.title)}
                                     alt=""
                                     onError={(e) => {
-                                      e.currentTarget.style.display = "none";
+                                      e.currentTarget.onerror = null;
+                                      if (article.image && article.image.startsWith("/uploads/") && !e.currentTarget.src.startsWith("https://swadeshvaani.com")) {
+                                        e.currentTarget.src = `https://swadeshvaani.com${article.image}`;
+                                      } else {
+                                        e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
+                                      }
                                     }}
                                     className="h-11 w-14 object-cover rounded-lg shrink-0 border border-slate-200"
                                   />
