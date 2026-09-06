@@ -31,6 +31,8 @@ import {
   Sparkles,
   AlertTriangle,
   Flame,
+  MapPin,
+  Building2,
 } from "lucide-react";
 
 import {
@@ -232,6 +234,7 @@ const Navbar = () => {
       section: t("jharkhandFeatures"),
       items: [
         { icon: <History size={18} />, title: t("historicJharkhand"), to: "/HistoricJharkhand" },
+        { icon: <MapPin size={18} />, title: t("dumkaSpecial"), to: "/Dumka" },
         { icon: <Video size={18} />, title: t("videos"), to: "/YouTubeVideos" },
         { icon: <Megaphone size={18} />, title: t("advertisement"), to: "/Advertisement" },
         { icon: <Info size={18} />, title: t("aboutUs"), to: "/About" },

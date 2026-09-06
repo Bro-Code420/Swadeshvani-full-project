@@ -16,6 +16,7 @@ import Sportsnews from "./Component/Sportsnews.jsx";
 import Signup from "./Component/Signup.jsx";
 import Login from "./Component/Login.jsx";
 import HistoricJharkhand from "./Component/HistoricJharkhand.jsx";
+import Dumka from "./Component/Dumka.jsx";
 import Admin from "./Component/Admin.jsx";
 import YouTubeVideos from "./Component/YouTubeVideos.jsx";
 import Advertisement from "./Component/Sponsors.jsx";
@@ -140,6 +141,8 @@ function AppLayout() {
           path="/historicjharkhand"
           element={<HistoricJharkhand />}
         />
+        <Route path="/Dumka" element={<Dumka />} />
+        <Route path="/dumka" element={<Dumka />} />
         <Route path="/Admin" element={<Admin />} />
         <Route path="/admin" element={<Admin />} />
         <Route

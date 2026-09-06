@@ -36,6 +36,7 @@ const Footer = () => {
     { label: t("technology"), to: "/technologynews" },
     { label: t("sports"), to: "/sportsnews" },
     { label: t("historicJharkhand"), to: "/historicjharkhand" },
+    { label: t("dumkaSpecial"), to: "/dumka" },
   ];
 
   const socialLinks = [
