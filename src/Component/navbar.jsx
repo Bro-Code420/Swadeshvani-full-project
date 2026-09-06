@@ -43,6 +43,8 @@ import {
   requestNotificationPermission,
   toHindiNumber,
   getAllArticles,
+  resolveArticleImage,
+  getCategoryFallbackImage,
 } from "../data/newsData";
 
 import { isAdminAuthenticated, logoutAdmin, getAdminUser } from "../utils/auth";
@@ -62,9 +64,19 @@ const Navbar = () => {
   const [isAdmin, setIsAdmin] = useState(() => isAdminAuthenticated());
   const [adminUser, setAdminUser] = useState(() => getAdminUser());
 
-  // Accordion state for collapsible extra topics in sidebar
+  // Top Horizontal Navbar Links
+  const topNavLinks = [
+    { label: language === "hi" ? "शिक्षा" : "Education", to: "/Education" },
+    { label: language === "hi" ? "देश-विदेश" : "World", to: "/Worldnews" },
+    { label: language === "hi" ? "तकनीक" : "Tech", to: "/Technologynews" },
+    { label: language === "hi" ? "खेल" : "Sports", to: "/Sportsnews" },
+    { label: language === "hi" ? "जिले" : "Districts", to: "/District" },
+    { label: language === "hi" ? "झारखंड" : "Jharkhand", to: "/HistoricJharkhand" },
+  ];
+
+  // Accordion state for categories dropdown (closed by default)
   const [openSections, setOpenSections] = useState({
-    moreTopics: false,
+    categories: false,
   });
 
   const toggleSection = (sectionId) => {
@@ -197,39 +209,48 @@ const Navbar = () => {
     setNotifOpen(false);
   };
 
+  // Nav links with fixed routes
+  const navLinks = [
+    { label: "Home", to: "/" },
+    { label: "District", to: "/District" },
+    { label: "Historic Jharkhand", to: "/HistoricJharkhand" },
+    { label: "Videos", to: "/YouTubeVideos" },
+    { label: "Advertisement", to: "/Advertisement" },
+    { label: "About", to: "/About" },
+  ];
 
   const sidebarLinks = [
-    {
-      id: "categories",
-      section: language === "hi" ? "प्रमुख श्रेणियां" : "Key Categories",
-      items: [
-        { icon: <GraduationCap size={18} />, title: language === "hi" ? "शिक्षा" : "Education", to: "/Education" },
-        { icon: <Globe size={18} />, title: language === "hi" ? "देश-विदेश" : "World", to: "/Worldnews" },
-        { icon: <Cpu size={18} />, title: language === "hi" ? "तकनीक" : "Tech", to: "/Technologynews" },
-        { icon: <Trophy size={18} />, title: language === "hi" ? "खेल" : "Sports", to: "/Sportsnews" },
-        { icon: <MapPin size={18} />, title: language === "hi" ? "जिले" : "Districts", to: "/District" },
-        { icon: <History size={18} />, title: language === "hi" ? "झारखंड" : "Jharkhand", to: "/HistoricJharkhand" },
-      ],
-    },
     {
       id: "mainMenu",
       section: t("mainMenu"),
       items: [
         { icon: <Home size={18} />, title: t("home"), to: "/" },
         { icon: <Newspaper size={18} />, title: t("allNews"), to: "/News" },
+        { icon: <MapPin size={18} />, title: t("districtNews"), to: "/District" },
+      ],
+    },
+    {
+      id: "categories",
+      section: t("categories"),
+      items: [
+        { icon: <GraduationCap size={18} />, title: t("education"), to: "/Education" },
+        { icon: <Globe size={18} />, title: t("worldNews"), to: "/Worldnews" },
+        { icon: <Cpu size={18} />, title: t("technology"), to: "/Technologynews" },
+        { icon: <Trophy size={18} />, title: t("sports"), to: "/Sportsnews" },
+        { icon: <Sparkles size={18} />, title: t("religion"), to: "/News?category=धर्म" },
+        { icon: <AlertTriangle size={18} />, title: t("disaster"), to: "/News?category=आपदा" },
+        { icon: <Flame size={18} />, title: t("accident"), to: "/News?category=दुर्घटना" },
+      ],
+    },
+    {
+      id: "jharkhandFeatures",
+      section: t("jharkhandFeatures"),
+      items: [
+        { icon: <History size={18} />, title: t("historicJharkhand"), to: "/HistoricJharkhand" },
         { icon: <Building2 size={18} />, title: t("dumkaSpecial"), to: "/Dumka" },
         { icon: <Video size={18} />, title: t("videos"), to: "/YouTubeVideos" },
         { icon: <Megaphone size={18} />, title: t("advertisement"), to: "/Advertisement" },
         { icon: <Info size={18} />, title: t("aboutUs"), to: "/About" },
-      ],
-    },
-    {
-      id: "moreTopics",
-      section: language === "hi" ? "अन्य विषय (More Topics)" : "More Topics",
-      items: [
-        { icon: <Sparkles size={18} />, title: t("religion"), to: "/News?category=धर्म" },
-        { icon: <AlertTriangle size={18} />, title: t("disaster"), to: "/News?category=आपदा" },
-        { icon: <Flame size={18} />, title: t("accident"), to: "/News?category=दुर्घटना" },
       ],
     },
     {
@@ -318,51 +339,8 @@ const Navbar = () => {
           </div>
 
           {sidebarLinks.map((section) => {
-            const isCollapsible = section.id === "moreTopics";
+            const isCollapsible = section.id === "categories";
             const isOpen = !!openSections[section.id];
-
-            // Render 6 Key Categories prominently as a direct 2-column grid in sidebar
-            if (section.id === "categories") {
-              return (
-                <div key={section.id} className="space-y-2">
-                  <div className="flex items-center justify-between px-1">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-orange-600 flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-orange-600" />
-                      {section.section}
-                    </p>
-                    <span className="text-[10px] font-bold text-orange-700 bg-orange-100/80 border border-orange-200/80 px-2 py-0.5 rounded-full">
-                      {section.items.length}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {section.items.map((item) => {
-                      const isActive = location.pathname === item.to;
-                      return (
-                        <Link
-                          key={item.title}
-                          to={item.to}
-                          onClick={closeMenus}
-                          className={`flex items-center gap-2 px-2.5 py-2.5 rounded-xl text-xs font-semibold transition group ${
-                            isActive
-                              ? "bg-orange-600 text-white shadow-xs font-bold"
-                              : "bg-slate-50 hover:bg-orange-50 hover:text-orange-600 text-slate-700 border border-slate-100"
-                          }`}
-                        >
-                          <span
-                            className={`${
-                              isActive ? "text-white" : "text-orange-600 group-hover:scale-110"
-                            } transition-transform shrink-0`}
-                          >
-                            {item.icon}
-                          </span>
-                          <span className="truncate">{item.title}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            }
 
             if (isCollapsible) {
               return (
@@ -381,7 +359,7 @@ const Navbar = () => {
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-700 group-hover:text-orange-600 transition">
                         {section.section}
                       </span>
-                      <span className="text-[10px] font-bold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.2 rounded-full">
                         {section.items.length}
                       </span>
                     </div>
@@ -500,6 +478,25 @@ const Navbar = () => {
               </Link>
             </div>
 
+            {/* Center Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+              {topNavLinks.map((item) => {
+                const isActive = location.pathname === item.to;
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className={`px-3.5 xl:px-4 py-2 rounded-full text-xs xl:text-sm font-semibold transition-all duration-200 ${
+                      isActive
+                        ? "bg-orange-50 text-orange-600 font-bold border border-orange-200/80 shadow-2xs"
+                        : "text-slate-700 hover:text-orange-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
 
             {/* Right Desktop Controls */}
             <div className="hidden items-center gap-3 xl:gap-4 lg:flex shrink-0">
@@ -587,13 +584,15 @@ const Navbar = () => {
                               onClick={() => handleSelectSearchResult(item.id)}
                               className="w-full text-left p-2.5 hover:bg-orange-50 rounded-xl transition flex items-start gap-2.5 group cursor-pointer"
                             >
-                              {item.image && (
-                                <img
-                                  src={item.image}
-                                  alt=""
-                                  className="h-10 w-12 object-cover rounded-lg shrink-0 border border-gray-200"
-                                />
-                              )}
+                              <img
+                                src={resolveArticleImage(item.image, item.category, item.id || item.title)}
+                                alt=""
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
+                                }}
+                                className="h-10 w-12 object-cover rounded-lg shrink-0 border border-gray-200"
+                              />
                               <div className="min-w-0">
                                 <p className="text-xs font-semibold text-gray-800 group-hover:text-orange-600 line-clamp-2 leading-tight">
                                   {item.title}

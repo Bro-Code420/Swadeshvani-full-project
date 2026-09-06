@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock, MapPin, User, ArrowRight, Trophy } from "lucide-react";
-import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, resolveArticleImage, toHindiNumber } from "../data/newsData";
+import { getArticlesByCategory, syncArticlesFromServer, resolveArticleImage, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function SportsPage() {
@@ -37,11 +37,11 @@ export default function SportsPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-bold uppercase tracking-wider mb-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider mb-3">
                 <Trophy size={14} /> {t("sportsTitle")}
               </span>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-                <span className="text-orange-500">{language === "hi" ? "खेल जगत" : "Sports"}</span> {language === "hi" ? "समाचार एवं अपडेट्स" : "News & Updates"}
+                <span className="text-orange-500">{language === "hi" ? "खेल" : "Sports"}</span> {language === "hi" ? "समाचार एवं गतिविधियां" : "News & Activities"}
               </h1>
               <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl">
                 {t("sportsSubtitle")}
@@ -63,7 +63,7 @@ export default function SportsPage() {
 
         {featured.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {featured.map((item, index) => (
+            {featured.map((item, idx) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col justify-between"
@@ -71,11 +71,11 @@ export default function SportsPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={resolveArticleImage(item.image, item.category || "खेल", item.id || item.title, index)}
+                      src={resolveArticleImage(item.image, item.category || "खेल", item.id || item.title || idx)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल", item.id || item.title, index);
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल", item.id || item.title || idx);
                       }}
                       className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
                     />
@@ -121,16 +121,16 @@ export default function SportsPage() {
         )}
       </section>
 
-      {/* Grid of More Sports News */}
+      {/* Grid of latest sports news */}
       {others.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
           <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
             <span className="h-4 w-1.5 bg-orange-500 rounded-full"></span>
-            अन्य खेल प्रतियोगिता एवं समाचार
+            अन्य खेल समाचार
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {others.map((item, index) => (
+            {others.map((item, idx) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-orange-200 hover:shadow-sm transition flex flex-col justify-between"
@@ -138,11 +138,11 @@ export default function SportsPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={resolveArticleImage(item.image, item.category || "खेल", item.id || item.title, index + featured.length)}
+                      src={resolveArticleImage(item.image, item.category || "खेल", item.id || item.title || (idx + 2))}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल", item.id || item.title, index + featured.length);
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल", item.id || item.title || (idx + 2));
                       }}
                       className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />

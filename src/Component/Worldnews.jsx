@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock, MapPin, User, ArrowRight, Globe } from "lucide-react";
-import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, resolveArticleImage, toHindiNumber } from "../data/newsData";
+import { getArticlesByCategory, syncArticlesFromServer, resolveArticleImage, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function WorldPage() {
@@ -37,24 +37,24 @@ export default function WorldPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider mb-3">
                 <Globe size={14} /> {t("worldTitle")}
               </span>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-                <span className="text-orange-500">देश-विदेश</span> एवं अंतरराष्ट्रीय समाचार
+                <span className="text-orange-500">{language === "hi" ? "देश-विदेश" : "World"}</span> {language === "hi" ? "प्रमुख समाचार" : "Major News"}
               </h1>
               <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl">
                 {t("worldSubtitle")}
               </p>
             </div>
             <div className="text-xs text-slate-500 font-medium">
-              कुल {toHindiNumber(articles.length)} विश्व समाचार उपलब्ध
+              {language === "hi" ? `कुल ${toHindiNumber(articles.length)} अंतर्राष्ट्रीय समाचार उपलब्ध` : `Total ${articles.length} International Stories Available`}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Stories */}
+      {/* Featured / Top Stories */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
           <span className="h-4 w-1.5 bg-orange-500 rounded-full"></span>
@@ -63,7 +63,7 @@ export default function WorldPage() {
 
         {featured.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {featured.map((item, index) => (
+            {featured.map((item, idx) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col justify-between"
@@ -71,11 +71,11 @@ export default function WorldPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={resolveArticleImage(item.image, item.category || "देश-विदेश", item.id || item.title, index)}
+                      src={resolveArticleImage(item.image, item.category || "देश-विदेश", item.id || item.title || idx)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "देश-विदेश", item.id || item.title, index);
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "देश-विदेश", item.id || item.title || idx);
                       }}
                       className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
                     />
@@ -130,7 +130,7 @@ export default function WorldPage() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {others.map((item, index) => (
+            {others.map((item, idx) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-orange-200 hover:shadow-sm transition flex flex-col justify-between"
@@ -138,11 +138,11 @@ export default function WorldPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={resolveArticleImage(item.image, item.category || "देश-विदेश", item.id || item.title, index + featured.length)}
+                      src={resolveArticleImage(item.image, item.category || "देश-विदेश", item.id || item.title || (idx + 2))}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "देश-विदेश", item.id || item.title, index + featured.length);
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "देश-विदेश", item.id || item.title || (idx + 2));
                       }}
                       className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />

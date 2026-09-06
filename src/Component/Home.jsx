@@ -18,8 +18,8 @@ import {
   getAdvertisements,
   recordAdClick,
   toHindiNumber,
-  getCategoryFallbackImage,
   resolveArticleImage,
+  getCategoryFallbackImage,
 } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 import SubscribeSection from "./SubscribeSection";
@@ -595,7 +595,7 @@ const Home = () => {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {topHeadlines.map((item, index) => (
+            {topHeadlines.map((item, idx) => (
               <article
                 key={item.id}
                 className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
@@ -603,11 +603,11 @@ const Home = () => {
                 <div>
                   <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
                     <img
-                      src={resolveArticleImage(item.image, item.category, item.id || item.title, index)}
+                      src={resolveArticleImage(item.image, item.category, item.id || item.title || idx)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title, index);
+                        e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title || idx);
                       }}
                       className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
                     />
@@ -682,11 +682,11 @@ const Home = () => {
               >
                 <Link to={`/news/${item.id}`} className="hidden h-24 w-32 shrink-0 overflow-hidden rounded-lg sm:block group">
                   <img
-                    src={resolveArticleImage(item.image, item.category, item.id || item.title, index + topHeadlines.length)}
+                    src={resolveArticleImage(item.image, item.category, item.id || item.title || index)}
                     alt={item.title}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
-                      e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title, index + topHeadlines.length);
+                      e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title || index);
                     }}
                     className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
                   />

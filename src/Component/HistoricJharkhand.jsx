@@ -433,7 +433,7 @@ export default function HistoricJharkhandPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dynamicArticles.map((article, index) => (
+            {dynamicArticles.map((article) => (
               <article
                 key={article.id}
                 className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 transition duration-300"
@@ -444,22 +444,11 @@ export default function HistoricJharkhandPage() {
                     className="block relative h-48 overflow-hidden bg-slate-100"
                   >
                     <img
-                      src={
-                        resolveArticleImage(
-                          article.image,
-                          article.category || "ऐतिहासिक झारखंड",
-                          article.id || article.title,
-                          index
-                        )
-                      }
+                      src={resolveArticleImage(article.image, article.category || "झारखंड", article.id || article.title)}
                       alt={article.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(
-                          article.category || "ऐतिहासिक झारखंड",
-                          article.id || article.title,
-                          index
-                        );
+                        e.currentTarget.src = getCategoryFallbackImage("झारखंड", article.id || article.title);
                       }}
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                     />
@@ -555,7 +544,7 @@ export default function HistoricJharkhandPage() {
                     loading="lazy"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
-                      e.currentTarget.src = getCategoryFallbackImage("झारखंड", place.name, idx);
+                      e.currentTarget.src = getCategoryFallbackImage("झारखंड");
                     }}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />

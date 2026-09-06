@@ -20,7 +20,7 @@ import {
   FaTwitter,
   FaCopy,
 } from "react-icons/fa";
-import { getArticleById, getAllArticles, syncArticlesFromServer, getCategoryFallbackImage, resolveArticleImage } from "../data/newsData";
+import { getArticleById, getAllArticles, syncArticlesFromServer, resolveArticleImage, getCategoryFallbackImage } from "../data/newsData";
 import { convex } from "../utils/convexClient";
 import { api } from "../../convex/_generated/api";
 import SubscribeSection from "./SubscribeSection";
@@ -423,18 +423,18 @@ export default function ArticleDetail() {
               </h4>
 
               <div className="space-y-4">
-                {relatedArticles.map((rel, index) => (
+                {relatedArticles.map((rel) => (
                   <Link
                     key={rel.id}
                     to={`/news/${rel.id}`}
                     className="group flex gap-3 items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0"
                   >
                     <img
-                      src={resolveArticleImage(rel.image, rel.category, rel.id || rel.title, index)}
+                      src={resolveArticleImage(rel.image, rel.category, rel.id || rel.title)}
                       alt={rel.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(rel.category, rel.id || rel.title, index);
+                        e.currentTarget.src = getCategoryFallbackImage(rel.category, rel.id || rel.title);
                       }}
                       className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"
                     />

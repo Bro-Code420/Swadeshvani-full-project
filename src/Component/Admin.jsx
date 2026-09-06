@@ -921,11 +921,11 @@ export default function Admin() {
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <img
-                          src={resolveArticleImage(article.image, article.category)}
+                          src={resolveArticleImage(article.image, article.category, article.id || article.title)}
                           alt=""
                           onError={(e) => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = getCategoryFallbackImage(article.category);
+                            e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
                           }}
                           className="h-12 w-16 object-cover rounded-lg shrink-0 border border-slate-200"
                         />
@@ -1051,11 +1051,11 @@ export default function Admin() {
                             <td className="py-3.5 px-5">
                               <div className="flex items-center gap-3 max-w-md">
                                 <img
-                                  src={resolveArticleImage(article.image, article.category)}
+                                  src={resolveArticleImage(article.image, article.category, article.id || article.title)}
                                   alt=""
                                   onError={(e) => {
                                     e.currentTarget.onerror = null;
-                                    e.currentTarget.src = getCategoryFallbackImage(article.category);
+                                    e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
                                   }}
                                   className="h-11 w-14 object-cover rounded-lg shrink-0 border border-slate-200"
                                 />

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Clock, MapPin, User, ArrowRight, Cpu } from "lucide-react";
-import { getArticlesByCategory, syncArticlesFromServer, getCategoryFallbackImage, resolveArticleImage, toHindiNumber } from "../data/newsData";
+import { Clock, MapPin, User, ArrowRight, Laptop } from "lucide-react";
+import { getArticlesByCategory, syncArticlesFromServer, resolveArticleImage, getCategoryFallbackImage, toHindiNumber } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function TechnologyPage() {
@@ -37,18 +37,18 @@ export default function TechnologyPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-bold uppercase tracking-wider mb-3">
-                <Cpu size={14} /> {t("techTitle")}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider mb-3">
+                <Laptop size={14} /> {t("techTitle")}
               </span>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-                <span className="text-orange-500">तकनीक</span> एवं डिजिटल नवाचार
+                <span className="text-orange-500">{language === "hi" ? "तकनीक" : "Technology"}</span> {language === "hi" ? "समाचार एवं विज्ञान" : "News & Science"}
               </h1>
               <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-2xl">
                 {t("techSubtitle")}
               </p>
             </div>
             <div className="text-xs text-slate-500 font-medium">
-              कुल {toHindiNumber(articles.length)} टेक समाचार उपलब्ध
+              {language === "hi" ? `कुल ${toHindiNumber(articles.length)} तकनीकी समाचार उपलब्ध` : `Total ${articles.length} Technology Stories Available`}
             </div>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function TechnologyPage() {
 
         {featured.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {featured.map((item, index) => (
+            {featured.map((item, idx) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col justify-between"
@@ -71,11 +71,11 @@ export default function TechnologyPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={resolveArticleImage(item.image, item.category || "तकनीक", item.id || item.title, index)}
+                      src={resolveArticleImage(item.image, item.category || "तकनीक", item.id || item.title || idx)}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "तकनीक", item.id || item.title, index);
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "तकनीक", item.id || item.title || idx);
                       }}
                       className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
                     />
@@ -106,7 +106,7 @@ export default function TechnologyPage() {
                 <div className="px-6 pb-6 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                   <span className="flex items-center gap-1 font-medium">
                     <User size={13} className="text-orange-500" />
-                    {item.reporter || item.author || "टेक डेस्क"}
+                    {item.reporter || item.author || "टेक ब्यूरो"}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock size={13} />
@@ -117,20 +117,20 @@ export default function TechnologyPage() {
             ))}
           </div>
         ) : (
-          <p className="text-slate-500 text-sm">तकनीकी समाचार लोड हो रहे हैं...</p>
+          <p className="text-slate-500 text-sm">तकनीक समाचार लोड हो रहे हैं...</p>
         )}
       </section>
 
-      {/* Grid of More Tech News */}
+      {/* Grid of Other Tech News */}
       {others.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
           <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
             <span className="h-4 w-1.5 bg-orange-500 rounded-full"></span>
-            अन्य तकनीकी एवं नवाचार समाचार
+            अन्य तकनीकी अपडेट्स
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {others.map((item, index) => (
+            {others.map((item, idx) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-orange-200 hover:shadow-sm transition flex flex-col justify-between"
@@ -138,11 +138,11 @@ export default function TechnologyPage() {
                 <div>
                   <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
                     <img
-                      src={resolveArticleImage(item.image, item.category || "तकनीक", item.id || item.title, index + featured.length)}
+                      src={resolveArticleImage(item.image, item.category || "तकनीक", item.id || item.title || (idx + 2))}
                       alt={item.title}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "तकनीक", item.id || item.title, index + featured.length);
+                        e.currentTarget.src = getCategoryFallbackImage(item.category || "तकनीक", item.id || item.title || (idx + 2));
                       }}
                       className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
                     />

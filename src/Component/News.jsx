@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Clock, ArrowRight, MapPin, User, Filter, Search, X } from "lucide-react";
-import { getAllArticles, syncArticlesFromServer, JHARKHAND_DISTRICTS, NEWS_CATEGORIES, getCategoryFallbackImage, resolveArticleImage } from "../data/newsData";
+import { getAllArticles, syncArticlesFromServer, JHARKHAND_DISTRICTS, NEWS_CATEGORIES, resolveArticleImage, getCategoryFallbackImage } from "../data/newsData";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function CategoriesSection() {
@@ -203,7 +203,7 @@ export default function CategoriesSection() {
 
                 {/* Articles grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {catArticles.map((article, index) => (
+                  {catArticles.map((article) => (
                     <article
                       key={article.id}
                       className="group flex flex-col gap-4 border border-slate-100 p-4 rounded-2xl bg-slate-50/50 hover:bg-white hover:border-orange-200 hover:shadow-md transition duration-300"
@@ -213,11 +213,11 @@ export default function CategoriesSection() {
                         className="overflow-hidden rounded-xl bg-slate-100 block"
                       >
                         <img
-                          src={resolveArticleImage(article.image, article.category, article.id || article.title, index)}
+                          src={resolveArticleImage(article.image, article.category, article.id || article.title)}
                           alt={article.title}
                           onError={(e) => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title, index);
+                            e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
                           }}
                           className="w-full h-[220px] object-cover transition-transform duration-500 group-hover:scale-105"
                         />
