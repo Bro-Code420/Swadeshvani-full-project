@@ -7,7 +7,6 @@ import {
   Share2,
   ArrowLeft,
   Bookmark,
-  Eye,
   Check,
   ChevronRight,
   TrendingUp,
@@ -262,10 +261,6 @@ export default function ArticleDetail() {
                 <span className="flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-slate-400" />
                   {article.readTime || "3 मिनट"}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Eye className="h-3.5 w-3.5 text-slate-400" />
-                  1.2k बार पढ़ा गया
                 </span>
               </div>
             </div>

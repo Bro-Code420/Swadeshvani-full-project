@@ -26,7 +26,7 @@ import { useLanguage } from "../context/LanguageContext";
 
 // Import Dumka places photos
 import malutiTemplesImage from "./photos/Maluti.jpeg";
-import basukinathTempleImage from "./photos/baba.jpeg";
+import basukinathTempleImage from "./photos/basukinath.jpg";
 import hijlaMelaImage from "./photos/hijla.jpeg";
 import dumkaRailwayImage from "./photos/railwaystation.jpeg";
 import dumkaCityHeroImage from "./photos/dumka.jpeg";

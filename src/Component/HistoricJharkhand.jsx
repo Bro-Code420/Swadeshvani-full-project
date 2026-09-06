@@ -33,7 +33,7 @@ import parasnathImage from "./photos/parasnath.jpg";
 import palamuFortImage from "./photos/Palamu.jpeg";
 import betlaParkImage from "./photos/Betla.jpeg";
 import malutiTemplesImage from "./photos/Maluti.jpeg";
-import basukinathTempleImage from "./photos/baba.jpeg";
+import basukinathTempleImage from "./photos/basukinath.jpg";
 import trikutHillsImage from "./photos/trikut.jpg";
 import mccluskieganjImage from "./photos/mccluskieganj.jpg";
 import patratuValleyImage from "./photos/patratu.jpg";
