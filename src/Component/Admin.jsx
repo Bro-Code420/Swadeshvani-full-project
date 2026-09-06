@@ -31,6 +31,7 @@ import {
   FaMousePointer,
   FaWhatsapp,
   FaUserCheck,
+  FaSync,
 } from "react-icons/fa";
 
 import {
@@ -379,6 +380,62 @@ export default function Admin() {
       const updated = deleteSubscriber(subId);
       setSubscribersList(updated);
       showToast("सब्सक्राइबर हटा दिया गया।", "info");
+    }
+  };
+
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+
+  // Sync all local articles and images to Convex Cloud DB
+  const handleSyncLocalImagesToCloud = async () => {
+    setIsSyncingCloud(true);
+    showToast(
+      language === "hi"
+        ? "लोकल फोटो और समाचार लाइव क्लाउड में सिंक हो रहे हैं..."
+        : "Syncing local photos & articles to Live Cloud...",
+      "info"
+    );
+    try {
+      const saved = localStorage.getItem("savdeshvani_articles_store");
+      const localArticles = saved ? JSON.parse(saved) : getAllArticles();
+      let syncedCount = 0;
+
+      for (const article of localArticles) {
+        if (article && article.title) {
+          await convex.mutation(api.articles.save, {
+            customId: String(article.id),
+            title: article.title,
+            slug: article.slug || generateSlug(article.title),
+            category: article.category || "Jharkhand",
+            district: article.district || "Ranchi",
+            subDistrict: article.subDistrict || "",
+            reporter: article.reporter || article.author || "स्वदेश वाणी ब्यूरो",
+            author: article.author || article.reporter || "स्वदेश वाणी ब्यूरो",
+            excerpt: article.excerpt || "",
+            content: article.content || "",
+            image: article.image || "",
+            date: article.date || "",
+            readTime: article.readTime || "",
+          }).catch((err) => console.warn("Sync article err:", err));
+          syncedCount++;
+        }
+      }
+
+      showToast(
+        language === "hi"
+          ? `सफलतापूर्वक ${syncedCount} समाचार व तस्वीरें लाइव सर्वर से सिंक हो गईं!`
+          : `Successfully synced ${syncedCount} articles & photos to Live Cloud!`,
+        "success"
+      );
+    } catch (err) {
+      console.error("Error syncing to cloud:", err);
+      showToast(
+        language === "hi"
+          ? "सिंक करने में त्रुटि आई।"
+          : "Error syncing to Live Cloud.",
+        "error"
+      );
+    } finally {
+      setIsSyncingCloud(false);
     }
   };
 
@@ -746,6 +803,18 @@ export default function Admin() {
               <span className="tracking-wide">{language === "hi" ? "English" : "हिंदी"}</span>
             </button>
 
+            {/* Sync Localhost to Live Cloud Button */}
+            <button
+              type="button"
+              onClick={handleSyncLocalImagesToCloud}
+              disabled={isSyncingCloud}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-blue-900 text-xs font-bold transition shadow-2xs cursor-pointer group disabled:opacity-50"
+              title={language === "hi" ? "सभी लोकल फोटो व समाचार लाइव क्लाउड में सिंक करें" : "Sync all local photos & articles to Live Cloud"}
+            >
+              <FaSync className={`text-xs ${isSyncingCloud ? "animate-spin text-blue-600" : "text-blue-600"}`} />
+              <span className="tracking-wide hidden sm:inline">{isSyncingCloud ? (language === "hi" ? "सिंक हो रहा है..." : "Syncing...") : (language === "hi" ? "क्लाउड सिंक" : "Cloud Sync")}</span>
+            </button>
+
             {activePage === "ads" ? (
               <button
                 onClick={() => {
@@ -1027,6 +1096,16 @@ export default function Admin() {
                   <span className="text-xs text-slate-500 font-semibold">
                     {language === "hi" ? "कुल समाचार: " : "Total Articles: "}<strong>{toHindiNumber(filteredNews.length)}</strong>
                   </span>
+
+                  <button
+                    onClick={handleSyncLocalImagesToCloud}
+                    disabled={isSyncingCloud}
+                    className="px-3.5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                    title={language === "hi" ? "सभी लोकल फोटो व समाचार लाइव क्लाउड में सिंक करें" : "Sync all local photos & articles to Live Cloud"}
+                  >
+                    <FaSync className={isSyncingCloud ? "animate-spin text-blue-600" : "text-blue-600"} />
+                    <span>{isSyncingCloud ? (language === "hi" ? "सिंक हो रहा है..." : "Syncing...") : (language === "hi" ? "क्लाउड सिंक" : "Cloud Sync")}</span>
+                  </button>
 
                   <button
                     onClick={() => {
