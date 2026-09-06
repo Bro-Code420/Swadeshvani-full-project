@@ -556,15 +556,16 @@ const Navbar = () => {
                               onClick={() => handleSelectSearchResult(item.id)}
                               className="w-full text-left p-2.5 hover:bg-orange-50 rounded-xl transition flex items-start gap-2.5 group cursor-pointer"
                             >
-                              <img
-                                src={resolveArticleImage(item.image, item.category, item.id || item.title)}
-                                alt=""
-                                onError={(e) => {
-                                  e.currentTarget.onerror = null;
-                                  e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
-                                }}
-                                className="h-10 w-12 object-cover rounded-lg shrink-0 border border-gray-200"
-                              />
+                              {item.image ? (
+                                <img
+                                  src={item.image}
+                                  alt=""
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                  className="h-10 w-12 object-cover rounded-lg shrink-0 border border-gray-200"
+                                />
+                              ) : null}
                               <div className="min-w-0">
                                 <p className="text-xs font-semibold text-gray-800 group-hover:text-orange-600 line-clamp-2 leading-tight">
                                   {item.title}

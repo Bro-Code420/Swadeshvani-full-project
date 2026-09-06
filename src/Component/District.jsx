@@ -82,39 +82,63 @@ function FeaturedNewsCard({ item }) {
       to={item.link}
       className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
     >
-      <div className="relative h-64 overflow-hidden sm:h-80">
-        <img
-          src={resolveArticleImage(item.image, item.category, item.id || item.title)}
-          alt={item.title}
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
-          }}
-          className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-        />
+      {item.image ? (
+        <div className="relative h-64 overflow-hidden sm:h-80">
+          <img
+            src={item.image}
+            alt={item.title}
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+            className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+          />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-        <div className="absolute left-4 top-4 flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-orange-600 px-3 py-1 text-xs font-bold text-white shadow">
-            <Zap size={12} />
-            {t("featuredBadge")}
-          </span>
+          <div className="absolute left-4 top-4 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-orange-600 px-3 py-1 text-xs font-bold text-white shadow">
+              <Zap size={12} />
+              {t("featuredBadge")}
+            </span>
 
-          <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-            {item.category}
-          </span>
+            <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+              {item.category}
+            </span>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 p-5 text-white sm:p-6">
+            <NewsMeta item={item} />
+
+            <h2 className="mt-2 line-clamp-2 text-lg font-bold leading-7 text-white sm:text-2xl">
+              {item.title}
+            </h2>
+
+            <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-orange-300">
+              {t("readFullStory")}
+              <ArrowRight
+                size={16}
+                className="transition group-hover:translate-x-1"
+              />
+            </span>
+          </div>
         </div>
-
-        <div className="absolute bottom-0 left-0 right-0 p-5 text-white sm:p-6">
+      ) : (
+        <div className="p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+              <Zap size={12} />
+              {t("featuredBadge")}
+            </span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              {item.category}
+            </span>
+          </div>
           <NewsMeta item={item} />
-
-          <h2 className="mt-2 line-clamp-2 text-lg font-bold leading-7 text-white sm:text-2xl">
+          <h2 className="mt-3 line-clamp-2 text-xl font-bold leading-7 text-blue-950 sm:text-2xl group-hover:text-orange-600 transition">
             {item.title}
           </h2>
-
-          <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-orange-300">
+          <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-orange-600">
             {t("readFullStory")}
             <ArrowRight
               size={16}
@@ -122,7 +146,7 @@ function FeaturedNewsCard({ item }) {
             />
           </span>
         </div>
-      </div>
+      )}
     </Link>
   );
 }
@@ -133,18 +157,19 @@ function NewsListItem({ item }) {
       to={item.link}
       className="group flex gap-4 border-b border-slate-100 py-5 first:pt-0 last:border-0 last:pb-0"
     >
-      <div className="h-24 w-32 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-40">
-        <img
-          src={resolveArticleImage(item.image, item.category, item.id || item.title)}
-          alt={item.title}
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title);
-          }}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-        />
-      </div>
+      {item.image ? (
+        <div className="h-24 w-32 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-40">
+          <img
+            src={item.image}
+            alt={item.title}
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          />
+        </div>
+      ) : null}
 
       <div className="min-w-0">
         <span className="text-xs font-semibold text-orange-600">
@@ -222,7 +247,7 @@ export default function DistrictNews() {
       subDistrict: a.subDistrict || "",
       location: a.district || "झारखंड",
       time: a.date || "आज",
-      image: a.image || getCategoryFallbackImage(a.category),
+      image: a.image || "",
       link: `/news/${a.id}`,
       featured: idx === 0 || a.featured,
     }));

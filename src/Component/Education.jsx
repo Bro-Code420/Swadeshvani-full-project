@@ -63,34 +63,47 @@ export default function EducationPage() {
 
         {featured.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {featured.map((item, idx) => (
+            {featured.map((item) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col justify-between"
               >
                 <div>
-                  <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
-                    <img
-                      src={resolveArticleImage(item.image, item.category || "शिक्षा", item.id || item.title || idx)}
-                      alt={item.title}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "शिक्षा", item.id || item.title || idx);
-                      }}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
-                    />
-                    <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                      <span className="px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-sm">
+                  {item.image ? (
+                    <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        onError={(e) => {
+                          e.currentTarget.parentElement.style.display = "none";
+                        }}
+                        className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
+                      />
+                      <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                        <span className="px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-sm">
+                          {item.category || "शिक्षा"}
+                        </span>
+                        {item.district && (
+                          <span className="px-2.5 py-1 bg-blue-950/80 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white shadow-sm flex items-center gap-1">
+                            <MapPin size={10} className="text-orange-400" />
+                            {item.district}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="px-6 pt-6 flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-orange-50 rounded-full text-xs font-bold text-orange-600 border border-orange-100">
                         {item.category || "शिक्षा"}
                       </span>
                       {item.district && (
-                        <span className="px-2.5 py-1 bg-blue-950/80 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white shadow-sm flex items-center gap-1">
-                          <MapPin size={10} className="text-orange-400" />
+                        <span className="px-2.5 py-1 bg-blue-50 rounded-full text-[11px] font-semibold text-blue-800 border border-blue-100 flex items-center gap-1">
+                          <MapPin size={10} className="text-orange-500" />
                           {item.district}
                         </span>
                       )}
                     </div>
-                  </Link>
+                  )}
 
                   <div className="p-6">
                     <h3 className="text-xl font-bold text-slate-900 group-hover:text-orange-600 transition line-clamp-2">
@@ -130,33 +143,45 @@ export default function EducationPage() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {others.map((item, idx) => (
+            {others.map((item) => (
               <article
                 key={item.id}
                 className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-orange-200 hover:shadow-sm transition flex flex-col justify-between"
               >
                 <div>
-                  <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
-                    <img
-                      src={resolveArticleImage(item.image, item.category || "शिक्षा", item.id || item.title || (idx + 2))}
-                      alt={item.title}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "शिक्षा", item.id || item.title || (idx + 2));
-                      }}
-                      className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
-                    />
-                    <div className="absolute left-3 top-3 flex flex-wrap gap-1">
-                      <span className="px-2 py-0.5 bg-white/95 rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
+                  {item.image ? (
+                    <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        onError={(e) => {
+                          e.currentTarget.parentElement.style.display = "none";
+                        }}
+                        className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
+                      />
+                      <div className="absolute left-3 top-3 flex flex-wrap gap-1">
+                        <span className="px-2 py-0.5 bg-white/95 rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
+                          {item.category || "शिक्षा"}
+                        </span>
+                        {item.district && (
+                          <span className="px-2 py-0.5 bg-blue-950/80 rounded-full text-[10px] font-medium text-white shadow-sm">
+                            📍 {item.district}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="p-4 pb-0 flex flex-wrap gap-1.5">
+                      <span className="px-2 py-0.5 bg-orange-50 rounded-full text-[10px] font-bold text-orange-600 border border-orange-100">
                         {item.category || "शिक्षा"}
                       </span>
                       {item.district && (
-                        <span className="px-2 py-0.5 bg-blue-950/80 rounded-full text-[10px] font-medium text-white shadow-sm">
+                        <span className="px-2 py-0.5 bg-blue-50 rounded-full text-[10px] font-medium text-blue-800 border border-blue-100">
                           📍 {item.district}
                         </span>
                       )}
                     </div>
-                  </Link>
+                  )}
 
                   <div className="p-4">
                     <h3 className="text-base font-bold text-slate-900 group-hover:text-orange-600 transition line-clamp-2">

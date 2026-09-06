@@ -920,15 +920,20 @@ export default function Admin() {
                       className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 p-2 rounded-xl transition"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src={resolveArticleImage(article.image, article.category, article.id || article.title)}
-                          alt=""
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
-                          }}
-                          className="h-12 w-16 object-cover rounded-lg shrink-0 border border-slate-200"
-                        />
+                        {article.image ? (
+                          <img
+                            src={article.image}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                            className="h-12 w-16 object-cover rounded-lg shrink-0 border border-slate-200"
+                          />
+                        ) : (
+                          <div className="h-12 w-16 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] text-slate-400 font-medium border border-slate-200 shrink-0">
+                            बिना फोटो
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-slate-900 truncate">
                             {article.title}
@@ -1050,15 +1055,20 @@ export default function Admin() {
                             {/* Article Title & Thumbnail */}
                             <td className="py-3.5 px-5">
                               <div className="flex items-center gap-3 max-w-md">
-                                <img
-                                  src={resolveArticleImage(article.image, article.category, article.id || article.title)}
-                                  alt=""
-                                  onError={(e) => {
-                                    e.currentTarget.onerror = null;
-                                    e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
-                                  }}
-                                  className="h-11 w-14 object-cover rounded-lg shrink-0 border border-slate-200"
-                                />
+                                {article.image ? (
+                                  <img
+                                    src={article.image}
+                                    alt=""
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = "none";
+                                    }}
+                                    className="h-11 w-14 object-cover rounded-lg shrink-0 border border-slate-200"
+                                  />
+                                ) : (
+                                  <div className="h-11 w-14 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] text-slate-400 font-medium border border-slate-200 shrink-0">
+                                    बिना फोटो
+                                  </div>
+                                )}
                                 <div className="min-w-0">
                                   <p className="font-bold text-slate-900 truncate">
                                     {article.title}

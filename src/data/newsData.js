@@ -999,9 +999,9 @@ export const syncArticlesFromServer = async () => {
   return getAllArticles();
 };
 
-export const resolveArticleImage = (image, category, seedKey = "") => {
+export const resolveArticleImage = (image) => {
   if (!image || typeof image !== "string" || !image.trim()) {
-    return getCategoryFallbackImage(category, seedKey);
+    return "";
   }
   const trimmed = image.trim();
 
@@ -1038,7 +1038,7 @@ export const getAllArticles = () => {
           .filter((a) => !deletedIds.has(String(a.id)))
           .map((a) => ({
             ...a,
-            image: resolveArticleImage(a.image, a.category, a.id || a.title),
+            image: resolveArticleImage(a.image),
           }));
       }
     }

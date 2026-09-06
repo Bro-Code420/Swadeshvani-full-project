@@ -347,21 +347,22 @@ export default function ArticleDetail() {
               </div>
             </div>
 
-            {/* Featured Image */}
-            <div className="mb-8 overflow-hidden rounded-2xl border border-slate-100 shadow-md">
-              <img
-                src={resolveArticleImage(article.image, article.category, article.id || article.title)}
-                alt={article.title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
-                }}
-                className="w-full max-h-[480px] object-cover hover:scale-105 transition duration-500"
-              />
-              <div className="p-2.5 bg-slate-50 text-[11px] text-slate-400 text-center italic border-t border-slate-100">
-                फोटो: {article.title} (स्वदेश वाणी स्पेशल)
+            {/* Featured Image - Only render when the article has an image */}
+            {article.image ? (
+              <div className="mb-8 overflow-hidden rounded-2xl border border-slate-100 shadow-md">
+                <img
+                  src={article.image}
+                  alt={article.title}
+                  onError={(e) => {
+                    e.currentTarget.parentElement.style.display = "none";
+                  }}
+                  className="w-full max-h-[480px] object-cover hover:scale-105 transition duration-500"
+                />
+                <div className="p-2.5 bg-slate-50 text-[11px] text-slate-400 text-center italic border-t border-slate-100">
+                  फोटो: {article.title} (स्वदेश वाणी)
+                </div>
               </div>
-            </div>
+            ) : null}
 
             {/* Short Excerpt Box */}
             {article.excerpt && (
@@ -429,15 +430,16 @@ export default function ArticleDetail() {
                     to={`/news/${rel.id}`}
                     className="group flex gap-3 items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0"
                   >
-                    <img
-                      src={resolveArticleImage(rel.image, rel.category, rel.id || rel.title)}
-                      alt={rel.title}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(rel.category, rel.id || rel.title);
-                      }}
-                      className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"
-                    />
+                    {rel.image && (
+                      <img
+                        src={rel.image}
+                        alt={rel.title}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                        className="h-16 w-20 rounded-xl object-cover flex-shrink-0 group-hover:opacity-90 transition"
+                      />
+                    )}
                     <div className="flex-1 min-w-0">
                       <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider block mb-1">
                         {rel.category}

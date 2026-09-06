@@ -69,28 +69,41 @@ export default function SportsPage() {
                 className="group border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col justify-between"
               >
                 <div>
-                  <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
-                    <img
-                      src={resolveArticleImage(item.image, item.category || "खेल", item.id || item.title || idx)}
-                      alt={item.title}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल", item.id || item.title || idx);
-                      }}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
-                    />
-                    <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                      <span className="px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-sm">
+                  {item.image ? (
+                    <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                        className="w-full h-64 object-cover group-hover:scale-105 transition duration-500"
+                      />
+                      <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                        <span className="px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-sm">
+                          {item.category || "खेल"}
+                        </span>
+                        {item.district && (
+                          <span className="px-2.5 py-1 bg-blue-950/80 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white shadow-sm flex items-center gap-1">
+                            <MapPin size={10} className="text-orange-400" />
+                            {item.district}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="p-6 pb-0 flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-orange-100 rounded-full text-xs font-bold text-orange-600">
                         {item.category || "खेल"}
                       </span>
                       {item.district && (
-                        <span className="px-2.5 py-1 bg-blue-950/80 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white shadow-sm flex items-center gap-1">
-                          <MapPin size={10} className="text-orange-400" />
+                        <span className="px-2.5 py-1 bg-slate-100 rounded-full text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                          <MapPin size={10} className="text-orange-500" />
                           {item.district}
                         </span>
                       )}
                     </div>
-                  </Link>
+                  )}
 
                   <div className="p-6">
                     <h3 className="text-xl font-bold text-slate-900 group-hover:text-orange-600 transition line-clamp-2">
@@ -136,27 +149,39 @@ export default function SportsPage() {
                 className="group border border-slate-200 rounded-xl overflow-hidden bg-white hover:border-orange-200 hover:shadow-sm transition flex flex-col justify-between"
               >
                 <div>
-                  <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
-                    <img
-                      src={resolveArticleImage(item.image, item.category || "खेल", item.id || item.title || (idx + 2))}
-                      alt={item.title}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category || "खेल", item.id || item.title || (idx + 2));
-                      }}
-                      className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
-                    />
-                    <div className="absolute left-3 top-3 flex flex-wrap gap-1">
-                      <span className="px-2 py-0.5 bg-white/95 rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
+                  {item.image ? (
+                    <Link to={`/news/${item.id}`} className="block overflow-hidden relative">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                        className="w-full h-44 object-cover group-hover:scale-105 transition duration-300"
+                      />
+                      <div className="absolute left-3 top-3 flex flex-wrap gap-1">
+                        <span className="px-2 py-0.5 bg-white/95 rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
+                          {item.category || "खेल"}
+                        </span>
+                        {item.district && (
+                          <span className="px-2 py-0.5 bg-blue-950/80 rounded-full text-[10px] font-medium text-white shadow-sm">
+                            📍 {item.district}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="p-4 pb-0 flex flex-wrap gap-1">
+                      <span className="px-2 py-0.5 bg-orange-100 rounded-full text-[10px] font-bold text-orange-600">
                         {item.category || "खेल"}
                       </span>
                       {item.district && (
-                        <span className="px-2 py-0.5 bg-blue-950/80 rounded-full text-[10px] font-medium text-white shadow-sm">
+                        <span className="px-2 py-0.5 bg-slate-100 rounded-full text-[10px] font-medium text-slate-700">
                           📍 {item.district}
                         </span>
                       )}
                     </div>
-                  </Link>
+                  )}
 
                   <div className="p-4">
                     <h3 className="text-base font-bold text-slate-900 group-hover:text-orange-600 transition line-clamp-2">

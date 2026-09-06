@@ -439,25 +439,32 @@ export default function HistoricJharkhandPage() {
                 className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 transition duration-300"
               >
                 <div>
-                  <Link
-                    to={`/news/${article.id}`}
-                    className="block relative h-48 overflow-hidden bg-slate-100"
-                  >
-                    <img
-                      src={resolveArticleImage(article.image, article.category || "झारखंड", article.id || article.title)}
-                      alt={article.title}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage("झारखंड", article.id || article.title);
-                      }}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-                    <div className="absolute left-3 top-3">
-                      <span className="rounded-full bg-emerald-600/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">
+                  {article.image ? (
+                    <Link
+                      to={`/news/${article.id}`}
+                      className="block relative h-48 overflow-hidden bg-slate-100"
+                    >
+                      <img
+                        src={article.image}
+                        alt={article.title}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                      <div className="absolute left-3 top-3">
+                        <span className="rounded-full bg-emerald-600/90 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">
+                          {article.category || "ऐतिहासिक झारखंड"}
+                        </span>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="p-5 pb-0">
+                      <span className="rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-0.5 text-xs font-bold">
                         {article.category || "ऐतिहासिक झारखंड"}
                       </span>
                     </div>
-                  </Link>
+                  )}
 
                   <div className="p-5">
                     {article.district && (

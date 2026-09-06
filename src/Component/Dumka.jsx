@@ -407,35 +407,45 @@ export default function DumkaPage() {
                 >
                   <div>
                     {/* Article Image */}
-                    <Link
-                      to={`/news/${article.id}`}
-                      className="block relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100"
-                    >
-                      <img
-                        src={resolveArticleImage(article.image, article.category || "दुमका", article.id || article.title)}
-                        alt={article.title}
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = getCategoryFallbackImage(
-                            article.category || "दुमका",
-                            article.id || article.title
-                          );
-                        }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                      />
+                    {article.image ? (
+                      <Link
+                        to={`/news/${article.id}`}
+                        className="block relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100"
+                      >
+                        <img
+                          src={article.image}
+                          alt={article.title}
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        />
 
-                      <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                        <span className="px-2.5 py-0.5 bg-white/95 backdrop-blur-sm rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
+                        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                          <span className="px-2.5 py-0.5 bg-white/95 backdrop-blur-sm rounded-full text-[10px] font-bold text-orange-600 shadow-sm">
+                            {article.category || "दुमका"}
+                          </span>
+                          {article.district && (
+                            <span className="px-2 py-0.5 bg-blue-950/80 backdrop-blur-sm rounded-full text-[10px] font-semibold text-white shadow-sm flex items-center gap-1">
+                              <MapPin size={9} className="text-orange-400" />
+                              {article.district}
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    ) : (
+                      <div className="p-5 pb-0 flex flex-wrap gap-1.5">
+                        <span className="px-2.5 py-0.5 bg-orange-100 rounded-full text-[10px] font-bold text-orange-600">
                           {article.category || "दुमका"}
                         </span>
                         {article.district && (
-                          <span className="px-2 py-0.5 bg-blue-950/80 backdrop-blur-sm rounded-full text-[10px] font-semibold text-white shadow-sm flex items-center gap-1">
+                          <span className="px-2 py-0.5 bg-slate-100 rounded-full text-[10px] font-semibold text-slate-700 flex items-center gap-1">
                             <MapPin size={9} className="text-orange-400" />
                             {article.district}
                           </span>
                         )}
                       </div>
-                    </Link>
+                    )}
 
                     {/* Article Content */}
                     <div className="p-5">

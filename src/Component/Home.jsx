@@ -405,17 +405,18 @@ const Home = () => {
           <div className="grid gap-6 lg:grid-cols-3">
           {/* Main news */}
           <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
-            <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden">
-              <img
-                src={resolveArticleImage(mainNews.image, mainNews.category, mainNews.id || mainNews.title)}
-                alt={mainNews.title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = getCategoryFallbackImage(mainNews.category, mainNews.id || mainNews.title);
-                }}
-                className="h-[300px] w-full object-cover sm:h-[420px] group-hover:scale-105 transition duration-500"
-              />
-            </Link>
+            {mainNews.image ? (
+              <Link to={`/news/${mainNews.id}`} className="block group overflow-hidden">
+                <img
+                  src={mainNews.image}
+                  alt={mainNews.title}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                  className="h-[300px] w-full object-cover sm:h-[420px] group-hover:scale-105 transition duration-500"
+                />
+              </Link>
+            ) : null}
 
             <div className="p-6 sm:p-8">
               <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -601,29 +602,42 @@ const Home = () => {
                 className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
               >
                 <div>
-                  <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
-                    <img
-                      src={resolveArticleImage(item.image, item.category, item.id || item.title || idx)}
-                      alt={item.title}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title || idx);
-                      }}
-                      className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
+                  {item.image ? (
+                    <Link to={`/news/${item.id}`} className="block relative overflow-hidden">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                        className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
 
-                    <div className="absolute left-4 top-4 flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-white/95 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm">
+                      <div className="absolute left-4 top-4 flex flex-wrap gap-1.5">
+                        <span className="rounded-full bg-white/95 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-orange-600 shadow-sm">
+                          {item.category}
+                        </span>
+                        {item.district && (
+                          <span className="rounded-full bg-blue-950/80 backdrop-blur-sm px-2.5 py-1 text-[11px] font-medium text-white shadow-sm flex items-center gap-1">
+                            <MapPin size={10} className="text-orange-400" />
+                            {item.district}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="p-5 pb-0 flex flex-wrap gap-1.5">
+                      <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-600">
                         {item.category}
                       </span>
                       {item.district && (
-                        <span className="rounded-full bg-blue-950/80 backdrop-blur-sm px-2.5 py-1 text-[11px] font-medium text-white shadow-sm flex items-center gap-1">
-                          <MapPin size={10} className="text-orange-400" />
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 flex items-center gap-1">
+                          <MapPin size={10} className="text-orange-500" />
                           {item.district}
                         </span>
                       )}
                     </div>
-                  </Link>
+                  )}
 
                   <div className="p-5">
                     <h3 className="line-clamp-3 text-lg font-bold leading-7 text-blue-950">
@@ -680,17 +694,18 @@ const Home = () => {
                 key={item.id}
                 className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-orange-200 hover:shadow-sm"
               >
-                <Link to={`/news/${item.id}`} className="hidden h-24 w-32 shrink-0 overflow-hidden rounded-lg sm:block group">
-                  <img
-                    src={resolveArticleImage(item.image, item.category, item.id || item.title || index)}
-                    alt={item.title}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = getCategoryFallbackImage(item.category, item.id || item.title || index);
-                    }}
-                    className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                </Link>
+                {item.image ? (
+                  <Link to={`/news/${item.id}`} className="hidden h-24 w-32 shrink-0 overflow-hidden rounded-lg sm:block group">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                      className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                  </Link>
+                ) : null}
 
                 <div className="min-w-0 flex-1 flex flex-col justify-between">
                   <div>

@@ -208,20 +208,21 @@ export default function CategoriesSection() {
                       key={article.id}
                       className="group flex flex-col gap-4 border border-slate-100 p-4 rounded-2xl bg-slate-50/50 hover:bg-white hover:border-orange-200 hover:shadow-md transition duration-300"
                     >
-                      <Link
-                        to={`/news/${article.id}`}
-                        className="overflow-hidden rounded-xl bg-slate-100 block"
-                      >
-                        <img
-                          src={resolveArticleImage(article.image, article.category, article.id || article.title)}
-                          alt={article.title}
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = getCategoryFallbackImage(article.category, article.id || article.title);
-                          }}
-                          className="w-full h-[220px] object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </Link>
+                      {article.image ? (
+                        <Link
+                          to={`/news/${article.id}`}
+                          className="overflow-hidden rounded-xl bg-slate-100 block"
+                        >
+                          <img
+                            src={article.image}
+                            alt={article.title}
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                            className="w-full h-[220px] object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </Link>
+                      ) : null}
 
                       <div className="space-y-2.5 flex-1 flex flex-col justify-between">
                         <div>
