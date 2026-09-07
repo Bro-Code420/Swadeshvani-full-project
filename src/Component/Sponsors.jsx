@@ -15,6 +15,7 @@ import { useLanguage } from "../context/LanguageContext";
 const Advertisement = () => {
   const { language, t } = useLanguage();
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -43,13 +44,58 @@ const Advertisement = () => {
     setSelectedFile(file);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
+
+    try {
+      let creativeDataUrl = "";
+      if (selectedFile) {
+        try {
+          creativeDataUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(selectedFile);
+          });
+        } catch (fileErr) {
+          console.warn("File read error:", fileErr);
+        }
+      }
+
+      const payload = {
+        name: formData.name,
+        businessName: formData.businessName,
+        phone: formData.phone,
+        email: formData.email,
+        city: formData.city,
+        advertisementType: formData.advertisementType,
+        duration: formData.duration,
+        budget: formData.budget,
+        message: formData.message,
+        creative: creativeDataUrl,
+        fileName: selectedFile ? selectedFile.name : "",
+      };
+
+      // Send to server API endpoint which delivers full email to swadeshvaaniofficial@gmail.com
+      await fetch("/api/advertisements/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => {});
+
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Advertisement submission error:", err);
+      setSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setSubmitted(false);
+    setIsSubmitting(false);
     setSelectedFile(null);
     setFormData({
       name: "",
@@ -406,10 +452,20 @@ const Advertisement = () => {
 
                   <button
                     type="submit"
-                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-orange-600 sm:w-auto shadow-lg shadow-orange-500/20"
+                    disabled={isSubmitting}
+                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-6 py-3.5 text-sm font-semibold text-white transition disabled:opacity-70 disabled:cursor-not-allowed sm:w-auto shadow-lg shadow-orange-500/20 cursor-pointer"
                   >
-                    <Send size={17} />
-                    {t("sendAdRequestBtn")}
+                    {isSubmitting ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>{language === "hi" ? "अनुरोध भेजा जा रहा है..." : "Sending Request..."}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={17} />
+                        <span>{t("sendAdRequestBtn")}</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

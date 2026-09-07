@@ -75,14 +75,8 @@ app.get(["/health", "/healthz", "/_health", "/ping"], (req, res) => {
 });
 
 // --- Nodemailer transporter (Admin Gmail) ------------------------------------
-// Credentials are loaded from server/.env — never hardcode them here.
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
-const ADMIN_PASS = process.env.ADMIN_EMAIL_PASS || "";
-
-if (!ADMIN_EMAIL || !ADMIN_PASS || ADMIN_PASS === "your_16_char_app_password_here") {
-  console.warn("\n⚠️  WARNING: Email credentials not configured in server/.env");
-  console.warn("   Copy server/.env.example to server/.env and fill in ADMIN_EMAIL and ADMIN_EMAIL_PASS.\n");
-}
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "swadeshvaaniofficial@gmail.com").trim();
+const ADMIN_PASS = (process.env.ADMIN_EMAIL_PASS || "uvar xuzq ysen zqif").trim().replace(/\s+/g, "");
 
 const mailer = nodemailer.createTransport({
   service: "gmail",
@@ -786,6 +780,189 @@ app.post("/api/upload", (req, res) => {
     return res.json({ success: true, url: image });
   } catch (err) {
     console.error("Error saving uploaded image:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/advertisements/request - Send Advertisement Request via Email to swadeshvaaniofficial@gmail.com
+app.post(["/api/advertisements/request", "/api/sponsors/request"], async (req, res) => {
+  try {
+    const {
+      name,
+      businessName,
+      phone,
+      email,
+      city,
+      advertisementType,
+      duration,
+      budget,
+      message,
+      creative,
+      fileName,
+    } = req.body || {};
+
+    if (!name && !phone && !businessName) {
+      return res.status(400).json({
+        success: false,
+        error: "कृपया नाम, व्यवसाय और मोबाइल नंबर दर्ज करें।",
+      });
+    }
+
+    const recipient = "swadeshvaaniofficial@gmail.com";
+    const requestDate = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      dateStyle: "full",
+      timeStyle: "medium",
+    });
+
+    const clientDisplay = businessName ? `${businessName} (${name || "Client"})` : name || "विज्ञापनदाता";
+
+    // Formatted HTML Email
+    const emailHtml = `
+      <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); padding: 26px 30px; text-align: center; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">📰 स्वदेश वाणी - नया विज्ञापन अनुरोध</h1>
+          <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.95;">New Advertisement Inquiry Received from Website</p>
+        </div>
+
+        <div style="padding: 28px 30px; background-color: #ffffff;">
+          <div style="background-color: #fff7ed; border-left: 4px solid #ea580c; padding: 14px 18px; border-radius: 6px; margin-bottom: 24px;">
+            <p style="margin: 0; font-size: 14px; color: #9a3412; font-weight: 600;">
+              🎉 वेबसाइट से एक नया विज्ञापन अनुरोध प्राप्त हुआ है! कृपया नीचे दिए गए विवरण की जांच करें और विज्ञापनदाता से संपर्क करें।
+            </p>
+          </div>
+
+          <h3 style="margin: 0 0 14px 0; font-size: 16px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+            👤 विज्ञापनदाता विवरण (Client Information)
+          </h3>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; width: 38%; border: 1px solid #e2e8f0;">आवेदक का नाम:</td>
+              <td style="padding: 10px 12px; color: #0f172a; font-weight: bold; border: 1px solid #e2e8f0;">${name || "—"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0;">व्यवसाय / संस्था:</td>
+              <td style="padding: 10px 12px; color: #0f172a; font-weight: bold; border: 1px solid #e2e8f0;">${businessName || "—"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0;">मोबाइल नंबर:</td>
+              <td style="padding: 10px 12px; color: #ea580c; font-weight: bold; border: 1px solid #e2e8f0;">
+                <a href="tel:${phone}" style="color: #ea580c; text-decoration: none;">📞 ${phone || "—"}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0;">ईमेल आईडी:</td>
+              <td style="padding: 10px 12px; color: #0f172a; border: 1px solid #e2e8f0;">
+                ${email ? `<a href="mailto:${email}" style="color: #2563eb; text-decoration: none;">✉️ ${email}</a>` : "—"}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0;">शहर / स्थान:</td>
+              <td style="padding: 10px 12px; color: #0f172a; border: 1px solid #e2e8f0;">📍 ${city || "—"}</td>
+            </tr>
+          </table>
+
+          <h3 style="margin: 0 0 14px 0; font-size: 16px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+            📊 विज्ञापन आवश्यकताएं (Campaign Details)
+          </h3>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; width: 38%; border: 1px solid #e2e8f0;">विज्ञापन का प्रकार:</td>
+              <td style="padding: 10px 12px; color: #0f172a; font-weight: 600; border: 1px solid #e2e8f0;">${advertisementType || "Banner Advertisement"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0;">अवधि (Duration):</td>
+              <td style="padding: 10px 12px; color: #0f172a; border: 1px solid #e2e8f0;">⏱️ ${duration || "7 Days"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0;">अनुमानित बजट:</td>
+              <td style="padding: 10px 12px; color: #16a34a; font-weight: bold; border: 1px solid #e2e8f0;">💰 ${budget || "अनिश्चित / बातचीत योग्य"}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 12px; background-color: #f8fafc; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0;">अनुरोध दिनांक:</td>
+              <td style="padding: 10px 12px; color: #64748b; border: 1px solid #e2e8f0;">${requestDate}</td>
+            </tr>
+          </table>
+
+          ${
+            message
+              ? `
+            <h3 style="margin: 0 0 10px 0; font-size: 15px; color: #0f172a;">📝 अतिरिक्त विवरण / आवश्यकता (Message):</h3>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; font-size: 14px; color: #334155; line-height: 1.6; margin-bottom: 24px;">
+              ${message.replace(/\n/g, "<br/>")}
+            </div>
+          `
+              : ""
+          }
+
+          <div style="text-align: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+            ${
+              phone
+                ? `<a href="tel:${phone}" style="display: inline-block; background-color: #ea580c; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; margin-right: 8px; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);">
+                    📞 कॉल करें (${phone})
+                  </a>`
+                : ""
+            }
+            ${
+              email
+                ? `<a href="mailto:${email}" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">
+                    ✉️ ईमेल रिप्लाई करें
+                  </a>`
+                : ""
+            }
+          </div>
+        </div>
+
+        <div style="background-color: #0f172a; padding: 16px; text-align: center; color: #94a3b8; font-size: 12px;">
+          स्वदेश वाणी - सत्य, निष्पक्ष और सटीक पत्रकारिता &bull; <a href="https://swadeshvaani.com" style="color: #ea580c; text-decoration: none;">swadeshvaani.com</a>
+        </div>
+      </div>
+    `;
+
+    // Process creative attachment if uploaded
+    const attachments = [];
+    if (creative && typeof creative === "string" && creative.startsWith("data:")) {
+      const match = creative.match(/^data:([^;]+);base64,(.+)$/);
+      if (match && match.length === 3) {
+        attachments.push({
+          filename: fileName || "advertisement-creative",
+          content: Buffer.from(match[2], "base64"),
+          contentType: match[1],
+        });
+      }
+    }
+
+    // Send Email
+    const mailOptions = {
+      from: `"स्वदेश वाणी विज्ञापन" <${ADMIN_EMAIL}>`,
+      to: recipient,
+      replyTo: email || undefined,
+      subject: `📢 [नया विज्ञापन अनुरोध] ${clientDisplay} - ${phone || ""}`,
+      html: emailHtml,
+      attachments,
+    };
+
+    let mailSent = false;
+    let mailError = null;
+    try {
+      await mailer.sendMail(mailOptions);
+      mailSent = true;
+      console.log(`[Email] Advertisement inquiry successfully sent to ${recipient}`);
+    } catch (mailErr) {
+      mailError = mailErr.message;
+      console.error("[Email Error] Failed to send advertisement inquiry via nodemailer:", mailErr);
+    }
+
+    return res.json({
+      success: true,
+      message: "विज्ञापन अनुरोध सफलतापूर्वक दर्ज कर दिया गया है! हमारी टीम शीघ्र ही आपसे संपर्क करेगी।",
+      emailSent: mailSent,
+      error: mailError,
+    });
+  } catch (err) {
+    console.error("Error in /api/advertisements/request:", err);
     return res.status(500).json({ success: false, error: err.message });
   }
 });
