@@ -11,6 +11,8 @@ import {
   Info,
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { convex } from "../utils/convexClient";
+import { api } from "../../convex/_generated/api";
 
 const Advertisement = () => {
   const { language, t } = useLanguage();
@@ -77,13 +79,51 @@ const Advertisement = () => {
         fileName: selectedFile ? selectedFile.name : "",
       };
 
-      // Send to server API endpoint which delivers full email to swadeshvaaniofficial@gmail.com
-      await fetch("/api/advertisements/request", {
+      // 1. Direct Cloud Email Delivery directly to swadeshvaaniofficial@gmail.com
+      const formSubmitPromise = fetch(
+        "https://formsubmit.co/ajax/swadeshvaaniofficial@gmail.com",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            _subject: `📢 [नया विज्ञापन अनुरोध] ${formData.businessName || formData.name} - ${formData.phone}`,
+            _template: "table",
+            _captcha: "false",
+            "आवेदक का नाम (Name)": formData.name || "—",
+            "व्यवसाय / संस्था (Business Name)": formData.businessName || "—",
+            "मोबाइल नंबर (Phone)": formData.phone || "—",
+            "ईमेल आईडी (Email)": formData.email || "—",
+            "शहर / स्थान (City)": formData.city || "—",
+            "विज्ञापन का प्रकार (Ad Type)": formData.advertisementType || "Banner Advertisement",
+            "अवधि (Duration)": formData.duration || "7 Days",
+            "अनुमानित बजट (Budget)": formData.budget || "अनिश्चित",
+            "अतिरिक्त विवरण / आवश्यकता (Message)": formData.message || "—",
+            "फ़ाइल संलग्न (Attachment)": selectedFile ? selectedFile.name : "कोई फ़ाइल नहीं",
+          }),
+        }
+      ).catch((e) => console.warn("FormSubmit delivery log:", e));
+
+      // 2. Express Server Nodemailer Delivery
+      const expressPromise = fetch("/api/advertisements/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       }).catch(() => {});
 
+      // 3. Convex Real-time Admin Notification
+      convex
+        .mutation(api.notifications.send, {
+          title: `📢 नया विज्ञापन अनुरोध: ${formData.businessName || formData.name}`,
+          message: `फोन: ${formData.phone} | बजट: ${formData.budget || "अनिश्चित"} | शहर: ${formData.city || "झारखंड"}`,
+          type: "Advertisement",
+          target: "admin",
+        })
+        .catch(() => {});
+
+      await Promise.allSettled([formSubmitPromise, expressPromise]);
       setSubmitted(true);
     } catch (err) {
       console.error("Advertisement submission error:", err);
