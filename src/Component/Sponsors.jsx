@@ -100,7 +100,7 @@ const Advertisement = () => {
       // 2. Direct Cloud Email Dispatch to swadeshvaaniofficial@gmail.com (Guaranteed delivery on localhost & client side)
       if (!sentViaServer) {
         try {
-          await fetch("https://formsubmit.co/ajax/swadeshvaaniofficial@gmail.com", {
+          await fetch("https://formsubmit.co/ajax/78b7e7498e70e13123187561e1990354", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
