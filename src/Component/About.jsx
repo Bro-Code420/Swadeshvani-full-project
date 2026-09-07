@@ -141,15 +141,15 @@ export default function About() {
                   </p>
 
                   <a
-                    href="mailto:swadeshvaninewsnetwork@gmail.com"
+                    href="mailto:swadeshvaaniofficial@gmail.com"
                     className="mt-1 inline-block break-all text-sm font-medium text-[#063d3a] transition hover:text-orange-600 sm:text-base"
                   >
-                    swadeshvaninewsnetwork@gmail.com
+                    swadeshvaaniofficial@gmail.com
                   </a>
                 </div>
 
                 <a
-                  href="mailto:swadeshvaninewsnetwork@gmail.com"
+                  href="mailto:swadeshvaaniofficial@gmail.com"
                   className="inline-flex w-fit items-center gap-2 rounded-lg bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
                 >
                   <FaEnvelope />

@@ -60,6 +60,8 @@ export const broadcastLocalEvent = (type, data = {}) => {
   }
 };
 
+import { safeStorage } from "./safeStorage";
+
 export const initRealtimeEngine = () => {
   if (isInitialized || typeof window === "undefined") return;
   isInitialized = true;
@@ -68,28 +70,28 @@ export const initRealtimeEngine = () => {
   try {
     convex.onUpdate(api.articles.get, {}, (freshArticles) => {
       if (Array.isArray(freshArticles)) {
-        localStorage.setItem("savdeshvani_articles_store", JSON.stringify(freshArticles));
+        safeStorage.setItem("savdeshvani_articles_store", JSON.stringify(freshArticles));
         window.dispatchEvent(new Event("sv_articles_change"));
       }
     });
 
     convex.onUpdate(api.advertisements.get, {}, (freshAds) => {
       if (Array.isArray(freshAds)) {
-        localStorage.setItem("savdeshvani_advertisements", JSON.stringify(freshAds));
+        safeStorage.setItem("savdeshvani_advertisements", JSON.stringify(freshAds));
         window.dispatchEvent(new Event("sv_ads_change"));
       }
     });
 
     convex.onUpdate(api.subscribers.get, {}, (freshSubs) => {
       if (Array.isArray(freshSubs)) {
-        localStorage.setItem("savdeshvani_subscribers", JSON.stringify(freshSubs));
+        safeStorage.setItem("savdeshvani_subscribers", JSON.stringify(freshSubs));
         window.dispatchEvent(new Event("sv_subscribers_change"));
       }
     });
 
     convex.onUpdate(api.notifications.get, {}, (freshNotifs) => {
       if (Array.isArray(freshNotifs)) {
-        localStorage.setItem("savdeshvani_notifications", JSON.stringify(freshNotifs));
+        safeStorage.setItem("savdeshvani_notifications", JSON.stringify(freshNotifs));
         window.dispatchEvent(new Event("sv_notifications_change"));
       }
     });

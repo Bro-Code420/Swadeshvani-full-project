@@ -5,6 +5,7 @@
 
 import { convex } from "./convexClient";
 import { api } from "../../convex/_generated/api";
+import { safeStorage, safeSessionStorage } from "./safeStorage";
 
 const ADMIN_STORAGE_KEY = "savdeshvani_admin_auth";
 const USER_STORAGE_KEY = "savdeshvani_user_auth";
@@ -34,8 +35,8 @@ const DEFAULT_CREDENTIALS = {
 export const isAdminAuthenticated = () => {
   try {
     const session =
-      sessionStorage.getItem(ADMIN_STORAGE_KEY) ||
-      localStorage.getItem(ADMIN_STORAGE_KEY);
+      safeSessionStorage.getItem(ADMIN_STORAGE_KEY) ||
+      safeStorage.getItem(ADMIN_STORAGE_KEY);
     if (!session) return false;
 
     const data = JSON.parse(session);
@@ -59,15 +60,13 @@ export const isAdminAuthenticated = () => {
 export const getAdminUser = () => {
   try {
     const session =
-      sessionStorage.getItem(ADMIN_STORAGE_KEY) ||
-      localStorage.getItem(ADMIN_STORAGE_KEY);
+      safeSessionStorage.getItem(ADMIN_STORAGE_KEY) ||
+      safeStorage.getItem(ADMIN_STORAGE_KEY);
     if (session) {
       const data = JSON.parse(session);
       return data.user || null;
     }
-  } catch (err) {
-    console.error("Error reading admin user data:", err);
-  }
+  } catch (err) {}
   return null;
 };
 
@@ -109,11 +108,11 @@ export const authenticateAccount = async (identifier, password, rememberMe = fal
       };
 
       const payload = JSON.stringify(adminSession);
-      sessionStorage.setItem(ADMIN_STORAGE_KEY, payload);
+      safeSessionStorage.setItem(ADMIN_STORAGE_KEY, payload);
       if (rememberMe) {
-        localStorage.setItem(ADMIN_STORAGE_KEY, payload);
+        safeStorage.setItem(ADMIN_STORAGE_KEY, payload);
       } else {
-        localStorage.removeItem(ADMIN_STORAGE_KEY);
+        safeStorage.removeItem(ADMIN_STORAGE_KEY);
       }
 
       window.dispatchEvent(new Event("sv_auth_change"));
@@ -156,11 +155,11 @@ export const authenticateAccount = async (identifier, password, rememberMe = fal
           };
 
           const payload = JSON.stringify(adminSession);
-          sessionStorage.setItem(ADMIN_STORAGE_KEY, payload);
+          safeSessionStorage.setItem(ADMIN_STORAGE_KEY, payload);
           if (rememberMe) {
-            localStorage.setItem(ADMIN_STORAGE_KEY, payload);
+            safeStorage.setItem(ADMIN_STORAGE_KEY, payload);
           } else {
-            localStorage.removeItem(ADMIN_STORAGE_KEY);
+            safeStorage.removeItem(ADMIN_STORAGE_KEY);
           }
 
           window.dispatchEvent(new Event("sv_auth_change"));
@@ -180,8 +179,8 @@ export const authenticateAccount = async (identifier, password, rememberMe = fal
             user: data.user,
           };
           const userPayload = JSON.stringify(userSession);
-          sessionStorage.setItem(USER_STORAGE_KEY, userPayload);
-          if (rememberMe) localStorage.setItem(USER_STORAGE_KEY, userPayload);
+          safeSessionStorage.setItem(USER_STORAGE_KEY, userPayload);
+          if (rememberMe) safeStorage.setItem(USER_STORAGE_KEY, userPayload);
 
           window.dispatchEvent(new Event("sv_auth_change"));
           return {
@@ -238,11 +237,11 @@ export const authenticateAccount = async (identifier, password, rememberMe = fal
     };
 
     const payload = JSON.stringify(adminSession);
-    sessionStorage.setItem(ADMIN_STORAGE_KEY, payload);
+    safeSessionStorage.setItem(ADMIN_STORAGE_KEY, payload);
     if (rememberMe) {
-      localStorage.setItem(ADMIN_STORAGE_KEY, payload);
+      safeStorage.setItem(ADMIN_STORAGE_KEY, payload);
     } else {
-      localStorage.removeItem(ADMIN_STORAGE_KEY);
+      safeStorage.removeItem(ADMIN_STORAGE_KEY);
     }
 
     window.dispatchEvent(new Event("sv_auth_change"));
@@ -283,8 +282,8 @@ export const authenticateAccount = async (identifier, password, rememberMe = fal
         user: userRes.user,
       };
       const userPayload = JSON.stringify(userSession);
-      sessionStorage.setItem(USER_STORAGE_KEY, userPayload);
-      if (rememberMe) localStorage.setItem(USER_STORAGE_KEY, userPayload);
+      safeSessionStorage.setItem(USER_STORAGE_KEY, userPayload);
+      if (rememberMe) safeStorage.setItem(USER_STORAGE_KEY, userPayload);
       window.dispatchEvent(new Event("sv_auth_change"));
       return {
         success: true,
@@ -310,8 +309,8 @@ export const authenticateAccount = async (identifier, password, rememberMe = fal
           user: regRes.user,
         };
         const userPayload = JSON.stringify(userSession);
-        sessionStorage.setItem(USER_STORAGE_KEY, userPayload);
-        if (rememberMe) localStorage.setItem(USER_STORAGE_KEY, userPayload);
+        safeSessionStorage.setItem(USER_STORAGE_KEY, userPayload);
+        if (rememberMe) safeStorage.setItem(USER_STORAGE_KEY, userPayload);
         window.dispatchEvent(new Event("sv_auth_change"));
         return {
           success: true,
@@ -340,9 +339,9 @@ export const authenticateAccount = async (identifier, password, rememberMe = fal
   };
 
   const userPayload = JSON.stringify(userSession);
-  sessionStorage.setItem(USER_STORAGE_KEY, userPayload);
+  safeSessionStorage.setItem(USER_STORAGE_KEY, userPayload);
   if (rememberMe) {
-    localStorage.setItem(USER_STORAGE_KEY, userPayload);
+    safeStorage.setItem(USER_STORAGE_KEY, userPayload);
   }
 
   window.dispatchEvent(new Event("sv_auth_change"));
@@ -362,8 +361,8 @@ export const authenticateAccount = async (identifier, password, rememberMe = fal
 export const isUserAuthenticated = () => {
   try {
     const session =
-      sessionStorage.getItem(USER_STORAGE_KEY) ||
-      localStorage.getItem(USER_STORAGE_KEY);
+      safeSessionStorage.getItem(USER_STORAGE_KEY) ||
+      safeStorage.getItem(USER_STORAGE_KEY);
     if (!session) return false;
     const data = JSON.parse(session);
     return !!(data && data.authenticated);
@@ -381,8 +380,8 @@ export const getCurrentAccount = () => {
   }
   try {
     const session =
-      sessionStorage.getItem(USER_STORAGE_KEY) ||
-      localStorage.getItem(USER_STORAGE_KEY);
+      safeSessionStorage.getItem(USER_STORAGE_KEY) ||
+      safeStorage.getItem(USER_STORAGE_KEY);
     if (session) {
       const data = JSON.parse(session);
       return data.user || null;
@@ -395,8 +394,8 @@ export const getCurrentAccount = () => {
  * Logout the admin user
  */
 export const logoutAdmin = () => {
-  sessionStorage.removeItem(ADMIN_STORAGE_KEY);
-  localStorage.removeItem(ADMIN_STORAGE_KEY);
+  safeSessionStorage.removeItem(ADMIN_STORAGE_KEY);
+  safeStorage.removeItem(ADMIN_STORAGE_KEY);
   window.dispatchEvent(new Event("sv_auth_change"));
 };
 
@@ -405,7 +404,8 @@ export const logoutAdmin = () => {
  */
 export const logoutAll = () => {
   logoutAdmin();
-  sessionStorage.removeItem(USER_STORAGE_KEY);
-  localStorage.removeItem(USER_STORAGE_KEY);
+  safeSessionStorage.removeItem(USER_STORAGE_KEY);
+  safeStorage.removeItem(USER_STORAGE_KEY);
   window.dispatchEvent(new Event("sv_auth_change"));
 };
+

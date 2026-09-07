@@ -34,6 +34,7 @@ export { toHindiNumber } from "../utils/hindiNumbers";
 import { broadcastLocalEvent } from "../utils/realtimeEngine";
 import { convex } from "../utils/convexClient";
 import { api } from "../../convex/_generated/api";
+import { safeStorage } from "../utils/safeStorage";
 
 export const JHARKHAND_DISTRICTS = [
   "Ranchi",
@@ -581,7 +582,7 @@ export const syncAdvertisementsFromServer = async () => {
     try {
       const convexAds = await convex.query(api.advertisements.get);
       if (Array.isArray(convexAds) && convexAds.length > 0) {
-        localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(convexAds));
+        safeStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(convexAds));
         window.dispatchEvent(new Event("sv_ads_change"));
         return getAdvertisements();
       }
@@ -594,13 +595,13 @@ export const syncAdvertisementsFromServer = async () => {
       if (data) {
         if (Array.isArray(data.deletedIds)) {
           const currentDeleted = new Set(
-            JSON.parse(localStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
+            JSON.parse(safeStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
           );
           data.deletedIds.forEach((id) => currentDeleted.add(String(id)));
-          localStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...currentDeleted]));
+          safeStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...currentDeleted]));
         }
         if (Array.isArray(data.advertisements)) {
-          localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(data.advertisements));
+          safeStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(data.advertisements));
         }
         window.dispatchEvent(new Event("sv_ads_change"));
         return getAdvertisements();
@@ -612,12 +613,12 @@ export const syncAdvertisementsFromServer = async () => {
 
 export const getAdvertisements = () => {
   try {
-    const saved = localStorage.getItem(ADVERTISEMENTS_KEY);
+    const saved = safeStorage.getItem(ADVERTISEMENTS_KEY);
     if (saved !== null) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
         const deletedIds = new Set(
-          JSON.parse(localStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
+          JSON.parse(safeStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
         );
         return parsed.filter((a) => !deletedIds.has(String(a.id)));
       }
@@ -657,11 +658,11 @@ export const saveAdvertisement = (adData) => {
     // Remove from deleted list if restoring or creating
     try {
       const deletedIds = new Set(
-        JSON.parse(localStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
+        JSON.parse(safeStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
       );
       if (deletedIds.has(adId)) {
         deletedIds.delete(adId);
-        localStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...deletedIds]));
+        safeStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...deletedIds]));
       }
     } catch {}
 
@@ -675,7 +676,7 @@ export const saveAdvertisement = (adData) => {
     }
 
     try {
-      localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+      safeStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
     } catch {}
     window.dispatchEvent(new Event("sv_ads_change"));
 
@@ -711,15 +712,15 @@ export const deleteAdvertisement = (id) => {
   try {
     const idStr = String(id);
     const deletedIds = new Set(
-      JSON.parse(localStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
+      JSON.parse(safeStorage.getItem(DELETED_ADS_KEY) || "[]").map(String)
     );
     deletedIds.add(idStr);
-    localStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...deletedIds]));
+    safeStorage.setItem(DELETED_ADS_KEY, JSON.stringify([...deletedIds]));
 
     const ads = getAdvertisements();
     const filtered = ads.filter((a) => String(a.id) !== idStr);
     try {
-      localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(filtered));
+      safeStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(filtered));
     } catch {}
     window.dispatchEvent(new Event("sv_ads_change"));
 
@@ -749,7 +750,7 @@ export const toggleAdStatus = (id) => {
       return ad;
     });
     try {
-      localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+      safeStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
     } catch {}
     window.dispatchEvent(new Event("sv_ads_change"));
 
@@ -779,7 +780,7 @@ export const recordAdClick = (id) => {
       return ad;
     });
     try {
-      localStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
+      safeStorage.setItem(ADVERTISEMENTS_KEY, JSON.stringify(updated));
     } catch {}
     window.dispatchEvent(new Event("sv_ads_change"));
 
@@ -812,7 +813,7 @@ export const generateSlug = (text) => {
 
 export const getNotifications = () => {
   try {
-    const saved = localStorage.getItem(NOTIFICATIONS_KEY);
+    const saved = safeStorage.getItem(NOTIFICATIONS_KEY);
     if (saved) {
       return JSON.parse(saved);
     }
@@ -853,7 +854,7 @@ export const addNotification = (article) => {
     };
 
     const updated = [newNotif, ...notifications].slice(0, 30); // keep last 30
-    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    safeStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
 
     // Dispatch global custom event for Navbar & UI reactivity
     window.dispatchEvent(new CustomEvent("sv_notification_received", { detail: newNotif }));
@@ -893,7 +894,7 @@ export const markNotificationAsRead = (id) => {
     const updated = notifications.map((n) =>
       String(n.id) === String(id) ? { ...n, read: true } : n
     );
-    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    safeStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("sv_notifications_change"));
 
     // Convex mark read
@@ -910,7 +911,7 @@ export const markAllNotificationsAsRead = () => {
   try {
     const notifications = getNotifications();
     const updated = notifications.map((n) => ({ ...n, read: true }));
-    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    safeStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("sv_notifications_change"));
     return updated;
   } catch (e) {
@@ -925,7 +926,7 @@ export const syncNotificationsFromServer = async () => {
     try {
       const convexNotifs = await convex.query(api.notifications.get);
       if (Array.isArray(convexNotifs) && convexNotifs.length > 0) {
-        localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(convexNotifs));
+        safeStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(convexNotifs));
         window.dispatchEvent(new Event("sv_notifications_change"));
         return convexNotifs;
       }
@@ -936,7 +937,7 @@ export const syncNotificationsFromServer = async () => {
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.notifications)) {
-        localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(data.notifications));
+        safeStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(data.notifications));
         window.dispatchEvent(new Event("sv_notifications_change"));
         return data.notifications;
       }
@@ -947,7 +948,7 @@ export const syncNotificationsFromServer = async () => {
 
 export const clearNotifications = () => {
   try {
-    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify([]));
+    safeStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify([]));
     window.dispatchEvent(new Event("sv_notifications_change"));
     fetch("/api/notifications", { method: "DELETE" }).catch(() => {});
     return [];
@@ -964,7 +965,7 @@ export const syncArticlesFromServer = async () => {
     try {
       const convexArticles = await convex.query(api.articles.get);
       if (Array.isArray(convexArticles) && convexArticles.length > 0) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(convexArticles));
+        safeStorage.setItem(STORAGE_KEY, JSON.stringify(convexArticles));
         window.dispatchEvent(new Event("sv_articles_change"));
         return getAllArticles();
       }
@@ -978,15 +979,15 @@ export const syncArticlesFromServer = async () => {
         // 1. Sync deleted article IDs across devices so deleted news never reappears
         if (Array.isArray(data.deletedIds)) {
           const currentDeleted = new Set(
-            JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
+            JSON.parse(safeStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
           );
           data.deletedIds.forEach((id) => currentDeleted.add(String(id)));
-          localStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...currentDeleted]));
+          safeStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...currentDeleted]));
         }
 
         // 2. Sync articles list
         if (Array.isArray(data.articles)) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.articles));
+          safeStorage.setItem(STORAGE_KEY, JSON.stringify(data.articles));
         }
 
         window.dispatchEvent(new Event("sv_articles_change"));
@@ -1035,12 +1036,12 @@ const DELETED_ARTICLES_KEY = "sv_deleted_article_ids";
 // Get all articles (Returns localStorage / synced articles, fallback to initial seeds only on cold start)
 export const getAllArticles = () => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = safeStorage.getItem(STORAGE_KEY);
     if (saved !== null) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
         const deletedIds = new Set(
-          JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
+          JSON.parse(safeStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
         );
         return parsed
           .filter((a) => !deletedIds.has(String(a.id)))
@@ -1051,7 +1052,7 @@ export const getAllArticles = () => {
       }
     }
   } catch (e) {
-    console.error("Error reading articles from localStorage:", e);
+    console.error("Error reading articles from storage:", e);
   }
   return initialArticles;
 };
@@ -1114,7 +1115,7 @@ export const getArticlesByCategory = (categoryQuery) => {
 // Save a new or updated article (used when Admin publishes or edits)
 export const saveArticleToStore = (articleData) => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = safeStorage.getItem(STORAGE_KEY);
     let customArticles = saved ? JSON.parse(saved) : [];
 
     const articleId = String(articleData.id || `art-${Date.now()}`);
@@ -1143,11 +1144,11 @@ export const saveArticleToStore = (articleData) => {
     // Remove from deleted list if restoring or creating
     try {
       const deletedIds = new Set(
-        JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
+        JSON.parse(safeStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
       );
       if (deletedIds.has(String(articleToSave.id))) {
         deletedIds.delete(String(articleToSave.id));
-        localStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...deletedIds]));
+        safeStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...deletedIds]));
       }
     } catch {}
 
@@ -1159,15 +1160,15 @@ export const saveArticleToStore = (articleData) => {
     } else {
       customArticles = [articleToSave, ...customArticles];
     }
-    // Safely persist to localStorage with quota-exceeded fallback
+    // Safely persist to storage with quota-exceeded fallback
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
+      safeStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
     } catch (quotaErr) {
       console.warn("Storage quota limit reached. Pruning older articles to save new article:", quotaErr);
       while (customArticles.length > 5) {
         customArticles.pop();
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
+          safeStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
           break;
         } catch {}
       }
@@ -1218,15 +1219,15 @@ export const deleteArticleFromStore = (id) => {
   try {
     const idStr = String(id);
     const deletedIds = new Set(
-      JSON.parse(localStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
+      JSON.parse(safeStorage.getItem(DELETED_ARTICLES_KEY) || "[]").map(String)
     );
     deletedIds.add(idStr);
-    localStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...deletedIds]));
+    safeStorage.setItem(DELETED_ARTICLES_KEY, JSON.stringify([...deletedIds]));
 
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = safeStorage.getItem(STORAGE_KEY);
     if (saved) {
       const customArticles = JSON.parse(saved).filter((a) => String(a.id) !== idStr);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
+      safeStorage.setItem(STORAGE_KEY, JSON.stringify(customArticles));
     }
 
     window.dispatchEvent(new Event("sv_articles_change"));
@@ -1256,7 +1257,7 @@ export const syncSubscribersFromServer = async () => {
     try {
       const convexSubs = await convex.query(api.subscribers.get);
       if (Array.isArray(convexSubs) && convexSubs.length > 0) {
-        localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(convexSubs));
+        safeStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(convexSubs));
         window.dispatchEvent(new Event("sv_subscribers_change"));
         return convexSubs;
       }
@@ -1267,7 +1268,7 @@ export const syncSubscribersFromServer = async () => {
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.subscribers)) {
-        localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(data.subscribers));
+        safeStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(data.subscribers));
         window.dispatchEvent(new Event("sv_subscribers_change"));
         return data.subscribers;
       }
@@ -1278,7 +1279,7 @@ export const syncSubscribersFromServer = async () => {
 
 export const getSubscribers = () => {
   try {
-    const saved = localStorage.getItem(SUBSCRIBERS_KEY);
+    const saved = safeStorage.getItem(SUBSCRIBERS_KEY);
     if (saved) {
       return JSON.parse(saved);
     }
@@ -1314,7 +1315,7 @@ export const saveSubscriber = ({ email, phone }) => {
     };
 
     const updated = [newSub, ...subscribers];
-    localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(updated));
+    safeStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("sv_subscribers_change"));
 
     // Persist to Convex DB
@@ -1343,7 +1344,7 @@ export const deleteSubscriber = (idOrPhone) => {
     const filtered = subscribers.filter(
       (s) => String(s.id) !== String(idOrPhone) && String(s.phone) !== String(idOrPhone)
     );
-    localStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(filtered));
+    safeStorage.setItem(SUBSCRIBERS_KEY, JSON.stringify(filtered));
     window.dispatchEvent(new Event("sv_subscribers_change"));
 
     // Delete in Convex DB
@@ -1359,5 +1360,6 @@ export const deleteSubscriber = (idOrPhone) => {
     return [];
   }
 };
+
 
 

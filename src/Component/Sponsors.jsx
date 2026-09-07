@@ -433,16 +433,16 @@ const Advertisement = () => {
 
           <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:gap-6">
             <a
-              href="tel:+919999999999"
-              className="flex items-center gap-2 transition hover:text-orange-600"
+              href="tel:+917979093015"
+              className="flex items-center gap-2 transition hover:text-orange-600 font-semibold"
             >
               <Phone size={17} className="text-orange-500" />
-              +91 99999 99999
+              +91 79790 93015
             </a>
 
             <a
               href="mailto:swadeshvaaniofficial@gmail.com"
-              className="flex items-center gap-2 transition hover:text-orange-600"
+              className="flex items-center gap-2 transition hover:text-orange-600 font-semibold"
             >
               <Mail size={17} className="text-orange-500" />
               swadeshvaaniofficial@gmail.com

@@ -31,7 +31,8 @@ import {
   FaMousePointer,
   FaWhatsapp,
   FaUserCheck,
-  FaSync,
+  FaDownload,
+  FaFileDownload,
 } from "react-icons/fa";
 
 import {
@@ -383,60 +384,55 @@ export default function Admin() {
     }
   };
 
-  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  // Download Subscribers CSV file (Excel & Sheets UTF-8 compatible)
+  const handleDownloadSubscribersCSV = () => {
+    if (!subscribersList || subscribersList.length === 0) {
+      showToast(
+        language === "hi"
+          ? "डाउनलोड करने के लिए कोई सब्सक्राइबर नहीं मिला।"
+          : "No subscribers found to download.",
+        "info"
+      );
+      return;
+    }
 
-  // Sync all local articles and images to Convex Cloud DB
-  const handleSyncLocalImagesToCloud = async () => {
-    setIsSyncingCloud(true);
+    const headers = [
+      language === "hi" ? "क्रम संख्या (S.No)" : "S.No",
+      language === "hi" ? "मोबाइल नंबर (Mobile Number)" : "Mobile Number",
+      language === "hi" ? "ईमेल आईडी (Email Address)" : "Email Address",
+      language === "hi" ? "सब्सक्रिप्शन दिनांक (Date & Time)" : "Subscription Date",
+      language === "hi" ? "स्थिति (Status)" : "Status",
+    ];
+
+    const rows = subscribersList.map((sub, idx) => [
+      idx + 1,
+      sub.phone ? `"${sub.phone}"` : '""',
+      sub.email ? `"${(sub.email || "").replace(/"/g, '""')}"` : '""',
+      sub.subscribedAt ? `"${(sub.subscribedAt || "").replace(/"/g, '""')}"` : '""',
+      sub.status ? `"${(sub.status || "").replace(/"/g, '""')}"` : '"Active"',
+    ]);
+
+    const csvContent =
+      "\uFEFF" +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `swadesh_vani_subscribers_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
     showToast(
       language === "hi"
-        ? "लोकल फोटो और समाचार लाइव क्लाउड में सिंक हो रहे हैं..."
-        : "Syncing local photos & articles to Live Cloud...",
-      "info"
+        ? "सब्सक्राइबर्स CSV फ़ाइल सफलतापूर्वक डाउनलोड हुई!"
+        : "Subscribers CSV file downloaded successfully!",
+      "success"
     );
-    try {
-      const saved = localStorage.getItem("savdeshvani_articles_store");
-      const localArticles = saved ? JSON.parse(saved) : getAllArticles();
-      let syncedCount = 0;
-
-      for (const article of localArticles) {
-        if (article && article.title) {
-          await convex.mutation(api.articles.save, {
-            customId: String(article.id),
-            title: article.title,
-            slug: article.slug || generateSlug(article.title),
-            category: article.category || "Jharkhand",
-            district: article.district || "Ranchi",
-            subDistrict: article.subDistrict || "",
-            reporter: article.reporter || article.author || "स्वदेश वाणी ब्यूरो",
-            author: article.author || article.reporter || "स्वदेश वाणी ब्यूरो",
-            excerpt: article.excerpt || "",
-            content: article.content || "",
-            image: article.image || "",
-            date: article.date || "",
-            readTime: article.readTime || "",
-          }).catch((err) => console.warn("Sync article err:", err));
-          syncedCount++;
-        }
-      }
-
-      showToast(
-        language === "hi"
-          ? `सफलतापूर्वक ${syncedCount} समाचार व तस्वीरें लाइव सर्वर से सिंक हो गईं!`
-          : `Successfully synced ${syncedCount} articles & photos to Live Cloud!`,
-        "success"
-      );
-    } catch (err) {
-      console.error("Error syncing to cloud:", err);
-      showToast(
-        language === "hi"
-          ? "सिंक करने में त्रुटि आई।"
-          : "Error syncing to Live Cloud.",
-        "error"
-      );
-    } finally {
-      setIsSyncingCloud(false);
-    }
   };
 
   // --- ADVERTISEMENT HANDLERS ---
@@ -803,18 +799,6 @@ export default function Admin() {
               <span className="tracking-wide">{language === "hi" ? "English" : "हिंदी"}</span>
             </button>
 
-            {/* Sync Localhost to Live Cloud Button */}
-            <button
-              type="button"
-              onClick={handleSyncLocalImagesToCloud}
-              disabled={isSyncingCloud}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-blue-900 text-xs font-bold transition shadow-2xs cursor-pointer group disabled:opacity-50"
-              title={language === "hi" ? "सभी लोकल फोटो व समाचार लाइव क्लाउड में सिंक करें" : "Sync all local photos & articles to Live Cloud"}
-            >
-              <FaSync className={`text-xs ${isSyncingCloud ? "animate-spin text-blue-600" : "text-blue-600"}`} />
-              <span className="tracking-wide hidden sm:inline">{isSyncingCloud ? (language === "hi" ? "सिंक हो रहा है..." : "Syncing...") : (language === "hi" ? "क्लाउड सिंक" : "Cloud Sync")}</span>
-            </button>
-
             {activePage === "ads" ? (
               <button
                 onClick={() => {
@@ -1096,16 +1080,6 @@ export default function Admin() {
                   <span className="text-xs text-slate-500 font-semibold">
                     {language === "hi" ? "कुल समाचार: " : "Total Articles: "}<strong>{toHindiNumber(filteredNews.length)}</strong>
                   </span>
-
-                  <button
-                    onClick={handleSyncLocalImagesToCloud}
-                    disabled={isSyncingCloud}
-                    className="px-3.5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-                    title={language === "hi" ? "सभी लोकल फोटो व समाचार लाइव क्लाउड में सिंक करें" : "Sync all local photos & articles to Live Cloud"}
-                  >
-                    <FaSync className={isSyncingCloud ? "animate-spin text-blue-600" : "text-blue-600"} />
-                    <span>{isSyncingCloud ? (language === "hi" ? "सिंक हो रहा है..." : "Syncing...") : (language === "hi" ? "क्लाउड सिंक" : "Cloud Sync")}</span>
-                  </button>
 
                   <button
                     onClick={() => {
@@ -1732,7 +1706,7 @@ export default function Admin() {
           {/* ==================================================== */}
           {activePage === "subscribers" && (
             <div className="space-y-5 animate-fadeIn">
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-blue-950">
                     {language === "hi" ? "सब्सक्राइबर्स सूची (Audience & Readers)" : "Subscribers List"}
@@ -1742,9 +1716,20 @@ export default function Admin() {
                   </p>
                 </div>
 
-                <span className="px-3.5 py-1.5 bg-purple-50 text-purple-700 font-bold text-xs rounded-full border border-purple-200">
-                  {language === "hi" ? `कुल: ${subscribersList.length}` : `Total: ${subscribersList.length}`}
-                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleDownloadSubscribersCSV}
+                    className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-2 transition cursor-pointer"
+                    title={language === "hi" ? "सब्सक्राइबर विवरण एक्सेल / CSV में डाउनलोड करें" : "Download subscriber details in CSV / Excel format"}
+                  >
+                    <FaFileDownload className="text-sm" />
+                    <span>{language === "hi" ? "CSV डाउनलोड करें (Export)" : "Download CSV"}</span>
+                  </button>
+
+                  <span className="px-3.5 py-1.5 bg-purple-50 text-purple-700 font-bold text-xs rounded-full border border-purple-200">
+                    {language === "hi" ? `कुल: ${subscribersList.length}` : `Total: ${subscribersList.length}`}
+                  </span>
+                </div>
               </div>
 
               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">

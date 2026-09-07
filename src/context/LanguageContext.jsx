@@ -482,10 +482,12 @@ const LanguageContext = createContext({
   t: (key) => key,
 });
 
+import { safeStorage } from "../utils/safeStorage";
+
 export const LanguageProvider = ({ children }) => {
   const [language, setLangState] = useState(() => {
     try {
-      return localStorage.getItem(LANGUAGE_KEY) || "hi";
+      return safeStorage.getItem(LANGUAGE_KEY) || "hi";
     } catch {
       return "hi";
     }
@@ -552,7 +554,7 @@ export const LanguageProvider = ({ children }) => {
     const validLang = lang === "en" ? "en" : "hi";
     setLangState(validLang);
     try {
-      localStorage.setItem(LANGUAGE_KEY, validLang);
+      safeStorage.setItem(LANGUAGE_KEY, validLang);
     } catch {}
     applyDOMTranslation(validLang);
     window.dispatchEvent(new CustomEvent("sv_language_change", { detail: validLang }));

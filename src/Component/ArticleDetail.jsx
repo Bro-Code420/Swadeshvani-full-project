@@ -23,6 +23,7 @@ import {
 import { getArticleById, getAllArticles, syncArticlesFromServer, resolveArticleImage, getCategoryFallbackImage } from "../data/newsData";
 import { convex } from "../utils/convexClient";
 import { api } from "../../convex/_generated/api";
+import { safeStorage } from "../utils/safeStorage";
 import SubscribeSection from "./SubscribeSection";
 
 export default function ArticleDetail() {
@@ -50,10 +51,11 @@ export default function ArticleDetail() {
           if (convexArt) {
             setArticle(convexArt);
             setLoading(false);
+
             try {
-              const saved = JSON.parse(localStorage.getItem("savdeshvani_articles_store") || "[]");
+              const saved = JSON.parse(safeStorage.getItem("savdeshvani_articles_store") || "[]");
               if (!saved.some((a) => String(a.id) === String(convexArt.id))) {
-                localStorage.setItem("savdeshvani_articles_store", JSON.stringify([convexArt, ...saved]));
+                safeStorage.setItem("savdeshvani_articles_store", JSON.stringify([convexArt, ...saved]));
                 window.dispatchEvent(new Event("sv_articles_change"));
               }
             } catch {}
