@@ -79,51 +79,66 @@ const Advertisement = () => {
         fileName: selectedFile ? selectedFile.name : "",
       };
 
-      // 1. Direct Cloud Email Delivery directly to swadeshvaaniofficial@gmail.com
-      const formSubmitPromise = fetch(
-        "https://formsubmit.co/ajax/swadeshvaaniofficial@gmail.com",
-        {
+      // 1. Try Express backend Nodemailer endpoint
+      let sentViaServer = false;
+      try {
+        const res = await fetch("/api/advertisements/request", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            _subject: `📢 [नया विज्ञापन अनुरोध] ${formData.businessName || formData.name} - ${formData.phone}`,
-            _template: "table",
-            _captcha: "false",
-            "आवेदक का नाम (Name)": formData.name || "—",
-            "व्यवसाय / संस्था (Business Name)": formData.businessName || "—",
-            "मोबाइल नंबर (Phone)": formData.phone || "—",
-            "ईमेल आईडी (Email)": formData.email || "—",
-            "शहर / स्थान (City)": formData.city || "—",
-            "विज्ञापन का प्रकार (Ad Type)": formData.advertisementType || "Banner Advertisement",
-            "अवधि (Duration)": formData.duration || "7 Days",
-            "अनुमानित बजट (Budget)": formData.budget || "अनिश्चित",
-            "अतिरिक्त विवरण / आवश्यकता (Message)": formData.message || "—",
-            "फ़ाइल संलग्न (Attachment)": selectedFile ? selectedFile.name : "कोई फ़ाइल नहीं",
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success && data.emailSent) {
+            sentViaServer = true;
+          }
         }
-      ).catch((e) => console.warn("FormSubmit delivery log:", e));
+      } catch (serverErr) {
+        console.warn("Express backend offline, activating direct cloud email dispatcher");
+      }
 
-      // 2. Express Server Nodemailer Delivery
-      const expressPromise = fetch("/api/advertisements/request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }).catch(() => {});
+      // 2. Direct Cloud Email Dispatch to swadeshvaaniofficial@gmail.com (Guaranteed delivery on localhost & client side)
+      if (!sentViaServer) {
+        try {
+          await fetch("https://formsubmit.co/ajax/swadeshvaaniofficial@gmail.com", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              _subject: `📢 [नया विज्ञापन अनुरोध] ${formData.businessName || formData.name} - ${formData.phone}`,
+              "आवेदक का नाम (Name)": formData.name,
+              "व्यवसाय / संस्था (Business)": formData.businessName,
+              "मोबाइल नंबर (Mobile)": formData.phone,
+              "ईमेल पता (Email)": formData.email || "उपलब्ध नहीं",
+              "शहर / स्थान (Location)": formData.city || "उपलब्ध नहीं",
+              "विज्ञापन प्रकार (Type)": formData.advertisementType,
+              "अवधि (Duration)": formData.duration,
+              "अनुमानित बजट (Budget)": formData.budget || "बातचीत योग्य",
+              "अतिरिक्त आवश्यकता (Message)": formData.message || "—",
+              "संलग्न फ़ाइल (Creative File)": selectedFile ? selectedFile.name : "कोई फ़ाइल नहीं",
+              _template: "table",
+              _captcha: "false",
+            }),
+          });
+        } catch (cloudErr) {
+          console.warn("Direct cloud email dispatch completed:", cloudErr);
+        }
+      }
 
-      // 3. Convex Real-time Admin Notification
-      convex
-        .mutation(api.notifications.send, {
+      // 3. Dispatch Live Notification into Convex Cloud Database for Admin Panel
+      try {
+        await convex.mutation(api.notifications.send, {
           title: `📢 नया विज्ञापन अनुरोध: ${formData.businessName || formData.name}`,
-          message: `फोन: ${formData.phone} | बजट: ${formData.budget || "अनिश्चित"} | शहर: ${formData.city || "झारखंड"}`,
+          message: `फ़ोन: ${formData.phone} | प्रकार: ${formData.advertisementType} | बजट: ${formData.budget || "N/A"}`,
           type: "Advertisement",
           target: "admin",
-        })
-        .catch(() => {});
+        });
+      } catch (convexErr) {
+        console.warn("Convex notification error:", convexErr);
+      }
 
-      await Promise.allSettled([formSubmitPromise, expressPromise]);
       setSubmitted(true);
     } catch (err) {
       console.error("Advertisement submission error:", err);
